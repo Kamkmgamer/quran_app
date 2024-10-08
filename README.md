@@ -23,7 +23,7 @@
 1. Clone this repository:
 
    ```
-   git clone https://github.com/your-username/huda-al-quran.git
+   git clone https://github.com/Abdulmalik1321/Huda-Al-Quran.git
    ```
    
 3. Install the dependencies:
