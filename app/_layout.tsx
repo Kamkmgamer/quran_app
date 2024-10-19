@@ -31,11 +31,15 @@ export default function RootLayout() {
   if (!loaded) {
     return null;
   }
-
+  // value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DarkTheme}>
       <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="index"
+          options={{ headerShown: false, title: "الرئيسية" }}
+        />
+        <Stack.Screen name="quran" />
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>
