@@ -16,7 +16,7 @@ export default function HomeScreen({ navigation }) {
   });
 
   const surah = 5;
-  const verse = 3;
+  const verse = 60;
 
   return (
     <SafeAreaView className="px-5 flex flex-col items-center">
