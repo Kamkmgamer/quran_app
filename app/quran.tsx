@@ -1,10 +1,15 @@
 import { useLocalSearchParams, useNavigation } from "expo-router";
-
 import quran from "../assets/Quran.json";
-import { Text, Image, ScrollView, View, Button } from "react-native";
-import { useEffect } from "react";
-
-import ScrollIntoView from "react-scroll-into-view";
+import {
+  Text,
+  Image,
+  ScrollView,
+  View,
+  StyleSheet,
+  ActionSheetIOS,
+} from "react-native";
+import { useEffect, useRef, useState } from "react";
+import * as Clipboard from "expo-clipboard";
 
 const convertToArabicNumerals = (number: number) => {
   const arabicNumerals = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -18,7 +23,9 @@ const convertToArabicNumerals = (number: number) => {
 export default function Quran() {
   const { surah, verse } = useLocalSearchParams();
   const navigation = useNavigation();
-
+  const [renderCount, setRenderCount] = useState(50); // Limit initially rendered items
+  const [highlightedIndex, setHighlightedIndex] = useState(null);
+  const pressTimeoutRef = useRef(null);
   useEffect(() => {
     navigation.setOptions({
       title: `سورة ${quran[surah].name}`,
@@ -28,8 +35,39 @@ export default function Quran() {
       },
     });
   }, [navigation]);
+
+  const handleScroll = (event) => {
+    const scrollPosition = event.nativeEvent.contentOffset.y;
+    const scrollHeight = event.nativeEvent.contentSize.height;
+    const windowHeight = event.nativeEvent.layoutMeasurement.height;
+
+    if (scrollPosition + windowHeight > scrollHeight - 100) {
+      setRenderCount((prevCount) => prevCount + 20); // Load 20 more verses
+    }
+  };
+
+  const showActionSheet = (verse: number) => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: ["Cancel", "حفظ الآية 🔖", "نسخ الآية 📋"],
+        cancelButtonIndex: 0,
+      },
+      (buttonIndex) => {
+        if (buttonIndex === 1) {
+          console.log(`${surah}`, `${verse}`);
+        } else if (buttonIndex === 2) {
+          Clipboard.setString(quran[surah].array[verse].ar);
+        }
+      }
+    );
+  };
+
   return (
-    <ScrollView>
+    <ScrollView
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
+      removeClippedSubviews={true}
+    >
       <View className="items-center">
         <Image
           style={{
@@ -44,13 +82,31 @@ export default function Quran() {
           style={{ lineHeight: 48, justifyContent: "center", display: "flex" }}
           className="text-justify px-3 text-2xl mt-5 text-white font-[othmani-1] items-end"
         >
-          {quran[surah].array.map((item, index) => (
+          {quran[surah].array.slice(0, renderCount).map((item, index) => (
             <Text
+              onPressIn={() => {
+                pressTimeoutRef.current = setTimeout(() => {
+                  setHighlightedIndex(index);
+                }, 150);
+              }}
+              onPressOut={() => {
+                clearTimeout(pressTimeoutRef.current);
+                setHighlightedIndex(null);
+              }}
               onLongPress={() => {
-                alert("test");
+                showActionSheet(index);
               }}
               delayLongPress={250}
               key={index}
+              style={[
+                highlightedIndex === index && styles.highlighted,
+                {
+                  borderRadius: 100,
+                },
+              ]}
+              onLayout={(e) => {
+                console.log(item.ar);
+              }}
             >
               {item.ar}{" "}
               <Text style={{ fontSize: 30 }}>
@@ -63,3 +119,10 @@ export default function Quran() {
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  highlighted: {
+    backgroundColor: "gray",
+    borderRadius: 100,
+  },
+});

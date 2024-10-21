@@ -15,8 +15,8 @@ export default function HomeScreen({ navigation }) {
     "othmani-1": require("../assets/fonts/Othmani.ttf"),
   });
 
-  const surah = 5;
-  const verse = 60;
+  const surah = 15;
+  const verse = 50;
 
   return (
     <SafeAreaView className="px-5 flex flex-col items-center">
