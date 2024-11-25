@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import * as Clipboard from "expo-clipboard";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const convertToArabicNumerals = (number: number) => {
   const arabicNumerals = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -23,10 +24,20 @@ const convertToArabicNumerals = (number: number) => {
 export default function Quran() {
   const { surah, verse } = useLocalSearchParams();
   const navigation = useNavigation();
-  const [renderCount, setRenderCount] = useState(50); // Limit initially rendered items
+  const [renderCount, setRenderCount] = useState(50 + verse); // Limit initially rendered items
   const [highlightedIndex, setHighlightedIndex] = useState(null);
   const pressTimeoutRef = useRef(null);
+  const scrollViewRef = useRef(null);
+  const [verseCords, setVerseCords] = useState([]);
+
   useEffect(() => {
+    setTimeout(() => {
+      scrollViewRef.current.scrollTo({
+        x: 0,
+        y: verseCords[35 + 5],
+        animated: true,
+      });
+    }, 500);
     navigation.setOptions({
       title: `سورة ${quran[surah].name}`,
       headerTitleStyle: {
@@ -36,7 +47,21 @@ export default function Quran() {
     });
   }, [navigation]);
 
-  const handleScroll = (event) => {
+  // Save verse and surah to AsyncStorage
+  const saveVerseToStorage = async (surah: number, verse: number) => {
+    try {
+      await AsyncStorage.setItem(
+        "savedVerses",
+        JSON.stringify({ surah, verse })
+      );
+      const value = await AsyncStorage.getItem("savedVerses");
+    } catch (error) {
+      console.error("Error saving verse:", error);
+    }
+  };
+
+  // Function to handle scrolling and load more verses
+  const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.y;
     const scrollHeight = event.nativeEvent.contentSize.height;
     const windowHeight = event.nativeEvent.layoutMeasurement.height;
@@ -46,6 +71,7 @@ export default function Quran() {
     }
   };
 
+  // Show action sheet to save or copy verse
   const showActionSheet = (verse: number) => {
     ActionSheetIOS.showActionSheetWithOptions(
       {
@@ -54,8 +80,10 @@ export default function Quran() {
       },
       (buttonIndex) => {
         if (buttonIndex === 1) {
-          console.log(`${surah}`, `${verse}`);
+          // Save surah and verse to AsyncStorage
+          saveVerseToStorage(Number(surah), verse);
         } else if (buttonIndex === 2) {
+          // Copy the verse to clipboard
           Clipboard.setString(quran[surah].array[verse].ar);
         }
       }
@@ -67,53 +95,68 @@ export default function Quran() {
       onScroll={handleScroll}
       scrollEventThrottle={16}
       removeClippedSubviews={true}
+      ref={scrollViewRef}
     >
       <View className="items-center">
-        <Image
-          style={{
-            width: "75%",
-            height: 75,
-            tintColor: "white",
-            objectFit: "contain",
-          }}
-          source={require("@/assets/images/Basmalah.png")}
-        />
+        {verse < 1 ? (
+          <Image
+            style={{
+              width: "75%",
+              height: 75,
+              tintColor: "white",
+              objectFit: "contain",
+            }}
+            source={require("../assets/images/Basmalah.png")}
+          />
+        ) : (
+          <></>
+        )}
         <Text
           style={{ lineHeight: 48, justifyContent: "center", display: "flex" }}
           className="text-justify px-3 text-2xl mt-5 text-white font-[othmani-1] items-end"
         >
-          {quran[surah].array.slice(0, renderCount).map((item, index) => (
-            <Text
-              onPressIn={() => {
-                pressTimeoutRef.current = setTimeout(() => {
-                  setHighlightedIndex(index);
-                }, 150);
-              }}
-              onPressOut={() => {
-                clearTimeout(pressTimeoutRef.current);
-                setHighlightedIndex(null);
-              }}
-              onLongPress={() => {
-                showActionSheet(index);
-              }}
-              delayLongPress={250}
-              key={index}
-              style={[
-                highlightedIndex === index && styles.highlighted,
-                {
-                  borderRadius: 100,
-                },
-              ]}
-              onLayout={(e) => {
-                console.log(item.ar);
-              }}
-            >
-              {item.ar}{" "}
-              <Text style={{ fontSize: 30 }}>
-                {convertToArabicNumerals(index + 1)}
-              </Text>{" "}
-            </Text>
-          ))}
+          {quran[surah].array.slice(0, renderCount).map((item, index) => {
+            console.log(index == quran[surah].array.length - 1);
+
+            return index < verse - 1 ? (
+              <></>
+            ) : (
+              <Text
+                key={index + item.ar}
+                onPressIn={() => {
+                  pressTimeoutRef.current = setTimeout(() => {
+                    setHighlightedIndex(index);
+                  }, 150);
+                }}
+                onPressOut={() => {
+                  clearTimeout(pressTimeoutRef.current);
+                  setHighlightedIndex(null);
+                }}
+                onLongPress={() => {
+                  showActionSheet(index);
+                }}
+                delayLongPress={250}
+                style={[
+                  highlightedIndex === index && styles.highlighted,
+                  {
+                    borderRadius: 100,
+                  },
+                ]}
+                className={`${
+                  index == verse && verse > 0 ? "bg-gray-800" : ""
+                } ${
+                  index == quran[surah].array.length - 1
+                    ? "text-right text-red-400"
+                    : "text-justify"
+                }`}
+              >
+                {item.ar}{" "}
+                <Text style={{ fontSize: 30 }}>
+                  {convertToArabicNumerals(index + 1)}
+                </Text>{" "}
+              </Text>
+            );
+          })}
         </Text>
       </View>
     </ScrollView>
