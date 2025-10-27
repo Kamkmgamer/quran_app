@@ -1,37 +1,18 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
-import { useFonts } from "expo-font";
+import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
-
-import { useColorScheme } from "@/hooks/useColorScheme";
 import { I18nManager } from "react-native";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-  });
-
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
+    SplashScreen.hideAsync();
     I18nManager.forceRTL(true);
-  }, [loaded]);
+  }, []);
 
-  if (!loaded) {
-    return null;
-  }
-  // value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
   return (
     <ThemeProvider value={DarkTheme}>
       <Stack>
@@ -39,7 +20,28 @@ export default function RootLayout() {
           name="index"
           options={{ headerShown: false, title: "الرئيسية" }}
         />
-        <Stack.Screen name="quran" />
+        <Stack.Screen 
+          name="quran"
+          options={{
+            headerShown: true,
+            title: "القرآن الكريم",
+            headerStyle: {
+              backgroundColor: "#065F46",
+            },
+            headerTintColor: "#fff",
+            headerTitleStyle: {
+              fontSize: 20,
+              fontWeight: "bold",
+            },
+          }}
+        />
+        <Stack.Screen 
+          name="qibla"
+          options={{
+            headerShown: false,
+            title: "اتجاه القبلة",
+          }}
+        />
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>
