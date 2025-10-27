@@ -7,10 +7,12 @@ import {
   View,
   StyleSheet,
   ActionSheetIOS,
+  TouchableOpacity,
 } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import * as Clipboard from "expo-clipboard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
 
 const convertToArabicNumerals = (number: number) => {
   const arabicNumerals = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -24,55 +26,48 @@ const convertToArabicNumerals = (number: number) => {
 export default function Quran() {
   const { surah, verse } = useLocalSearchParams();
   const navigation = useNavigation();
-  const [renderCount, setRenderCount] = useState(50 + verse); // Limit initially rendered items
+  const [renderCount, setRenderCount] = useState(50 + Number(verse));
   const [highlightedIndex, setHighlightedIndex] = useState(null);
   const pressTimeoutRef = useRef(null);
   const scrollViewRef = useRef(null);
-  const [verseCords, setVerseCords] = useState([]);
 
   useEffect(() => {
-    setTimeout(() => {
-      scrollViewRef.current.scrollTo({
-        x: 0,
-        y: verseCords[35 + 5],
-        animated: true,
-      });
-    }, 500);
     navigation.setOptions({
-      title: `سورة ${quran[surah].name}`,
+      title: quran[Number(surah)].name,
+      headerTitleAlign: "center",
+      headerStyle: {
+        backgroundColor: "#065F46",
+      },
+      headerTintColor: "#fff",
       headerTitleStyle: {
-        fontFamily: "othmani-1",
-        fontSize: 24,
+        fontSize: 20,
+        fontWeight: "bold",
       },
     });
-  }, [navigation]);
+  }, [navigation, surah]);
 
-  // Save verse and surah to AsyncStorage
   const saveVerseToStorage = async (surah: number, verse: number) => {
     try {
       await AsyncStorage.setItem(
         "savedVerses",
         JSON.stringify({ surah, verse })
       );
-      const value = await AsyncStorage.getItem("savedVerses");
     } catch (error) {
       console.error("Error saving verse:", error);
     }
   };
 
-  // Function to handle scrolling and load more verses
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.y;
     const scrollHeight = event.nativeEvent.contentSize.height;
     const windowHeight = event.nativeEvent.layoutMeasurement.height;
 
     if (scrollPosition + windowHeight > scrollHeight - 100) {
-      setRenderCount((prevCount) => prevCount + 20); // Load 20 more verses
+      setRenderCount((prevCount: number) => prevCount + 20);
     }
   };
 
-  // Show action sheet to save or copy verse
-  const showActionSheet = (verse: number) => {
+  const showActionSheet = (verseIndex: number) => {
     ActionSheetIOS.showActionSheetWithOptions(
       {
         options: ["Cancel", "حفظ الآية 🔖", "نسخ الآية 📋"],
@@ -80,92 +75,186 @@ export default function Quran() {
       },
       (buttonIndex) => {
         if (buttonIndex === 1) {
-          // Save surah and verse to AsyncStorage
-          saveVerseToStorage(Number(surah), verse);
+          saveVerseToStorage(Number(surah), verseIndex);
         } else if (buttonIndex === 2) {
-          // Copy the verse to clipboard
-          Clipboard.setString(quran[surah].array[verse].ar);
+          Clipboard.setString(quran[Number(surah)].array[verseIndex].ar);
         }
       }
     );
   };
 
   return (
-    <ScrollView
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
-      removeClippedSubviews={true}
-      ref={scrollViewRef}
-    >
-      <View className="items-center">
-        {verse < 1 ? (
-          <Image
-            style={{
-              width: "75%",
-              height: 75,
-              tintColor: "white",
-              objectFit: "contain",
-            }}
-            source={require("../assets/images/Basmalah.png")}
-          />
-        ) : (
-          <></>
-        )}
-        <Text
-          style={{ lineHeight: 48, justifyContent: "center", display: "flex" }}
-          className="text-justify px-3 text-2xl mt-5 text-white font-[othmani-1] items-end"
-        >
-          {quran[surah].array.slice(0, renderCount).map((item, index) => {
-            console.log(index == quran[surah].array.length - 1);
-
-            return index < verse - 1 ? (
-              <></>
-            ) : (
-              <Text
-                key={index + item.ar}
-                onPressIn={() => {
-                  pressTimeoutRef.current = setTimeout(() => {
-                    setHighlightedIndex(index);
-                  }, 150);
-                }}
-                onPressOut={() => {
-                  clearTimeout(pressTimeoutRef.current);
-                  setHighlightedIndex(null);
-                }}
-                onLongPress={() => {
-                  showActionSheet(index);
-                }}
-                delayLongPress={250}
-                style={[
-                  highlightedIndex === index && styles.highlighted,
-                  {
-                    borderRadius: 100,
-                  },
-                ]}
-                className={`${
-                  index == verse && verse > 0 ? "bg-gray-800" : ""
-                } ${
-                  index == quran[surah].array.length - 1
-                    ? "text-right text-red-400"
-                    : "text-justify"
-                }`}
-              >
-                {item.ar}{" "}
-                <Text style={{ fontSize: 30 }}>
-                  {convertToArabicNumerals(index + 1)}
-                </Text>{" "}
-              </Text>
-            );
-          })}
-        </Text>
+    <View style={styles.container}>
+      {/* Header Banner */}
+      <View style={styles.headerBanner}>
+        <View style={styles.bannerContent}>
+          <Text style={styles.surahTitle}>{quran[Number(surah)].name}</Text>
+          <Text style={styles.surahInfo}>
+            {quran[Number(surah)].array.length} آيات - {quran[Number(surah)].type === "مكية" ? "مكية" : "مدنية"}
+          </Text>
+        </View>
       </View>
-    </ScrollView>
+
+      <ScrollView
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        ref={scrollViewRef}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.contentCard}>
+          {/* Basmalah */}
+          <Text style={styles.basmalah}>
+            بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+          </Text>
+          
+          {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => (
+            <View key={index} style={styles.verseContainer}>
+              <TouchableOpacity
+                style={styles.bookmarkIcon}
+                onPress={() => showActionSheet(index)}
+              >
+                <Ionicons name="bookmark-outline" size={20} color="#065F46" />
+              </TouchableOpacity>
+              <View style={styles.verseContent}>
+                <Text
+                  style={styles.verseText}
+                  onLongPress={() => showActionSheet(index)}
+                >
+                  {item.ar}
+                </Text>
+                <View style={styles.verseNumber}>
+                  <Text style={styles.verseNumberText}>{index + 1}</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+
+      {/* Footer Navigation */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.navButton}>
+          <Ionicons name="chevron-back" size={20} color="#065F46" />
+          <Text style={styles.navText}>السابق</Text>
+        </TouchableOpacity>
+        <Text style={styles.pageNumber}>48/1</Text>
+        <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.navText}>التالي</Text>
+          <Ionicons name="chevron-forward" size={20} color="#065F46" />
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  highlighted: {
-    backgroundColor: "gray",
-    borderRadius: 100,
+  container: {
+    flex: 1,
+    backgroundColor: "#F0F9F8",
+  },
+  headerBanner: {
+    backgroundColor: "#065F46",
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
+  bannerContent: {
+    alignItems: "center",
+  },
+  surahTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 4,
+  },
+  surahInfo: {
+    fontSize: 14,
+    color: "#D4AF37",
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 80, // Space for footer
+  },
+  contentCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    minHeight: 500,
+  },
+  basmalah: {
+    fontSize: 22,
+    color: "#065F46",
+    textAlign: "center",
+    marginBottom: 24,
+    fontWeight: "600",
+  },
+  verseContainer: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  bookmarkIcon: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    padding: 8,
+  },
+  verseContent: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+  },
+  verseText: {
+    fontSize: 20,
+    color: "#065F46",
+    textAlign: "right",
+    lineHeight: 36,
+    flex: 1,
+    marginRight: 12,
+  },
+  verseNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#E5E7EB",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  verseNumberText: {
+    fontSize: 12,
+    color: "#065F46",
+    fontWeight: "600",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  navButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  navText: {
+    fontSize: 14,
+    color: "#065F46",
+    marginHorizontal: 4,
+  },
+  pageNumber: {
+    fontSize: 16,
+    color: "#065F46",
+    fontWeight: "600",
   },
 });
