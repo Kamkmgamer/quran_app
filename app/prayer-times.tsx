@@ -396,16 +396,10 @@ const styles = StyleSheet.create({
     color: '#065F46',
     marginLeft: 12,
   },
-  nextPrayerName: {
-    color: '#fff',
-  },
   prayerTime: {
     fontSize: 16,
     fontWeight: '500',
     color: '#10B981',
-  },
-  nextPrayerTime: {
-    color: '#D4AF37',
   },
   locationCard: {
     flexDirection: 'row',

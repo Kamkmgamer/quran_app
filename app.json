@@ -33,9 +33,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "يستخدم هذا التطبيق الموقع لتحديد مواقيت الصلاة بدقة.",
-          "locationAlwaysPermission": "يستخدم هذا التطبيق الموقع لتحديد مواقيت الصلاة بدقة.",
-          "locationWhenInUsePermission": "يستخدم هذا التطبيق الموقع لتحديد مواقيت الصلاة بدقة.",
+          "locationAlwaysAndWhenInUsePermission": "يستخدم هذا التطبيق الموقع لتحديد اتجاه القبلة بدقة.",
+          "locationAlwaysPermission": "يستخدم هذا التطبيق الموقع لتحديد اتجاه القبلة بدقة.",
+          "locationWhenInUsePermission": "يستخدم هذا التطبيق الموقع لتحديد اتجاه القبلة بدقة.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }

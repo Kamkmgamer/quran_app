@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as Location from 'expo-location';
+import { Magnetometer } from 'expo-sensors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,6 +32,10 @@ export default function QiblaCompass() {
     lat: DEFAULT_LAT,
     lng: DEFAULT_LNG,
   });
+  const [locationPermission, setLocationPermission] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [magnetometerData, setMagnetometerData] = useState({ x: 0, y: 0, z: 0 });
 
   // Calculate Qibla direction based on user location
   const calculateQiblaDirection = (userLat: number, userLng: number) => {
@@ -46,6 +52,63 @@ export default function QiblaCompass() {
 
     return bearing;
   };
+
+  // Get user's GPS location
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('Location permission denied');
+          setLocationLoading(false);
+          return;
+        }
+
+        setLocationPermission(true);
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+
+        const { latitude, longitude } = location.coords;
+        setUserLocation({
+          lat: latitude,
+          lng: longitude,
+        });
+        setLocationLoading(false);
+      } catch (error) {
+        setLocationError('Failed to get location');
+        setLocationLoading(false);
+      }
+    })();
+  }, []);
+
+  // Setup magnetometer for device orientation
+  useEffect(() => {
+    let subscription: any;
+
+    const setupMagnetometer = async () => {
+      try {
+        subscription = Magnetometer.addListener((data) => {
+          setMagnetometerData(data);
+          // Calculate heading from magnetometer data
+          const heading = Math.atan2(data.y, data.x) * (180 / Math.PI);
+          setDeviceOrientation((heading + 360) % 360);
+        });
+
+        Magnetometer.setUpdateInterval(100); // Update every 100ms
+      } catch (error) {
+        console.log('Magnetometer not available');
+      }
+    };
+
+    setupMagnetometer();
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Calculate initial Qibla direction
@@ -68,10 +131,6 @@ export default function QiblaCompass() {
         },
       ]
     );
-  };
-
-  const handleManualRotate = () => {
-    setDeviceOrientation(prev => (prev + 45) % 360);
   };
 
   const getDirectionText = (angle: number) => {
@@ -98,15 +157,9 @@ export default function QiblaCompass() {
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={handleManualRotate}
-          >
-            <Ionicons name="refresh-circle" size={24} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
             onPress={handleCalibrate}
           >
-            <Ionicons name="refresh" size={24} color="#fff" />
+            <Ionicons name="settings" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -181,13 +234,28 @@ export default function QiblaCompass() {
       {/* Status */}
       <View style={styles.statusContainer}>
         <Text style={styles.statusText}>
-          {isCalibrated ? 'البوصلة معايرة' : 'قم بمعايرة البوصلة'}
+          {locationLoading
+            ? 'جاري الحصول على الموقع...'
+            : locationError
+            ? `خطأ: ${locationError}`
+            : isCalibrated
+            ? 'البوصلة معايرة'
+            : 'قم بمعايرة البوصلة'
+          }
         </Text>
         <Text style={styles.locationText}>
-          الموقع: الرياض، المملكة العربية السعودية
+          {locationLoading
+            ? 'تحديد الموقع...'
+            : locationError
+            ? 'تعذر الحصول على الموقع'
+            : `الموقع: ${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}`
+          }
         </Text>
         <Text style={styles.instructionText}>
-          اضغط على زر التدوير لاختبار البوصلة
+          {locationPermission && !locationError
+            ? 'وجه الجهاز نحو اتجاه القبلة'
+            : 'يرجى السماح بالوصول للموقع'
+          }
         </Text>
       </View>
     </View>
