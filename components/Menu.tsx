@@ -40,7 +40,7 @@ export default function Menu({ visible, onClose }: MenuProps) {
       iconColor: '#fff',
       onPress: () => {
         onClose();
-        // Navigate to prayer times
+        router.push('/prayer-times');
       },
     },
     {

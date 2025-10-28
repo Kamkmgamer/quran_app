@@ -42,6 +42,21 @@ export default function RootLayout() {
             title: "اتجاه القبلة",
           }}
         />
+        <Stack.Screen 
+          name="prayer-times"
+          options={{
+            headerShown: true,
+            title: "مواقيت الصلاة",
+            headerStyle: {
+              backgroundColor: "#065F46",
+            },
+            headerTintColor: "#fff",
+            headerTitleStyle: {
+              fontSize: 20,
+              fontWeight: "bold",
+            },
+          }}
+        />
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>
