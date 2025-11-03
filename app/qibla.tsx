@@ -8,25 +8,26 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import { Magnetometer } from 'expo-sensors';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-// Kaaba coordinates (Mecca)
+// موقع الكعبة بالدقة التي قدمتها (من DMS -> عشري)
+// 21°25'21" N = 21.4225
+// 39°49'34" E = 39.82611111111111
 const KAABA_LAT = 21.4225;
-const KAABA_LNG = 39.8262;
+const KAABA_LNG = 39.82611111111111;
 
-// Default location (you can replace with actual GPS coordinates)
-const DEFAULT_LAT = 24.7136; // Riyadh coordinates as default
+// موقع افتراضي (الرياض) حتى نحصل على صلاحية الموقع
+const DEFAULT_LAT = 24.7136;
 const DEFAULT_LNG = 46.6753;
 
 export default function QiblaCompass() {
-  const [deviceOrientation, setDeviceOrientation] = useState(0);
-  const [qiblaDirection, setQiblaDirection] = useState(0);
+  const [deviceOrientation, setDeviceOrientation] = useState(0); // اتجاه الجهاز بالنسبة للشمال بالدرجات
+  const [qiblaDirection, setQiblaDirection] = useState(0); // اتجاه القبلة من الموقع بالدرجات (0..360, بالنسبة للشمال)
   const [isCalibrated, setIsCalibrated] = useState(false);
   const [userLocation, setUserLocation] = useState({
     lat: DEFAULT_LAT,
@@ -35,31 +36,31 @@ export default function QiblaCompass() {
   const [locationPermission, setLocationPermission] = useState(false);
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [magnetometerData, setMagnetometerData] = useState({ x: 0, y: 0, z: 0 });
 
-  // Calculate Qibla direction based on user location
+  // تحويل إحداثيات المستخدم و الكعبة إلى زاوية البوصلة تجاه الكعبة (bearing)
   const calculateQiblaDirection = (userLat: number, userLng: number) => {
     const lat1 = (userLat * Math.PI) / 180;
     const lat2 = (KAABA_LAT * Math.PI) / 180;
     const deltaLng = ((KAABA_LNG - userLng) * Math.PI) / 180;
 
     const y = Math.sin(deltaLng) * Math.cos(lat2);
-    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+    const x =
+      Math.cos(lat1) * Math.sin(lat2) -
+      Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
 
     let bearing = Math.atan2(y, x);
     bearing = (bearing * 180) / Math.PI;
-    bearing = (bearing + 360) % 360;
-
+    bearing = (bearing + 360) % 360; // 0..360 حيث 0 = شمال حقيقي
     return bearing;
   };
 
-  // Get user's GPS location
+  // تطلب صلاحية الموقع وتحصل على الموقع الحالي
   useEffect(() => {
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          setLocationError('Location permission denied');
+          setLocationError('تم رفض إذن الموقع');
           setLocationLoading(false);
           return;
         }
@@ -70,48 +71,37 @@ export default function QiblaCompass() {
         });
 
         const { latitude, longitude } = location.coords;
-        setUserLocation({
-          lat: latitude,
-          lng: longitude,
-        });
+        setUserLocation({ lat: latitude, lng: longitude });
         setLocationLoading(false);
       } catch (error) {
-        setLocationError('Failed to get location');
+        setLocationError('فشل في الحصول على الموقع');
         setLocationLoading(false);
       }
     })();
   }, []);
 
-  // Setup magnetometer for device orientation
+  // إعداد المستشعر المغناطيسي لقراءة اتجاه الجهاز بالنسبة للشمال
   useEffect(() => {
     let subscription: any;
-
     const setupMagnetometer = async () => {
       try {
         subscription = Magnetometer.addListener((data) => {
-          setMagnetometerData(data);
-          // Calculate heading from magnetometer data
+          // حساب heading من بيانات المغناطيسية
           const heading = Math.atan2(data.y, data.x) * (180 / Math.PI);
-          setDeviceOrientation((heading + 360) % 360);
+          const normalized = (heading + 360) % 360; // 0..360
+          setDeviceOrientation(normalized);
         });
-
-        Magnetometer.setUpdateInterval(100); // Update every 100ms
+        Magnetometer.setUpdateInterval(100);
       } catch (error) {
         console.log('Magnetometer not available');
       }
     };
-
     setupMagnetometer();
-
-    return () => {
-      if (subscription) {
-        subscription.remove();
-      }
-    };
+    return () => subscription && subscription.remove();
   }, []);
 
+  // إعادة حساب اتجاه القبلة كلما تغيّر موقع المستخدم
   useEffect(() => {
-    // Calculate initial Qibla direction
     const qiblaAngle = calculateQiblaDirection(userLocation.lat, userLocation.lng);
     setQiblaDirection(qiblaAngle);
   }, [userLocation]);
@@ -119,71 +109,76 @@ export default function QiblaCompass() {
   const handleCalibrate = () => {
     Alert.alert(
       'معايرة البوصلة',
-      'قم بتدوير الجهاز في شكل رقم 8 عدة مرات لمعايرة البوصلة',
+      'قم بتحريك الجهاز على شكل رقم 8 عدة مرات لمعايرة البوصلة',
       [
-        {
-          text: 'إلغاء',
-          style: 'cancel',
-        },
-        {
-          text: 'تم',
-          onPress: () => setIsCalibrated(true),
-        },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'تم', onPress: () => setIsCalibrated(true) },
       ]
     );
   };
 
-  const getDirectionText = (angle: number) => {
-    const directions = ['شمال', 'شمال شرق', 'شرق', 'جنوب شرق', 'جنوب', 'جنوب غرب', 'غرب', 'شمال غرب'];
-    const index = Math.round(angle / 45) % 8;
+  // الحصول على الزاوية النسبية بين اتجاه القبلة واتجاه الجهاز
+  // نتيجة: قيمة بين 0 و 360 تمثل الاتجاه الذي يجب تدوير العنصر إليه بالنسبة للعرض الأفقي (0 = أعلى الشاشة)
+  const getRelativeAngle = () => {
+    // نريد زاوية حيث 0 = للأعلى (الشمال بالنسبة للصورة) و القيمة هي مقدار دوران السهم ليشير للقبلة
+    const rel = (qiblaDirection - deviceOrientation + 360) % 360;
+    return rel;
+  };
+
+  // نزول إلى نطاق -180..180 لعرض الفرق رقمياً (أقصر دوران يمين/يسار)
+  const normalizeToMinus180To180 = (angle: number) => {
+    // تحويل إلى -180..180
+    const a = ((angle + 540) % 360) - 180;
+    return a;
+  };
+
+  const getDirectionText = () => {
+    const rel = getRelativeAngle(); // 0..360
+    const directions = [
+      'شمال',
+      'شمال شرق',
+      'شرق',
+      'جنوب شرق',
+      'جنوب',
+      'جنوب غرب',
+      'غرب',
+      'شمال غرب',
+    ];
+    const index = Math.round(rel / 45) % 8;
     return directions[index];
   };
 
-  const getDirectionAngle = () => {
-    return Math.round(qiblaDirection - deviceOrientation);
+  const getDisplayedAngle = () => {
+    const rel = getRelativeAngle();
+    const normalized = normalizeToMinus180To180(rel);
+    return Math.round(Math.abs(normalized)); // عرض القيمة المطلقة للدوران المطلوبة
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="chevron-back" size={24} color="#fff" />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={28} color="#10B981" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>اتجاه القبلة</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={handleCalibrate}
-          >
-            <Ionicons name="settings" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        <View style={styles.headerButton} />
       </View>
 
       {/* Direction Info */}
       <View style={styles.directionInfo}>
-        <Text style={styles.directionText}>
-          {getDirectionText(getDirectionAngle())}
-        </Text>
-        <Text style={styles.angleText}>
-          {Math.abs(getDirectionAngle())}°
-        </Text>
+        <Text style={styles.directionText}>{getDirectionText()}</Text>
+        <Text style={styles.angleText}>{getDisplayedAngle()}°</Text>
       </View>
 
-      {/* Qibla Arrow */}
-      <View style={styles.arrowContainer}>
+      {/* Large Pointer Arrow - Points to Qibla */}
+      <View style={styles.pointerContainer}>
         <Image
           source={require('../assets/images/pointer to mekka.png')}
           style={[
-            styles.qiblaArrow,
+            styles.pointerImage,
             {
-              transform: [
-                { rotate: `${getDirectionAngle() + 180}deg` }
-              ],
+              transform: [{ rotate: `${getRelativeAngle()}deg` }],
             },
           ]}
           resizeMode="contain"
@@ -193,40 +188,43 @@ export default function QiblaCompass() {
       {/* Compass */}
       <View style={styles.compassContainer}>
         <View style={styles.compass}>
-          {/* Compass Background */}
+          {/* صورة الاتجاهات - ثابتة (N دائماً للأعلى) */}
           <Image
             source={require('../assets/images/north east south west.png')}
-            style={[
-              styles.compassBackground,
-              {
-                transform: [
-                  { rotate: `${deviceOrientation}deg` }
-                ],
-              },
-            ]}
+            style={styles.directionsImage}
             resizeMode="contain"
           />
 
-          {/* Kaaba Image */}
-          <View style={styles.kaabaContainer}>
+          {/* صورة الكعبة - تدور لتتجه نحو القبلة */}
+          <View
+            style={[
+              styles.kaabaContainer,
+              {
+                transform: [{ rotate: `${getRelativeAngle()}deg` }],
+              },
+            ]}
+          >
             <Image
               source={require('../assets/images/kaba.png')}
-              style={[
-                styles.kaabaImage,
-                {
-                  transform: [
-                    { rotate: `${-deviceOrientation}deg` }
-                  ],
-                },
-              ]}
+              style={styles.kaabaImage}
               resizeMode="contain"
             />
           </View>
 
-          {/* User Position Indicator */}
-          <View style={styles.userIndicator}>
-            <View style={styles.userDot} />
-            <View style={styles.userArrow} />
+          {/* مؤشر اتجاه القبلة - يشير نحو القبلة */}
+          <View
+            style={[
+              styles.userIndicatorContainer,
+              {
+                transform: [{ rotate: `${getRelativeAngle()}deg` }],
+              },
+            ]}
+          >
+            <Image
+              source={require('../assets/images/Vector.png')}
+              style={styles.centerVector}
+              resizeMode="contain"
+            />
           </View>
         </View>
       </View>
@@ -239,164 +237,130 @@ export default function QiblaCompass() {
             : locationError
             ? `خطأ: ${locationError}`
             : isCalibrated
-            ? 'البوصلة معايرة'
-            : 'قم بمعايرة البوصلة'
-          }
+            ? 'البوصلة جاهزة'
+            : 'يرجى معايرة البوصلة'}
         </Text>
         <Text style={styles.locationText}>
           {locationLoading
             ? 'تحديد الموقع...'
             : locationError
-            ? 'تعذر الحصول على الموقع'
-            : `الموقع: ${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}`
-          }
-        </Text>
-        <Text style={styles.instructionText}>
-          {locationPermission && !locationError
-            ? 'وجه الجهاز نحو اتجاه القبلة'
-            : 'يرجى السماح بالوصول للموقع'
-          }
+            ? 'تعذر تحديد الموقع'
+            : `الموقع: ${userLocation.lat.toFixed(6)}, ${userLocation.lng.toFixed(6)}`}
         </Text>
       </View>
     </View>
   );
 }
 
+// ======= Styles =======
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F9F8',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#065F46',
-    height: 60,
+    paddingTop: 50,
+    paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
   },
   backButton: {
     padding: 8,
   },
+  headerButton: {
+    width: 40,
+  },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerButton: {
-    padding: 8,
-    marginLeft: 8,
+    color: '#065F46',
   },
   directionInfo: {
     alignItems: 'center',
-    paddingVertical: 24,
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    paddingVertical: 16,
+    backgroundColor: 'transparent',
   },
   directionText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#065F46',
-    marginBottom: 8,
   },
   angleText: {
-    fontSize: 20,
+    fontSize: 28,
     color: '#10B981',
-    fontWeight: 'bold',
+    marginTop: 4,
+    fontWeight: '600',
   },
-  arrowContainer: {
+  pointerContainer: {
     alignItems: 'center',
-    paddingVertical: 30,
+    marginVertical: 24,
   },
-  qiblaArrow: {
-    width: 80,
-    height: 80,
+  pointerImage: {
+    width: 100,
+    height: 100,
   },
   compassContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    backgroundColor: '#E8F5E8',
+    paddingBottom: 40,
   },
   compass: {
-    width: width * 0.85,
-    height: width * 0.85,
+    width: width * 0.75,
+    height: width * 0.75,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
-  compassBackground: {
+  directionsImage: {
     width: '100%',
     height: '100%',
     position: 'absolute',
   },
+  centerVector: {
+    width: 50,
+    height: 50,
+  },
+  userIndicatorContainer: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    top: 0,
+    left: 0,
+  },
   kaabaContainer: {
     position: 'absolute',
-    top: '12%',
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    top: 0,
+    left: 0,
   },
   kaabaImage: {
     width: 50,
     height: 50,
-  },
-  userIndicator: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#D4AF37',
-    marginBottom: 6,
-  },
-  userArrow: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopWidth: 16,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#D4AF37',
+    marginTop: '15%',
   },
   statusContainer: {
+    display: 'none',
     alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: '#E8F5E8',
   },
   statusText: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#065F46',
     fontWeight: 'bold',
-    marginBottom: 12,
   },
   locationText: {
-    fontSize: 16,
-    color: '#10B981',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  instructionText: {
     fontSize: 14,
     color: '#10B981',
-    textAlign: 'center',
-    fontStyle: 'italic',
+    marginTop: 6,
   },
 });
