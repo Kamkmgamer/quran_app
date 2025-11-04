@@ -1,16 +1,25 @@
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
 import AudioService, { VerseAudio } from '../AudioService';
 import StorageService from '../StorageService';
 
 // Mock the modules
-jest.mock('expo-av');
+jest.mock('expo-av', () => ({
+  Audio: {
+    setAudioModeAsync: jest.fn().mockResolvedValue({}),
+    Sound: {
+      createAsync: jest.fn(),
+    },
+  },
+}));
+
 jest.mock('expo-file-system');
 jest.mock('../StorageService');
 
-const mockAudio = Audio as jest.Mocked<typeof Audio>;
-const mockFileSystem = FileSystem as jest.Mocked<typeof FileSystem>;
-const mockStorageService = StorageService as jest.Mocked<typeof StorageService>;
+const mockAudio = Audio as any;
+const mockStorageService = StorageService as any;
+
+// Mock Sound.createAsync methods
+const mockCreateAsync = mockAudio.Sound.createAsync as jest.MockedFunction<typeof mockAudio.Sound.createAsync>;
 
 describe('AudioService', () => {
   let audioService: AudioService;
@@ -93,14 +102,16 @@ describe('AudioService', () => {
       setPositionAsync: jest.fn(),
       setRateAsync: jest.fn(),
       getStatusAsync: jest.fn(),
+      setOnPlaybackStatusUpdate: jest.fn(),
     };
 
     beforeEach(() => {
-      mockAudio.Sound.createAsync.mockResolvedValue({
+      jest.clearAllMocks();
+      mockCreateAsync.mockResolvedValue({
         sound: mockSound,
         status: { isLoaded: true, isPlaying: false },
-      } as any);
-      mockAudio.setAudioModeAsync.mockResolvedValue({} as any);
+      });
+      mockAudio.setAudioModeAsync.mockResolvedValue({});
       mockStorageService.getLocalAudioPath.mockResolvedValue(null);
       mockStorageService.saveLastPosition.mockResolvedValue();
     });
@@ -179,7 +190,7 @@ describe('AudioService', () => {
       const surahId = 1;
       const verseId = 5;
 
-      mockAudio.Sound.createAsync.mockRejectedValue(new Error('Audio loading failed'));
+      mockCreateAsync.mockRejectedValue(new Error('Audio loading failed'));
 
       await expect(audioService.loadAndPlayVerse(reciterPath, reciterId, surahId, verseId, true))
         .rejects.toThrow('Audio loading failed');
