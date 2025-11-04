@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,59 +19,16 @@ export default function PrayerTimesScreen() {
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  const prayerNames = [
+  const prayerNames = useMemo(() => [
     { arabic: 'الفجر', english: 'fajr', icon: 'sunny-outline' },
     { arabic: 'الشروق', english: 'sunrise', icon: 'sunny' },
     { arabic: 'الظهر', english: 'dhuhr', icon: 'partly-sunny' },
     { arabic: 'العصر', english: 'asr', icon: 'cloudy-outline' },
     { arabic: 'المغرب', english: 'maghrib', icon: 'moon-outline' },
     { arabic: 'العشاء', english: 'isha', icon: 'moon' }
-  ];
+  ], []);
 
-  useEffect(() => {
-    getLocationAndCalculatePrayerTimes();
-    
-    // تحديث الوقت كل دقيقة
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const getLocationAndCalculatePrayerTimes = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // طلب إذن الوصول للموقع
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setError('يجب السماح بالوصول للموقع لحساب مواقيت الصلاة');
-        return;
-      }
-
-      // الحصول على الموقع الحالي
-      const locationResult = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      const coords = {
-        latitude: locationResult.coords.latitude,
-        longitude: locationResult.coords.longitude,
-      };
-
-      setLocation(coords);
-      calculatePrayerTimes(coords);
-    } catch (err) {
-      console.error('خطأ في الحصول على الموقع:', err);
-      setError('فشل في الحصول على الموقع. تأكد من تفعيل خدمات الموقع.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculatePrayerTimes = (coords: {latitude: number, longitude: number}) => {
+  const calculatePrayerTimes = useCallback((coords: {latitude: number, longitude: number}) => {
     try {
       // حساب مبسط لمواقيت الصلاة
       const now = new Date();
@@ -122,7 +79,50 @@ export default function PrayerTimesScreen() {
       console.error('خطأ في حساب مواقيت الصلاة:', err);
       setError('فشل في حساب مواقيت الصلاة');
     }
-  };
+  }, [prayerNames]);
+
+  const getLocationAndCalculatePrayerTimes = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // طلب إذن الوصول للموقع
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('يجب السماح بالوصول للموقع لحساب مواقيت الصلاة');
+        return;
+      }
+
+      // الحصول على الموقع الحالي
+      const locationResult = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const coords = {
+        latitude: locationResult.coords.latitude,
+        longitude: locationResult.coords.longitude,
+      };
+
+      setLocation(coords);
+      calculatePrayerTimes(coords);
+    } catch (err) {
+      console.error('خطأ في الحصول على الموقع:', err);
+      setError('فشل في الحصول على الموقع. تأكد من تفعيل خدمات الموقع.');
+    } finally {
+      setLoading(false);
+    }
+  }, [calculatePrayerTimes]);
+
+  useEffect(() => {
+    getLocationAndCalculatePrayerTimes();
+    
+    // تحديث الوقت كل دقيقة
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, [getLocationAndCalculatePrayerTimes]);
 
   const formatTime = (timeString: string) => {
     const [hours, minutes] = timeString.split(':');
