@@ -1,18 +1,21 @@
 import { useLocalSearchParams, useNavigation } from "expo-router";
-import quran from "../assets/Quran.json";
+import quranImport from "../assets/Quran.json";
+
+const quran = quranImport as any[];
 import {
   Text,
   Image,
   ScrollView,
   View,
   StyleSheet,
-  ActionSheetIOS,
   TouchableOpacity,
 } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import * as Clipboard from "expo-clipboard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import { useAudioPlayer } from "../contexts/AudioPlayerContext";
+import { useActionSheet } from "@expo/react-native-action-sheet";
 
 const convertToArabicNumerals = (number: number) => {
   const arabicNumerals = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -26,6 +29,8 @@ const convertToArabicNumerals = (number: number) => {
 export default function Quran() {
   const { surah, verse } = useLocalSearchParams();
   const navigation = useNavigation();
+  const { state, playVerse } = useAudioPlayer();
+  const { showActionSheetWithOptions } = useActionSheet();
   const [renderCount, setRenderCount] = useState(50 + Number(verse));
   const [highlightedIndex, setHighlightedIndex] = useState(null);
   const pressTimeoutRef = useRef(null);
@@ -67,19 +72,41 @@ export default function Quran() {
     }
   };
 
+  const handlePlayVerse = async (verseIndex: number) => {
+    try {
+      await playVerse(Number(surah), verseIndex + 1, true);
+    } catch (error) {
+      console.error('Error playing verse:', error);
+    }
+  };
+
   const showActionSheet = (verseIndex: number) => {
-    ActionSheetIOS.showActionSheetWithOptions(
+    const options = ["إلغاء", "تشغيل الآية 🎵", "حفظ الآية 🔖", "نسخ الآية 📋"];
+    const cancelButtonIndex = 0;
+
+    showActionSheetWithOptions(
       {
-        options: ["Cancel", "حفظ الآية 🔖", "نسخ الآية 📋"],
-        cancelButtonIndex: 0,
+        options,
+        cancelButtonIndex,
       },
       (buttonIndex) => {
         if (buttonIndex === 1) {
-          saveVerseToStorage(Number(surah), verseIndex);
+          handlePlayVerse(verseIndex);
         } else if (buttonIndex === 2) {
+          saveVerseToStorage(Number(surah), verseIndex);
+        } else if (buttonIndex === 3) {
           Clipboard.setString(quran[Number(surah)].array[verseIndex].ar);
         }
       }
+    );
+  };
+  
+  // تحديد الآية النشطة (التي يتم تشغيلها حالياً)
+  const isVerseActive = (verseIndex: number) => {
+    return (
+      state.currentSurahId === Number(surah) &&
+      state.currentVerseId === verseIndex + 1 &&
+      state.isPlaying
     );
   };
 
@@ -108,22 +135,51 @@ export default function Quran() {
           </Text>
           
           {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => (
-            <View key={index} style={styles.verseContainer}>
-              <TouchableOpacity
-                style={styles.bookmarkIcon}
-                onPress={() => showActionSheet(index)}
-              >
-                <Ionicons name="bookmark-outline" size={20} color="#065F46" />
-              </TouchableOpacity>
+            <View 
+              key={index} 
+              style={[
+                styles.verseContainer,
+                isVerseActive(index) && styles.verseContainerActive
+              ]}
+            >
+              <View style={styles.verseActions}>
+                <TouchableOpacity
+                  style={styles.actionIcon}
+                  onPress={() => handlePlayVerse(index)}
+                >
+                  <Ionicons 
+                    name={isVerseActive(index) ? "pause-circle" : "play-circle"} 
+                    size={24} 
+                    color={isVerseActive(index) ? "#D4AF37" : "#065F46"} 
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionIcon}
+                  onPress={() => showActionSheet(index)}
+                >
+                  <Ionicons name="ellipsis-horizontal" size={20} color="#065F46" />
+                </TouchableOpacity>
+              </View>
               <View style={styles.verseContent}>
                 <Text
-                  style={styles.verseText}
+                  style={[
+                    styles.verseText,
+                    isVerseActive(index) && styles.verseTextActive
+                  ]}
                   onLongPress={() => showActionSheet(index)}
                 >
                   {item.ar}
                 </Text>
-                <View style={styles.verseNumber}>
-                  <Text style={styles.verseNumberText}>{index + 1}</Text>
+                <View style={[
+                  styles.verseNumber,
+                  isVerseActive(index) && styles.verseNumberActive
+                ]}>
+                  <Text style={[
+                    styles.verseNumberText,
+                    isVerseActive(index) && styles.verseNumberTextActive
+                  ]}>
+                    {index + 1}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -191,14 +247,25 @@ const styles = StyleSheet.create({
   verseContainer: {
     marginBottom: 16,
     paddingBottom: 16,
+    paddingTop: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
+    borderRadius: 8,
+    paddingHorizontal: 8,
   },
-  bookmarkIcon: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    padding: 8,
+  verseContainerActive: {
+    backgroundColor: "#F0F9F8",
+    borderLeftWidth: 3,
+    borderLeftColor: "#D4AF37",
+  },
+  verseActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginBottom: 8,
+  },
+  actionIcon: {
+    padding: 4,
   },
   verseContent: {
     flexDirection: "row",
@@ -213,6 +280,10 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
+  verseTextActive: {
+    color: "#047857",
+    fontWeight: "500",
+  },
   verseNumber: {
     width: 24,
     height: 24,
@@ -222,10 +293,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 8,
   },
+  verseNumberActive: {
+    backgroundColor: "#D4AF37",
+  },
   verseNumberText: {
     fontSize: 12,
     color: "#065F46",
     fontWeight: "600",
+  },
+  verseNumberTextActive: {
+    color: "#fff",
   },
   footer: {
     position: "absolute",

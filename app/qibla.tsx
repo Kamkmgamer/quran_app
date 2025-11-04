@@ -85,6 +85,13 @@ export default function QiblaCompass() {
     let subscription: any;
     const setupMagnetometer = async () => {
       try {
+        // Check if Magnetometer is available first
+        const isAvailable = await Magnetometer.isAvailableAsync();
+        if (!isAvailable) {
+          console.log('Magnetometer not available');
+          return;
+        }
+        
         subscription = Magnetometer.addListener((data) => {
           // حساب heading من بيانات المغناطيسية
           const heading = Math.atan2(data.y, data.x) * (180 / Math.PI);
@@ -93,11 +100,15 @@ export default function QiblaCompass() {
         });
         Magnetometer.setUpdateInterval(100);
       } catch (error) {
-        console.log('Magnetometer not available');
+        console.log('Error setting up magnetometer:', error);
       }
     };
     setupMagnetometer();
-    return () => subscription && subscription.remove();
+    return () => {
+      if (subscription && subscription.remove) {
+        subscription.remove();
+      }
+    };
   }, []);
 
   // إعادة حساب اتجاه القبلة كلما تغيّر موقع المستخدم

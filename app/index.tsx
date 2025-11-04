@@ -7,9 +7,12 @@ import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import quran from "../assets/Quran.json";
 import Menu from "../components/Menu";
+import { useAudioPlayer } from "../contexts/AudioPlayerContext";
+import StorageService from "../services/StorageService";
 
 export default function HomeScreen() {
   const surahList = quran;
+  const { state, resumeLastPosition } = useAudioPlayer();
 
   const [surah, setSurah] = React.useState(0);
   const [verse, setVerse] = React.useState(0);
@@ -17,6 +20,7 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = React.useState("سورة");
   const [searchText, setSearchText] = React.useState("");
   const [menuVisible, setMenuVisible] = React.useState(false);
+  const [lastListeningPosition, setLastListeningPosition] = React.useState<any>(null);
 
   const loadSavedVerse = async () => {
     try {
@@ -31,9 +35,19 @@ export default function HomeScreen() {
     }
   };
 
+  const loadLastListeningPosition = async () => {
+    try {
+      const position = await StorageService.getLastPosition();
+      setLastListeningPosition(position);
+    } catch (error) {
+      console.error("Error loading last listening position:", error);
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       loadSavedVerse();
+      loadLastListeningPosition();
     }, [])
   );
 
@@ -124,20 +138,62 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Qibla Compass Section */}
-      <TouchableOpacity
-        style={styles.qiblaCard}
-        onPress={() => router.push("/qibla")}
-      >
-        <View style={styles.qiblaContent}>
-          <Ionicons name="compass" size={24} color="#D4AF37" style={styles.qiblaIcon} />
-          <View style={styles.qiblaTextContainer}>
-            <Text style={styles.qiblaTitle}>اتجاه القبلة</Text>
-            <Text style={styles.qiblaSubtitle}>البوصلة نحو مكة المكرمة</Text>
+      {/* Last Listening Position */}
+      {lastListeningPosition && (
+        <TouchableOpacity
+          style={styles.listeningCard}
+          onPress={() => resumeLastPosition()}
+        >
+          <Ionicons name="headset" size={20} color="#10B981" style={styles.listeningIcon} />
+          <View style={styles.listeningContent}>
+            <Text style={styles.listeningTitle}>استئناف الاستماع</Text>
+            <Text style={styles.listeningSurah}>
+              {quran[lastListeningPosition.surahId]?.name} - آية {lastListeningPosition.verseId}
+            </Text>
           </View>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color="#D4AF37" />
-      </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => resumeLastPosition()}
+            style={styles.playSmallButton}
+          >
+            <Ionicons name="play" size={16} color="#fff" />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      )}
+
+      {/* Quick Actions */}
+      <View style={styles.quickActionsRow}>
+        <TouchableOpacity
+          style={styles.quickActionCard}
+          onPress={() => router.push("/qibla")}
+        >
+          <Ionicons name="compass" size={24} color="#D4AF37" />
+          <Text style={styles.quickActionText}>القبلة</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.quickActionCard}
+          onPress={() => router.push("/prayer-times")}
+        >
+          <Ionicons name="time" size={24} color="#10B981" />
+          <Text style={styles.quickActionText}>الصلاة</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.quickActionCard}
+          onPress={() => router.push("/reciters")}
+        >
+          <Ionicons name="person" size={24} color="#D4AF37" />
+          <Text style={styles.quickActionText}>القراء</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.quickActionCard}
+          onPress={() => router.push("/player")}
+        >
+          <Ionicons name="musical-notes" size={24} color="#10B981" />
+          <Text style={styles.quickActionText}>المشغل</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -359,5 +415,59 @@ const styles = StyleSheet.create({
   qiblaSubtitle: {
     fontSize: 14,
     color: "#10B981",
+  },
+  listeningCard: {
+    backgroundColor: "#F0FDF4",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+  },
+  listeningIcon: {
+    marginRight: 12,
+  },
+  listeningContent: {
+    flex: 1,
+  },
+  listeningTitle: {
+    fontSize: 14,
+    color: "#065F46",
+    marginBottom: 4,
+  },
+  listeningSurah: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#10B981",
+  },
+  playSmallButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#10B981",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quickActionsRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+  },
+  quickActionCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 80,
+  },
+  quickActionText: {
+    fontSize: 12,
+    color: "#065F46",
+    marginTop: 8,
+    fontWeight: "500",
   },
 });
