@@ -1,0 +1,49 @@
+{
+  "surah": 1,
+  "name": "الفاتحة",
+  "verses": [
+    {
+      "id": 1,
+      "startTime": 0,
+      "endTime": 4500,
+      "duration": 4500
+    },
+    {
+      "id": 2,
+      "startTime": 4500,
+      "endTime": 8000,
+      "duration": 3500
+    },
+    {
+      "id": 3,
+      "startTime": 8000,
+      "endTime": 10500,
+      "duration": 2500
+    },
+    {
+      "id": 4,
+      "startTime": 10500,
+      "endTime": 13000,
+      "duration": 2500
+    },
+    {
+      "id": 5,
+      "startTime": 13000,
+      "endTime": 16500,
+      "duration": 3500
+    },
+    {
+      "id": 6,
+      "startTime": 16500,
+      "endTime": 20000,
+      "duration": 3500
+    },
+    {
+      "id": 7,
+      "startTime": 20000,
+      "endTime": 28000,
+      "duration": 8000
+    }
+  ]
+}
+
