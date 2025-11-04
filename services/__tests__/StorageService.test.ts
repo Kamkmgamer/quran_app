@@ -294,7 +294,6 @@ describe('StorageService', () => {
       const reciterId = 'abdul_basit';
       const surahId = 1;
       const verseId = 5;
-      const expectedPath = '/mock/documents/audio/abdul_basit/001005.mp3';
 
       mockFileSystem.getInfoAsync.mockResolvedValue({ exists: false } as any);
 
