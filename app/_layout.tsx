@@ -29,16 +29,8 @@ export default function RootLayout() {
             <Stack.Screen 
               name="quran"
               options={{
-                headerShown: true,
+                headerShown: false,
                 title: "القرآن الكريم",
-                headerStyle: {
-                  backgroundColor: "#065F46",
-                },
-                headerTintColor: "#fff",
-                headerTitleStyle: {
-                  fontSize: 20,
-                  fontWeight: "bold",
-                },
               }}
             />
             <Stack.Screen 
@@ -51,46 +43,22 @@ export default function RootLayout() {
             <Stack.Screen 
               name="prayer-times"
               options={{
-                headerShown: true,
+                headerShown: false,
                 title: "مواقيت الصلاة",
-                headerStyle: {
-                  backgroundColor: "#065F46",
-                },
-                headerTintColor: "#fff",
-                headerTitleStyle: {
-                  fontSize: 20,
-                  fontWeight: "bold",
-                },
               }}
             />
             <Stack.Screen 
               name="player"
               options={{
-                headerShown: true,
+                headerShown: false,
                 title: "المشغل الصوتي",
-                headerStyle: {
-                  backgroundColor: "#065F46",
-                },
-                headerTintColor: "#fff",
-                headerTitleStyle: {
-                  fontSize: 20,
-                  fontWeight: "bold",
-                },
               }}
             />
             <Stack.Screen 
               name="reciters"
               options={{
-                headerShown: true,
+                headerShown: false,
                 title: "القراء",
-                headerStyle: {
-                  backgroundColor: "#065F46",
-                },
-                headerTintColor: "#fff",
-                headerTitleStyle: {
-                  fontSize: 20,
-                  fontWeight: "bold",
-                },
               }}
             />
             <Stack.Screen name="+not-found" />
