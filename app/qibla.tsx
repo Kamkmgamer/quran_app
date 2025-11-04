@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
-import { Magnetometer } from 'expo-sensors';
+import { Magnetometer, Accelerometer, DeviceMotion } from 'expo-sensors';
 
 const { width } = Dimensions.get('window');
 
@@ -28,13 +28,88 @@ const DEFAULT_LNG = 46.6753;
 export default function QiblaCompass() {
   const [deviceOrientation, setDeviceOrientation] = useState(0); // اتجاه الجهاز بالنسبة للشمال بالدرجات
   const [qiblaDirection, setQiblaDirection] = useState(0); // اتجاه القبلة من الموقع بالدرجات (0..360, بالنسبة للشمال)
-  const [isCalibrated] = useState(false);
+  const [isCalibrated, setIsCalibrated] = useState(false);
   const [userLocation, setUserLocation] = useState({
     lat: DEFAULT_LAT,
     lng: DEFAULT_LNG,
   });
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [compassMethod, setCompassMethod] = useState<string>('initializing');
+  const [magneticInterference, setMagneticInterference] = useState(false);
+  const [magneticFieldStrength, setMagneticFieldStrength] = useState(0);
+  const [calibrationQuality, setCalibrationQuality] = useState(0);
+  const previousAngles = React.useRef<number[]>([]);  // للتنعيم
+  const magnetometerData = React.useRef({ x: 0, y: 0, z: 0 });
+  const accelerometerData = React.useRef({ x: 0, y: 0, z: 0 });
+
+  // دالة لتنعيم القراءات ومنع الاهتزاز (Kalman-inspired smoothing)
+  const smoothAngle = (newAngle: number) => {
+    previousAngles.current.push(newAngle);
+    if (previousAngles.current.length > 10) {
+      previousAngles.current.shift();
+    }
+    
+    // حساب المتوسط مع مراعاة التفاف الزوايا (0-360)
+    let sumSin = 0;
+    let sumCos = 0;
+    previousAngles.current.forEach((angle, index) => {
+      // وزن أكبر للقراءات الأحدث
+      const weight = (index + 1) / previousAngles.current.length;
+      sumSin += Math.sin((angle * Math.PI) / 180) * weight;
+      sumCos += Math.cos((angle * Math.PI) / 180) * weight;
+    });
+    
+    const avgAngle = Math.atan2(sumSin, sumCos) * (180 / Math.PI);
+    return (avgAngle + 360) % 360;
+  };
+
+  // كشف التداخل المغناطيسي
+  const detectMagneticInterference = (x: number, y: number, z: number) => {
+    // حساب قوة المجال المغناطيسي (μT)
+    const magnitude = Math.sqrt(x * x + y * y + z * z);
+    setMagneticFieldStrength(magnitude);
+    
+    // المجال المغناطيسي للأرض: 25-65 μT
+    // إذا كانت القيمة خارج هذا النطاق، هناك تداخل
+    if (magnitude < 20 || magnitude > 70) {
+      setMagneticInterference(true);
+    } else {
+      setMagneticInterference(false);
+    }
+    
+    return magnitude;
+  };
+
+  // حساب الاتجاه مع تعويض الميل (3D tilt compensation)
+  const calculateTiltCompensatedHeading = (
+    mx: number, my: number, mz: number,  // magnetometer
+    ax: number, ay: number, az: number   // accelerometer
+  ) => {
+    // تطبيع قراءات المقياس التسارعي
+    const norm = Math.sqrt(ax * ax + ay * ay + az * az);
+    if (norm === 0) return 0;
+    
+    ax /= norm;
+    ay /= norm;
+    az /= norm;
+    
+    // حساب pitch و roll
+    const pitch = Math.asin(-ay);
+    const roll = Math.asin(ax / Math.cos(pitch));
+    
+    // تطبيق تعويض الميل
+    const xh = mx * Math.cos(pitch) + mz * Math.sin(pitch);
+    const yh = mx * Math.sin(roll) * Math.sin(pitch) + 
+               my * Math.cos(roll) - 
+               mz * Math.sin(roll) * Math.cos(pitch);
+    
+    // حساب الاتجاه
+    let heading = Math.atan2(yh, xh) * (180 / Math.PI);
+    heading = (heading + 360) % 360;
+    
+    return heading;
+  };
 
   // تحويل إحداثيات المستخدم و الكعبة إلى زاوية البوصلة تجاه الكعبة (bearing)
   const calculateQiblaDirection = (userLat: number, userLng: number) => {
@@ -50,7 +125,61 @@ export default function QiblaCompass() {
     let bearing = Math.atan2(y, x);
     bearing = (bearing * 180) / Math.PI;
     bearing = (bearing + 360) % 360; // 0..360 حيث 0 = شمال حقيقي
+    
+    // Test mode: Log detailed calculations
+    if (__DEV__) {
+      console.log('=== Qibla Bearing Calculation ===');
+      console.log(`User Location: ${userLat.toFixed(6)}, ${userLng.toFixed(6)}`);
+      console.log(`Kaaba Location: ${KAABA_LAT}, ${KAABA_LNG}`);
+      console.log(`Calculated Bearing: ${bearing.toFixed(2)}°`);
+      console.log(`Direction: ${getDirectionName(bearing)}`);
+      
+      // Verify against known cities
+      const knownCities = getKnownCityExpectedBearing(userLat, userLng);
+      if (knownCities) {
+        console.log(`Expected for ${knownCities.name}: ${knownCities.expected}°`);
+        console.log(`Difference: ${Math.abs(bearing - knownCities.expected).toFixed(2)}°`);
+      }
+    }
+    
     return bearing;
+  };
+
+  // الحصول على اسم الاتجاه من الزاوية
+  const getDirectionName = (angle: number) => {
+    const directions = [
+      'شمال', 'شمال شرق', 'شرق', 'جنوب شرق',
+      'جنوب', 'جنوب غرب', 'غرب', 'شمال غرب'
+    ];
+    const index = Math.round(angle / 45) % 8;
+    return directions[index];
+  };
+
+  // التحقق من المواقع المعروفة
+  const getKnownCityExpectedBearing = (lat: number, lng: number) => {
+    const knownCities = [
+      { name: 'الرياض', lat: 24.7136, lng: 46.6753, expected: 241 },
+      { name: 'جدة', lat: 21.5433, lng: 39.1728, expected: 85 },
+      { name: 'الدمام', lat: 26.4207, lng: 50.0888, expected: 253 },
+      { name: 'أبها', lat: 18.2164, lng: 42.5053, expected: 340 },
+      { name: 'حائل', lat: 27.5219, lng: 41.6901, expected: 178 },
+      { name: 'القاهرة', lat: 30.0444, lng: 31.2357, expected: 135 },
+      { name: 'دبي', lat: 25.2048, lng: 55.2708, expected: 258 },
+      { name: 'إسطنبول', lat: 41.0082, lng: 28.9784, expected: 147 },
+      { name: 'لندن', lat: 51.5074, lng: -0.1278, expected: 119 },
+      { name: 'نيويورك', lat: 40.7128, lng: -74.006, expected: 58 },
+    ];
+
+    for (const city of knownCities) {
+      // التحقق إذا كان الموقع قريباً من مدينة معروفة (ضمن 0.5 درجة)
+      if (
+        Math.abs(lat - city.lat) < 0.5 &&
+        Math.abs(lng - city.lng) < 0.5
+      ) {
+        return city;
+      }
+    }
+    return null;
   };
 
   // تطلب صلاحية الموقع وتحصل على الموقع الحالي
@@ -78,33 +207,161 @@ export default function QiblaCompass() {
     })();
   }, []);
 
-  // إعداد المستشعر المغناطيسي لقراءة اتجاه الجهاز بالنسبة للشمال
+  // إعداد البوصلة مع تسلسل احتياطي متعدد المستويات
   useEffect(() => {
-    let subscription: any;
-    const setupMagnetometer = async () => {
+    let headingSubscription: Location.LocationSubscription | null = null;
+    let deviceMotionSubscription: any = null;
+    let magnetometerSubscription: any = null;
+    let accelerometerSubscription: any = null;
+    let isActive = true;
+
+    const setupCompass = async () => {
       try {
-        // Check if Magnetometer is available first
-        const isAvailable = await Magnetometer.isAvailableAsync();
-        if (!isAvailable) {
-          console.log('Magnetometer not available');
+        // الطريقة 1: استخدام Location Heading (الأكثر دقة - يستخدم دمج المستشعرات من النظام)
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status === 'granted') {
+          try {
+            console.log('Attempting Location Heading method...');
+            headingSubscription = await Location.watchHeadingAsync((headingData) => {
+              if (!isActive) return;
+              
+              // استخدام الاتجاه الحقيقي (true north)
+              const heading = headingData.trueHeading;
+              const smoothed = smoothAngle(heading);
+              setDeviceOrientation(smoothed);
+              setCompassMethod('location-heading');
+              setIsCalibrated(true);
+              setCalibrationQuality(headingData.accuracy || 0);
+            });
+            
+            console.log('Location Heading method active');
+            return; // نجح - لا حاجة للطرق الاحتياطية
+          } catch (headingError) {
+            console.log('Location Heading failed, trying DeviceMotion...', headingError);
+          }
+        }
+
+        // الطريقة 2: استخدام DeviceMotion (احتياطي 1 - دقة جيدة)
+        const deviceMotionAvailable = await DeviceMotion.isAvailableAsync();
+        if (deviceMotionAvailable) {
+          try {
+            console.log('Attempting DeviceMotion method...');
+            deviceMotionSubscription = DeviceMotion.addListener((data) => {
+              if (!isActive) return;
+              
+              if (data.rotation) {
+                // حساب الاتجاه من مصفوفة الدوران
+                const { alpha, beta, gamma } = data.rotation;
+                // alpha هو الاتجاه حول المحور Z (البوصلة)
+                let heading = alpha * (180 / Math.PI);
+                heading = (heading + 360) % 360;
+                
+                const smoothed = smoothAngle(heading);
+                setDeviceOrientation(smoothed);
+                setCompassMethod('device-motion');
+                setIsCalibrated(true);
+                setCalibrationQuality(3);
+              }
+            });
+            
+            DeviceMotion.setUpdateInterval(100);
+            console.log('DeviceMotion method active');
+            return; // نجح - لا حاجة للطريقة الاحتياطية التالية
+          } catch (motionError) {
+            console.log('DeviceMotion failed, trying manual fusion...', motionError);
+          }
+        }
+
+        // الطريقة 3: دمج يدوي للمستشعرات (احتياطي 2 - مع تعويض الميل)
+        const magAvailable = await Magnetometer.isAvailableAsync();
+        const accelAvailable = await Accelerometer.isAvailableAsync();
+        
+        if (magAvailable && accelAvailable) {
+          console.log('Attempting Manual Sensor Fusion...');
+          
+          // الاشتراك في كلا المستشعرين
+          magnetometerSubscription = Magnetometer.addListener((data) => {
+            magnetometerData.current = data;
+            detectMagneticInterference(data.x, data.y, data.z);
+            updateHeadingFromFusion();
+          });
+          
+          accelerometerSubscription = Accelerometer.addListener((data) => {
+            accelerometerData.current = data;
+            updateHeadingFromFusion();
+          });
+          
+          const updateHeadingFromFusion = () => {
+            if (!isActive) return;
+            
+            const mag = magnetometerData.current;
+            const accel = accelerometerData.current;
+            
+            // حساب الاتجاه مع تعويض الميل الكامل
+            const heading = calculateTiltCompensatedHeading(
+              mag.x, mag.y, mag.z,
+              accel.x, accel.y, accel.z
+            );
+            
+            const smoothed = smoothAngle(heading);
+            setDeviceOrientation(smoothed);
+            setCompassMethod('manual-fusion');
+            setIsCalibrated(true);
+            setCalibrationQuality(2);
+          };
+          
+          Magnetometer.setUpdateInterval(100);
+          Accelerometer.setUpdateInterval(100);
+          console.log('Manual Sensor Fusion active');
           return;
         }
-        
-        subscription = Magnetometer.addListener((data) => {
-          // حساب heading من بيانات المغناطيسية
-          const heading = Math.atan2(data.y, data.x) * (180 / Math.PI);
-          const normalized = (heading + 360) % 360; // 0..360
-          setDeviceOrientation(normalized);
-        });
-        Magnetometer.setUpdateInterval(100);
+
+        // الطريقة 4: مقياس المغناطيسية الخام فقط (الملاذ الأخير - تحذير!)
+        if (magAvailable) {
+          console.log('WARNING: Using raw magnetometer only (requires flat device)');
+          magnetometerSubscription = Magnetometer.addListener((data) => {
+            if (!isActive) return;
+            
+            detectMagneticInterference(data.x, data.y, data.z);
+            
+            // حساب بسيط - يعمل فقط عندما يكون الجهاز مسطحاً
+            let angle = Math.atan2(data.x, data.y) * (180 / Math.PI);
+            angle = (angle + 360) % 360;
+            
+            const smoothed = smoothAngle(angle);
+            setDeviceOrientation(smoothed);
+            setCompassMethod('raw-magnetometer');
+            setIsCalibrated(true);
+            setCalibrationQuality(1);
+          });
+          
+          Magnetometer.setUpdateInterval(100);
+          console.log('Raw magnetometer method active (WARNING: hold device flat)');
+        } else {
+          console.error('No compass sensors available!');
+          setCompassMethod('none');
+        }
       } catch (error) {
-        console.log('Error setting up magnetometer:', error);
+        console.error('Error setting up compass:', error);
+        setCompassMethod('error');
       }
     };
-    setupMagnetometer();
+
+    setupCompass();
+
     return () => {
-      if (subscription && subscription.remove) {
-        subscription.remove();
+      isActive = false;
+      if (headingSubscription) {
+        headingSubscription.remove();
+      }
+      if (deviceMotionSubscription && deviceMotionSubscription.remove) {
+        deviceMotionSubscription.remove();
+      }
+      if (magnetometerSubscription && magnetometerSubscription.remove) {
+        magnetometerSubscription.remove();
+      }
+      if (accelerometerSubscription && accelerometerSubscription.remove) {
+        accelerometerSubscription.remove();
       }
     };
   }, []);
@@ -152,19 +409,6 @@ export default function QiblaCompass() {
     return Math.round(Math.abs(normalized)); // عرض القيمة المطلقة للدوران المطلوبة
   };
 
-  const statusMessage = locationLoading
-    ? 'جاري الحصول على الموقع...'
-    : locationError
-    ? `خطأ: ${locationError}`
-    : isCalibrated
-    ? 'البوصلة جاهزة'
-    : 'يرجى معايرة البوصلة';
-
-  const locationMessage = locationLoading
-    ? 'تحديد الموقع...'
-    : locationError
-    ? 'تعذر تحديد الموقع'
-    : `الموقع: ${userLocation.lat.toFixed(6)}, ${userLocation.lng.toFixed(6)}`;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -197,7 +441,10 @@ export default function QiblaCompass() {
           <View style={styles.compass}>
             <Image
               source={require('../assets/images/north east south west.png')}
-              style={styles.directionsImage}
+              style={[
+                styles.directionsImage,
+                { transform: [{ rotate: `${-deviceOrientation}deg` }] },
+              ]}
               resizeMode="contain"
             />
 
@@ -229,10 +476,6 @@ export default function QiblaCompass() {
           </View>
         </View>
 
-        <View style={styles.statusContainer}>
-          <Text style={styles.statusText}>{statusMessage}</Text>
-          <Text style={styles.locationText}>{locationMessage}</Text>
-        </View>
       </View>
     </SafeAreaView>
   );
@@ -336,23 +579,5 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     marginTop: '15%',
-  },
-  statusContainer: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    backgroundColor: '#E8F5E8',
-    marginHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  statusText: {
-    fontSize: 16,
-    color: '#065F46',
-    fontWeight: 'bold',
-  },
-  locationText: {
-    fontSize: 14,
-    color: '#10B981',
-    marginTop: 6,
   },
 });
