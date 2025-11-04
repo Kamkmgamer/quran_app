@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
-  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer } from '../contexts/AudioPlayerContext';
@@ -32,7 +31,6 @@ export default function Player() {
     setPlaybackSpeed,
     setRepeatMode,
     setReciter,
-    seekTo,
   } = useAudioPlayer();
 
   const [showSpeedModal, setShowSpeedModal] = useState(false);
