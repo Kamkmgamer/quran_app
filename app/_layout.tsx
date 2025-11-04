@@ -48,6 +48,13 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen 
+              name="prayer-detail"
+              options={{
+                headerShown: false,
+                title: "تفاصيل الصلاة",
+              }}
+            />
+            <Stack.Screen 
               name="player"
               options={{
                 headerShown: false,
