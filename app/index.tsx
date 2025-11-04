@@ -10,13 +10,37 @@ import Menu from "../components/Menu";
 import { useAudioPlayer } from "../contexts/AudioPlayerContext";
 import StorageService from "../services/StorageService";
 
+interface Verse {
+  id: number;
+  ar: string;
+  en: string;
+  filename: string;
+  path: string;
+  dir: string;
+  size: number;
+}
+
+interface Surah {
+  id: number;
+  name: string;
+  name_en: string;
+  name_translation: string;
+  words: number;
+  letters: number;
+  type: string;
+  type_en: string;
+  ar: string;
+  en: string;
+  array: Verse[];
+}
+
 export default function HomeScreen() {
-  const surahList = quran;
-  const { state, resumeLastPosition } = useAudioPlayer();
+  const surahList = quran as Surah[];
+  const { resumeLastPosition } = useAudioPlayer();
 
   const [surah, setSurah] = React.useState(0);
   const [verse, setVerse] = React.useState(0);
-  const [surahSearchList, setSurahSearchList] = React.useState(surahList);
+  const [surahSearchList, setSurahSearchList] = React.useState<Surah[]>(surahList);
   const [activeTab, setActiveTab] = React.useState("سورة");
   const [searchText, setSearchText] = React.useState("");
   const [menuVisible, setMenuVisible] = React.useState(false);
@@ -53,7 +77,7 @@ export default function HomeScreen() {
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-    const results = surahList.filter((item: any) =>
+    const results = surahList.filter((item: Surah) =>
       item.name.includes(text)
     );
     setSurahSearchList(results);
@@ -61,7 +85,7 @@ export default function HomeScreen() {
 
   const tabs = ["سورة", "جزء", "الأذكار"];
 
-  const renderSurahCard = ({ item, index }: { item: any; index: number }) => {
+  const renderSurahCard = ({ item, index }: { item: Surah; index: number }) => {
     const isGold = index % 2 === 0;
     const borderColor = isGold ? "#D4AF37" : "#10B981";
     const backgroundColor = isGold ? "#D4AF37" : "#F9FAFB";
@@ -121,7 +145,7 @@ export default function HomeScreen() {
         <Ionicons name="bookmark" size={20} color="#D4AF37" style={styles.recentIcon} />
         <View style={styles.recentContent}>
           <Text style={styles.recentTitle}>ماتم قراءته مؤخرا</Text>
-          <Text style={styles.recentSurah}>{quran[surah as number].name}</Text>
+          <Text style={styles.recentSurah}>{surahList[surah as number].name}</Text>
           <Text style={styles.recentVerse}>الأية : {verse + 1}</Text>
         </View>
         <TouchableOpacity
@@ -148,7 +172,7 @@ export default function HomeScreen() {
           <View style={styles.listeningContent}>
             <Text style={styles.listeningTitle}>استئناف الاستماع</Text>
             <Text style={styles.listeningSurah}>
-              {quran[lastListeningPosition.surahId]?.name} - آية {lastListeningPosition.verseId}
+              {surahList[lastListeningPosition.surahId]?.name} - آية {lastListeningPosition.verseId}
             </Text>
           </View>
           <TouchableOpacity
