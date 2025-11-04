@@ -1,10 +1,7 @@
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import quranImport from "../assets/Quran.json";
-
-const quran = quranImport as any[];
 import {
   Text,
-  Image,
   ScrollView,
   View,
   StyleSheet,
@@ -17,14 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAudioPlayer } from "../contexts/AudioPlayerContext";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 
-const convertToArabicNumerals = (number: number) => {
-  const arabicNumerals = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
-  return number
-    .toString()
-    .split("")
-    .map((digit) => arabicNumerals[Number(digit)])
-    .join("");
-};
+const quran = quranImport as any[];
 
 export default function Quran() {
   const { surah, verse } = useLocalSearchParams();
@@ -32,8 +22,6 @@ export default function Quran() {
   const { state, playVerse } = useAudioPlayer();
   const { showActionSheetWithOptions } = useActionSheet();
   const [renderCount, setRenderCount] = useState(50 + Number(verse));
-  const [highlightedIndex, setHighlightedIndex] = useState(null);
-  const pressTimeoutRef = useRef(null);
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
