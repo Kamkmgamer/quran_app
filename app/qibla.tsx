@@ -6,6 +6,7 @@ import {
   Image,
   Dimensions,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -410,6 +411,42 @@ export default function QiblaCompass() {
   };
 
 
+  // Check if compass is ready
+  const isQiblaReady = isCalibrated && !locationLoading && !locationError;
+
+  // Loading Screen
+  if (!isQiblaReady) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <View style={styles.loadingContent}>
+            <Image
+              source={require('../assets/images/kaba.png')}
+              style={styles.loadingKaaba}
+              resizeMode="contain"
+            />
+            <ActivityIndicator size="large" color="#10B981" style={styles.loadingSpinner} />
+            <Text style={styles.loadingTitle}>جاري تحضير البوصلة</Text>
+            <Text style={styles.loadingSubtitle}>
+              {locationLoading ? 'تحديد موقعك...' : 
+               locationError ? locationError :
+               !isCalibrated ? 'معايرة البوصلة...' : 'جاري التحميل...'}
+            </Text>
+            
+            {!isCalibrated && !locationLoading && (
+              <View style={styles.loadingHint}>
+                <Ionicons name="information-circle" size={20} color="#10B981" />
+                <Text style={styles.loadingHintText}>
+                  قد تحتاج لتحريك جهازك بشكل رقم 8
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -579,5 +616,49 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     marginTop: '15%',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingKaaba: {
+    width: 120,
+    height: 120,
+    marginBottom: 30,
+  },
+  loadingSpinner: {
+    marginBottom: 20,
+  },
+  loadingTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#065F46',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  loadingSubtitle: {
+    fontSize: 16,
+    color: '#10B981',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  loadingHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E8',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  loadingHintText: {
+    fontSize: 14,
+    color: '#065F46',
+    marginLeft: 8,
   },
 });
