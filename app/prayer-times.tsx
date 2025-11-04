@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import * as Location from 'expo-location';
 
 interface PrayerTime {
@@ -156,9 +157,23 @@ export default function PrayerTimesScreen() {
     return prayerTimes.find(prayer => prayer.isNext);
   };
 
+  const renderHeader = () => (
+    <View style={styles.headerRow}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="chevron-back" size={24} color="#065F46" />
+      </TouchableOpacity>
+      <View style={styles.headerDetails}>
+        <Text style={styles.headerTitle}>مواقيت الصلاة</Text>
+        <Text style={styles.headerSubtitle}>تحديث لحظي حسب موقعك الحالي</Text>
+      </View>
+      <View style={styles.backButton} />
+    </View>
+  );
+
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#065F46" />
           <Text style={styles.loadingText}>جاري تحديد الموقع وحساب مواقيت الصلاة...</Text>
@@ -169,7 +184,8 @@ export default function PrayerTimesScreen() {
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        {renderHeader()}
         <View style={styles.errorContainer}>
           <Ionicons name="location-outline" size={48} color="#EF4444" />
           <Text style={styles.errorTitle}>خطأ في الموقع</Text>
@@ -185,16 +201,17 @@ export default function PrayerTimesScreen() {
   const nextPrayer = getNextPrayer();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      {renderHeader()}
       <ScrollView
         style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>مواقيت الصلاة</Text>
+        {/* Header Info */}
+        <View style={styles.headerInfoCard}>
+          <Text style={styles.headerInfoLabel}>الوقت الحالي</Text>
           <Text style={styles.currentTime}>{formatTime(getCurrentTimeString())}</Text>
         </View>
 
@@ -265,9 +282,48 @@ export default function PrayerTimesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#F0F9F8',
+    backgroundColor: '#FFFFFF',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerDetails: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  headerInfoCard: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  headerInfoLabel: {
+    fontSize: 14,
+    color: '#047857',
+    marginBottom: 8,
   },
   scrollView: {
     flex: 1,
@@ -313,16 +369,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  header: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#065F46',
-    marginBottom: 8,
   },
   currentTime: {
     fontSize: 18,
