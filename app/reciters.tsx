@@ -8,7 +8,9 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 import StorageService, { DownloadedAudio } from '../services/StorageService';
 import AudioService from '../services/AudioService';
@@ -217,29 +219,62 @@ export default function Reciters() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>اختر القارئ المفضل</Text>
-        <Text style={styles.headerSubtitle}>
-          يمكنك تحميل التلاوات للاستماع دون اتصال بالإنترنت
-        </Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color="#065F46" />
+          </TouchableOpacity>
+          <Text style={styles.headerRowTitle}>القراء</Text>
+          <View style={styles.backButton} />
+        </View>
 
-      <FlatList
-        data={recitersData.reciters}
-        renderItem={renderReciterCard}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>اختر القارئ المفضل</Text>
+          <Text style={styles.headerSubtitle}>
+            يمكنك تحميل التلاوات للاستماع دون اتصال بالإنترنت
+          </Text>
+        </View>
+
+        <FlatList
+          data={recitersData.reciters}
+          renderItem={renderReciterCard}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F0F9F8',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F0F9F8',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerRowTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#065F46',
   },
   header: {
     backgroundColor: '#fff',
