@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, RenderOptions } from '@testing-library/react-native';
 import { ThemeProvider } from '@react-navigation/native';
-import DarkTheme from '@react-navigation/native/src/types';
+import { DarkTheme } from '@react-navigation/native';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { AudioPlayerProvider } from '../../contexts/AudioPlayerContext';
 
