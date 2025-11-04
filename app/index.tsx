@@ -168,7 +168,10 @@ export default function HomeScreen() {
               <Ionicons name="menu" size={24} color="#065F46" />
             </TouchableOpacity>
             <Text style={styles.headerTime}>{currentTime}</Text>
-            <TouchableOpacity style={styles.headerIcon}>
+            <TouchableOpacity 
+              style={styles.headerIcon}
+              onPress={() => router.push('/settings')}
+            >
               <Ionicons name="settings-outline" size={24} color="#065F46" />
             </TouchableOpacity>
           </View>
