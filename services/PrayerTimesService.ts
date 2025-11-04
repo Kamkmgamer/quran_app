@@ -109,13 +109,14 @@ class PrayerTimesService {
   async getPrayerConfig(method: number = CalculationMethods.EGYPT): Promise<PrayerConfig> {
     try {
       // Dynamic prayer configuration based on Islamic standards
+      // Icons reflect the actual time of day for each prayer
       const prayers: PrayerInfo[] = [
-        { arabic: 'الفجر', english: 'fajr', icon: 'sunny-outline', order: 1 },
-        { arabic: 'الشروق', english: 'sunrise', icon: 'sunny', order: 2 },
-        { arabic: 'الظهر', english: 'dhuhr', icon: 'partly-sunny', order: 3 },
-        { arabic: 'العصر', english: 'asr', icon: 'cloudy-outline', order: 4 },
-        { arabic: 'المغرب', english: 'maghrib', icon: 'moon-outline', order: 5 },
-        { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 }
+        { arabic: 'الفجر', english: 'fajr', icon: 'moon-outline', order: 1 },        // Pre-dawn (still dark)
+        { arabic: 'الشروق', english: 'sunrise', icon: 'sunny-outline', order: 2 },   // Sunrise (sun emerging)
+        { arabic: 'الظهر', english: 'dhuhr', icon: 'sunny', order: 3 },              // Noon (sun at peak)
+        { arabic: 'العصر', english: 'asr', icon: 'partly-sunny', order: 4 },         // Afternoon (sun descending)
+        { arabic: 'المغرب', english: 'maghrib', icon: 'partly-sunny-outline', order: 5 }, // Sunset/Dusk
+        { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 }                // Night (darkness)
       ];
 
       // Get method info with fallback
@@ -140,11 +141,11 @@ class PrayerTimesService {
       // Return fallback configuration
       return {
         prayers: [
-          { arabic: 'الفجر', english: 'fajr', icon: 'sunny-outline', order: 1 },
-          { arabic: 'الشروق', english: 'sunrise', icon: 'sunny', order: 2 },
-          { arabic: 'الظهر', english: 'dhuhr', icon: 'partly-sunny', order: 3 },
-          { arabic: 'العصر', english: 'asr', icon: 'cloudy-outline', order: 4 },
-          { arabic: 'المغرب', english: 'maghrib', icon: 'moon-outline', order: 5 },
+          { arabic: 'الفجر', english: 'fajr', icon: 'moon-outline', order: 1 },
+          { arabic: 'الشروق', english: 'sunrise', icon: 'sunny-outline', order: 2 },
+          { arabic: 'الظهر', english: 'dhuhr', icon: 'sunny', order: 3 },
+          { arabic: 'العصر', english: 'asr', icon: 'partly-sunny', order: 4 },
+          { arabic: 'المغرب', english: 'maghrib', icon: 'partly-sunny-outline', order: 5 },
           { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 }
         ],
         method: {

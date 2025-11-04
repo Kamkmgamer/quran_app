@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import { Magnetometer, Accelerometer, DeviceMotion } from 'expo-sensors';
+import { useLocation } from '../contexts/LocationContext';
 
 const { width } = Dimensions.get('window');
 
@@ -27,15 +28,9 @@ const DEFAULT_LAT = 24.7136;
 const DEFAULT_LNG = 46.6753;
 
 export default function QiblaCompass() {
+  const locationContext = useLocation();
   const [deviceOrientation, setDeviceOrientation] = useState(0); // اتجاه الجهاز بالنسبة للشمال بالدرجات
-  const [qiblaDirection, setQiblaDirection] = useState(0); // اتجاه القبلة من الموقع بالدرجات (0..360, بالنسبة للشمال)
   const [isCalibrated, setIsCalibrated] = useState(false);
-  const [userLocation, setUserLocation] = useState({
-    lat: DEFAULT_LAT,
-    lng: DEFAULT_LNG,
-  });
-  const [locationLoading, setLocationLoading] = useState(true);
-  const [locationError, setLocationError] = useState<string | null>(null);
   const [compassMethod, setCompassMethod] = useState<string>('initializing');
   const [magneticInterference, setMagneticInterference] = useState(false);
   const [magneticFieldStrength, setMagneticFieldStrength] = useState(0);
@@ -43,6 +38,18 @@ export default function QiblaCompass() {
   const previousAngles = React.useRef<number[]>([]);  // للتنعيم
   const magnetometerData = React.useRef({ x: 0, y: 0, z: 0 });
   const accelerometerData = React.useRef({ x: 0, y: 0, z: 0 });
+  
+  // استخدام البيانات من السياق المحمل مسبقاً
+  const qiblaDirection = locationContext.qiblaDirection;
+  const locationLoading = locationContext.locationLoading;
+  const locationError = locationContext.locationError;
+  const userLocation = locationContext.location ? {
+    lat: locationContext.location.latitude,
+    lng: locationContext.location.longitude
+  } : {
+    lat: DEFAULT_LAT,
+    lng: DEFAULT_LNG
+  };
 
   // دالة لتنعيم القراءات ومنع الاهتزاز (Kalman-inspired smoothing)
   const smoothAngle = (newAngle: number) => {
@@ -183,30 +190,8 @@ export default function QiblaCompass() {
     return null;
   };
 
-  // تطلب صلاحية الموقع وتحصل على الموقع الحالي
-  useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setLocationError('تم رفض إذن الموقع');
-          setLocationLoading(false);
-          return;
-        }
-
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
-
-        const { latitude, longitude } = location.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-        setLocationLoading(false);
-      } catch {
-        setLocationError('فشل في الحصول على الموقع');
-        setLocationLoading(false);
-      }
-    })();
-  }, []);
+  // الموقع يتم جلبه تلقائياً من السياق عند بدء التطبيق
+  // لا حاجة لجلبه مرة أخرى هنا
 
   // إعداد البوصلة مع تسلسل احتياطي متعدد المستويات
   useEffect(() => {
@@ -367,11 +352,8 @@ export default function QiblaCompass() {
     };
   }, []);
 
-  // إعادة حساب اتجاه القبلة كلما تغيّر موقع المستخدم
-  useEffect(() => {
-    const qiblaAngle = calculateQiblaDirection(userLocation.lat, userLocation.lng);
-    setQiblaDirection(qiblaAngle);
-  }, [userLocation]);
+  // اتجاه القبلة يتم حسابه تلقائياً في السياق
+  // لا حاجة لإعادة حسابه هنا
 
   // الحصول على الزاوية النسبية بين اتجاه القبلة واتجاه الجهاز
   // نتيجة: قيمة بين 0 و 360 تمثل الاتجاه الذي يجب تدوير العنصر إليه بالنسبة للعرض الأفقي (0 = أعلى الشاشة)
