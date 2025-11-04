@@ -40,7 +40,7 @@ class TimingService {
       const timingFile = require(`../assets/timings/${surahId.toString().padStart(3, '0')}.json`);
       this.timingsCache.set(surahId, timingFile);
       return timingFile;
-    } catch (error) {
+    } catch {
       // إذا لم يكن الملف موجوداً، نستخدم توقيتات افتراضية
       console.log(`No timing file found for surah ${surahId}, using default timings`);
       return null;
