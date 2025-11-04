@@ -16,10 +16,6 @@ class AudioService {
   private onPlaybackStatusUpdate: ((status: any) => void) | null = null;
   private isInitialized: boolean = false;
 
-  constructor() {
-    // لا نستدعي initializeAudio هنا لتجنب مشاكل التحميل
-  }
-
   // تهيئة إعدادات الصوت
   private async initializeAudio() {
     if (this.isInitialized) return;
@@ -288,10 +284,6 @@ class AudioService {
   }
 }
 
-// Export class instead of singleton instance
-export { AudioService };
-
-// Create a default export for backward compatibility
-const audioServiceInstance = new AudioService();
-export default audioServiceInstance;
+// Export class as default
+export default AudioService;
 
