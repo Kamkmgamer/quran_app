@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import quranImport from "../assets/Quran.json";
 import {
   Text,
@@ -6,6 +6,8 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
+  ImageBackground,
+  Image,
 } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import * as Clipboard from "expo-clipboard";
@@ -13,31 +15,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useAudioPlayer } from "../contexts/AudioPlayerContext";
 import { useActionSheet } from "@expo/react-native-action-sheet";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 
 const quran = quranImport as any[];
 
 export default function Quran() {
   const { surah, verse } = useLocalSearchParams();
-  const navigation = useNavigation();
   const { state, playVerse } = useAudioPlayer();
   const { showActionSheetWithOptions } = useActionSheet();
   const [renderCount, setRenderCount] = useState(50 + Number(verse));
   const scrollViewRef = useRef(null);
-
-  useEffect(() => {
-    navigation.setOptions({
-      title: quran[Number(surah)].name,
-      headerTitleAlign: "center",
-      headerStyle: {
-        backgroundColor: "#065F46",
-      },
-      headerTintColor: "#fff",
-      headerTitleStyle: {
-        fontSize: 20,
-        fontWeight: "bold",
-      },
-    });
-  }, [navigation, surah]);
 
   const saveVerseToStorage = async (surah: number, verse: number) => {
     try {
@@ -100,93 +88,135 @@ export default function Quran() {
 
   return (
     <View style={styles.container}>
-      {/* Header Banner */}
-      <View style={styles.headerBanner}>
-        <View style={styles.bannerContent}>
-          <Text style={styles.surahTitle}>{quran[Number(surah)].name}</Text>
-          <Text style={styles.surahInfo}>
-            {quran[Number(surah)].array.length} آيات - {quran[Number(surah)].type === "مكية" ? "مكية" : "مدنية"}
-          </Text>
+      <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.headerBackButton}
+            onPress={() => router.back()}
+          >
+            <Svg width="9" height="19" viewBox="0 0 9 19" fill="none">
+              <Path
+                d="M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75"
+                stroke="#065F46"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </Svg>
+          </TouchableOpacity>
+          <View style={styles.headerDetails}>
+            <Text style={styles.headerTitle}>{quran[Number(surah)].name}</Text>
+            <Text style={styles.headerSubtitle}>
+              {quran[Number(surah)].array.length} آيات — {quran[Number(surah)].type}
+            </Text>
+          </View>
+          <View style={styles.headerSpacer} />
         </View>
+      </SafeAreaView>
+
+
+      {/* White Section with Decorative Banner */}
+      <View style={styles.whiteHeaderSection}>
+        {/* Decorative Surah Name Banner with Pattern Background */}
+        <ImageBackground
+          source={require("../app/Group 3219.png")}
+          style={styles.patternBackground}
+          imageStyle={styles.patternBackgroundImage}
+          resizeMode="cover"
+        >
+          <View style={styles.surahBannerContainer}>
+            <Image 
+              source={require("../app/Frame.png")} 
+              style={styles.decorativeFrame}
+              resizeMode="contain"
+            />
+            <Text style={styles.surahNameOverlay}>{quran[Number(surah)].name}</Text>
+          </View>
+        </ImageBackground>
       </View>
 
-      <ScrollView
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        ref={scrollViewRef}
-        contentContainerStyle={styles.scrollContent}
+      {/* Main Content with Pattern Background */}
+      <ImageBackground
+        source={require("../assets/images/Mosque.png")}
+        style={styles.backgroundPattern}
+        imageStyle={styles.backgroundPatternImage}
       >
-        <View style={styles.contentCard}>
-          {/* Basmalah */}
-          <Text style={styles.basmalah}>
-            بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-          </Text>
-          
-          {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => (
-            <View 
-              key={index} 
-              style={[
-                styles.verseContainer,
-                isVerseActive(index) && styles.verseContainerActive
-              ]}
-            >
-              <View style={styles.verseActions}>
-                <TouchableOpacity
-                  style={styles.actionIcon}
-                  onPress={() => handlePlayVerse(index)}
-                >
-                  <Ionicons 
-                    name={isVerseActive(index) ? "pause-circle" : "play-circle"} 
-                    size={24} 
-                    color={isVerseActive(index) ? "#D4AF37" : "#065F46"} 
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionIcon}
-                  onPress={() => showActionSheet(index)}
-                >
-                  <Ionicons name="ellipsis-horizontal" size={20} color="#065F46" />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.verseContent}>
+        <ScrollView
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.contentCard}>
+            {/* Basmalah */}
+            {Number(surah) !== 0 && Number(surah) !== 8 && (
+              <Text style={styles.basmalah}>
+                بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+              </Text>
+            )}
+            
+            {/* Verses */}
+            <Text style={styles.versesContainer}>
+              {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => (
                 <Text
+                  key={index}
+                  onLongPress={() => showActionSheet(index)}
                   style={[
                     styles.verseText,
                     isVerseActive(index) && styles.verseTextActive
                   ]}
-                  onLongPress={() => showActionSheet(index)}
                 >
                   {item.ar}
-                </Text>
-                <View style={[
-                  styles.verseNumber,
-                  isVerseActive(index) && styles.verseNumberActive
-                ]}>
-                  <Text style={[
-                    styles.verseNumberText,
-                    isVerseActive(index) && styles.verseNumberTextActive
-                  ]}>
-                    {index + 1}
+                  <Text style={styles.verseNumberInline}>
+                    {" "}﴿{index + 1}﴾{" "}
                   </Text>
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
+                </Text>
+              ))}
+            </Text>
+          </View>
+        </ScrollView>
+      </ImageBackground>
 
       {/* Footer Navigation */}
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.navButton}>
-          <Ionicons name="chevron-back" size={20} color="#065F46" />
-          <Text style={styles.navText}>السابق</Text>
-        </TouchableOpacity>
-        <Text style={styles.pageNumber}>48/1</Text>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navText}>التالي</Text>
-          <Ionicons name="chevron-forward" size={20} color="#065F46" />
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView edges={['bottom']} style={styles.footerSafeArea}>
+        <View style={styles.footer}>
+          <TouchableOpacity 
+            style={styles.navButton}
+            onPress={() => {
+              if (Number(surah) < quran.length - 1) {
+                router.push({
+                  pathname: "/quran",
+                  params: { surah: Number(surah) + 1, verse: 0 },
+                });
+              }
+            }}
+          >
+            <Svg width="9" height="19" viewBox="0 0 9 19" fill="none">
+              <Path 
+                d="M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75" 
+                stroke="#076040" 
+                strokeWidth="1.5" 
+                strokeLinecap="round"
+              />
+            </Svg>
+          </TouchableOpacity>
+          
+          <Text style={styles.pageNumber}>{quran[Number(surah)].id}/1</Text>
+          
+          <TouchableOpacity 
+            style={styles.navButton}
+            onPress={() => {
+              if (Number(surah) > 0) {
+                router.push({
+                  pathname: "/quran",
+                  params: { surah: Number(surah) - 1, verse: 0 },
+                });
+              }
+            }}
+          >
+            <Text style={styles.navText}>السابق</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
@@ -194,115 +224,159 @@ export default function Quran() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0F9F8",
+    backgroundColor: "#F5F5F5",
   },
-  headerBanner: {
-    backgroundColor: "#065F46",
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    alignItems: "center",
+  headerSafeArea: {
+    backgroundColor: "#F5F5F5",
   },
-  bannerContent: {
-    alignItems: "center",
-  },
-  surahTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 4,
-  },
-  surahInfo: {
-    fontSize: 14,
-    color: "#D4AF37",
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 80, // Space for footer
-  },
-  contentCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
-    minHeight: 500,
-  },
-  basmalah: {
-    fontSize: 22,
-    color: "#065F46",
-    textAlign: "center",
-    marginBottom: 24,
-    fontWeight: "600",
-  },
-  verseContainer: {
-    marginBottom: 16,
-    paddingBottom: 16,
-    paddingTop: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-  },
-  verseContainerActive: {
-    backgroundColor: "#F0F9F8",
-    borderLeftWidth: 3,
-    borderLeftColor: "#D4AF37",
-  },
-  verseActions: {
+  headerRow: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginBottom: 8,
-  },
-  actionIcon: {
-    padding: 4,
-  },
-  verseContent: {
-    flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
   },
-  verseText: {
-    fontSize: 20,
-    color: "#065F46",
-    textAlign: "right",
-    lineHeight: 36,
-    flex: 1,
-    marginRight: 12,
-  },
-  verseTextActive: {
-    color: "#047857",
-    fontWeight: "500",
-  },
-  verseNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#E5E7EB",
-    alignItems: "center",
+  headerBackButton: {
+    width: 40,
+    height: 40,
     justifyContent: "center",
-    marginLeft: 8,
+    alignItems: "center",
   },
-  verseNumberActive: {
-    backgroundColor: "#D4AF37",
+  headerDetails: {
+    flex: 1,
+    alignItems: "center",
   },
-  verseNumberText: {
-    fontSize: 12,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
     color: "#065F46",
-    fontWeight: "600",
   },
-  verseNumberTextActive: {
-    color: "#fff",
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
   },
-  footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+  headerSpacer: {
+    width: 40,
+  },
+  whiteHeaderSection: {
     backgroundColor: "#fff",
+  },
+  englishNameContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: "#fff",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  englishNameTextContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  englishName: {
+    fontSize: 16,
+    color: "#1F2937",
+    fontWeight: "600",
+  },
+  surahType: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginTop: 2,
+  },
+  patternBackground: {
+    width: "100%",
+    paddingVertical: 16,
+  },
+  patternBackgroundImage: {
+    resizeMode: "cover",
+  },
+  surahBannerContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    position: "relative",
+  },
+  decorativeFrame: {
+    width: 200,
+    height: 50,
+  },
+  surahNameOverlay: {
+    position: "absolute",
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#065F46",
+  },
+  backgroundPattern: {
+    flex: 1,
+  },
+  backgroundPatternImage: {
+    opacity: 0.03,
+    resizeMode: "repeat",
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 20,
+  },
+  contentCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 24,
+    minHeight: 500,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  basmalah: {
+    fontSize: 24,
+    color: "#065F46",
+    textAlign: "center",
+    marginBottom: 32,
+    fontWeight: "600",
+    lineHeight: 40,
+  },
+  versesContainer: {
+    paddingHorizontal: 4,
+    textAlign: "justify",
+    lineHeight: 48,
+  },
+  verseText: {
+    fontSize: 24,
+    color: "#1F2937",
+    lineHeight: 48,
+    fontFamily: "System",
+  },
+  verseTextActive: {
+    color: "#065F46",
+    backgroundColor: "#F0FDF4",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  verseNumberInline: {
+    fontSize: 20,
+    color: "#065F46",
+    fontWeight: "600",
+  },
+  footerSafeArea: {
+    backgroundColor: "#fff",
+  },
+  footer: {
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
   },
@@ -315,11 +389,12 @@ const styles = StyleSheet.create({
   navText: {
     fontSize: 14,
     color: "#065F46",
-    marginHorizontal: 4,
+    marginLeft: 8,
+    fontWeight: "500",
   },
   pageNumber: {
     fontSize: 16,
-    color: "#065F46",
+    color: "#1F2937",
     fontWeight: "600",
   },
 });
