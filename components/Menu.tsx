@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface MenuProps {
   visible: boolean;
@@ -19,8 +19,8 @@ interface MenuProps {
 }
 
 export default function Menu({ visible, onClose }: MenuProps) {
-  const [selectedReciter, setSelectedReciter] = useState('ماهر المعيقلي');
-  const [selectedFontSize, setSelectedFontSize] = useState('متوسط');
+  const [selectedReciter] = useState('ماهر المعيقلي');
+  const [selectedFontSize] = useState('متوسط');
 
   const menuItems = [
     {
@@ -53,21 +53,6 @@ export default function Menu({ visible, onClose }: MenuProps) {
         router.push('/qibla');
       },
     },
-  ];
-
-  const reciters = [
-    'ماهر المعيقلي',
-    'عبد الباسط عبد الصمد',
-    'محمد صديق المنشاوي',
-    'سعد الغامدي',
-    'عبد الرحمن السديس',
-  ];
-
-  const fontSizes = [
-    'صغير',
-    'متوسط',
-    'كبير',
-    'كبير جداً',
   ];
 
   return (
