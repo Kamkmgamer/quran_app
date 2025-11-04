@@ -22,7 +22,7 @@ const quran = quranImport as any[];
 
 export default function Quran() {
   const { surah, verse } = useLocalSearchParams();
-  const { state, playVerse } = useAudioPlayer();
+  const { state, playVerse, playSurahFromVerse, stop } = useAudioPlayer();
   const { showActionSheetWithOptions } = useActionSheet();
   const [renderCount, setRenderCount] = useState(50 + Number(verse));
   const scrollViewRef = useRef(null);
@@ -53,6 +53,21 @@ export default function Quran() {
       await playVerse(Number(surah), verseIndex + 1, true);
     } catch (error) {
       console.error('Error playing verse:', error);
+    }
+  };
+
+  const handlePlaySurah = async () => {
+    try {
+      if (state.isPlayingSurah && state.currentSurahId === Number(surah)) {
+        // Stop if currently playing this surah
+        await stop();
+      } else {
+        // Start playing from current verse or first verse
+        const startVerse = Number(verse) || 1;
+        await playSurahFromVerse(Number(surah), startVerse);
+      }
+    } catch (error) {
+      console.error('Error playing surah:', error);
     }
   };
 
@@ -109,7 +124,16 @@ export default function Quran() {
               {quran[Number(surah)].array.length} آيات — {quran[Number(surah)].type}
             </Text>
           </View>
-          <View style={styles.headerSpacer} />
+          <TouchableOpacity 
+            style={styles.playButton}
+            onPress={handlePlaySurah}
+          >
+            <Ionicons 
+              name={state.isPlayingSurah && state.currentSurahId === Number(surah) ? "pause" : "play"} 
+              size={20} 
+              color="#065F46" 
+            />
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
 
@@ -259,6 +283,16 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 40,
+  },
+  playButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F0FDF4",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#065F46",
   },
   whiteHeaderSection: {
     backgroundColor: "#fff",
