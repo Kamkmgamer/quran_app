@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAudioPlayer } from '../contexts/AudioPlayerContext';
+import recitersData from '../assets/reciters.json';
 
 const { width } = Dimensions.get('window');
 
@@ -19,15 +22,42 @@ interface MenuProps {
 }
 
 export default function Menu({ visible, onClose }: MenuProps) {
-  const [selectedReciter] = useState('ماهر المعيقلي');
-  const [selectedFontSize] = useState('متوسط');
+  const { state } = useAudioPlayer();
+  const [selectedFontSize, setSelectedFontSize] = useState('متوسط');
+
+  useEffect(() => {
+    loadFontSize();
+  }, [visible]);
+
+  const loadFontSize = async () => {
+    try {
+      const savedSize = await AsyncStorage.getItem('quranFontSize');
+      const sizeLabels: { [key: string]: string } = {
+        small: 'صغير',
+        medium: 'متوسط',
+        large: 'كبير',
+        xlarge: 'كبير جداً',
+      };
+      if (savedSize && sizeLabels[savedSize]) {
+        setSelectedFontSize(sizeLabels[savedSize]);
+      }
+    } catch (error) {
+      console.error('Error loading font size:', error);
+    }
+  };
+
+  // الحصول على اسم القارئ المختار
+  const getCurrentReciterName = () => {
+    const reciter = recitersData.reciters.find((r) => r.id === state.currentReciterId);
+    return reciter ? reciter.name : 'عبد الباسط عبد الصمد';
+  };
 
   const menuItems = [
     {
       id: 'bookmarks',
       title: 'العلامات المرجعية',
       icon: 'bookmark',
-      iconColor: '#000',
+      iconColor: '#fff',
       onPress: () => {
         onClose();
         router.push('/bookmarks');
@@ -62,8 +92,16 @@ export default function Menu({ visible, onClose }: MenuProps) {
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.menuContainer}>
+      <TouchableOpacity 
+        style={styles.overlay}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <TouchableOpacity 
+          style={styles.menuContainer}
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+        >
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>القائمة</Text>
@@ -89,6 +127,7 @@ export default function Menu({ visible, onClose }: MenuProps) {
 
             {/* Reciter Selection */}
             <View style={styles.section}>
+              <Text style={styles.sectionLabel}>القارئ</Text>
               <TouchableOpacity
                 style={styles.dropdown}
                 onPress={() => {
@@ -96,7 +135,7 @@ export default function Menu({ visible, onClose }: MenuProps) {
                   router.push('/reciters');
                 }}
               >
-                <Text style={styles.dropdownText}>{selectedReciter}</Text>
+                <Text style={styles.dropdownText}>{getCurrentReciterName()}</Text>
                 <Ionicons name="chevron-down" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
@@ -116,8 +155,8 @@ export default function Menu({ visible, onClose }: MenuProps) {
               </TouchableOpacity>
             </View>
           </ScrollView>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
 }

@@ -20,21 +20,63 @@ import Svg, { Path } from "react-native-svg";
 
 const quran = quranImport as any[];
 
+const fontSizeOptions: { [key: string]: { size: number; lineHeight: number } } = {
+  small: { size: 20, lineHeight: 40 },
+  medium: { size: 24, lineHeight: 48 },
+  large: { size: 28, lineHeight: 56 },
+  xlarge: { size: 32, lineHeight: 64 },
+};
+
 export default function Quran() {
   const { surah, verse } = useLocalSearchParams();
   const { state, playVerse, playSurahFromVerse, stop } = useAudioPlayer();
   const { showActionSheetWithOptions } = useActionSheet();
   const [renderCount, setRenderCount] = useState(50 + Number(verse));
+  const [fontSize, setFontSize] = useState(fontSizeOptions.medium);
   const scrollViewRef = useRef(null);
+
+  useEffect(() => {
+    loadFontSize();
+  }, []);
+
+  const loadFontSize = async () => {
+    try {
+      const savedSize = await AsyncStorage.getItem('quranFontSize');
+      if (savedSize && fontSizeOptions[savedSize]) {
+        setFontSize(fontSizeOptions[savedSize]);
+      }
+    } catch (error) {
+      console.error('Error loading font size:', error);
+    }
+  };
 
   const saveVerseToStorage = async (surah: number, verse: number) => {
     try {
-      await AsyncStorage.setItem(
-        "savedVerses",
-        JSON.stringify({ surah, verse })
+      // Get existing bookmarks
+      const existingBookmarksString = await AsyncStorage.getItem('bookmarkedVerses');
+      let bookmarks = existingBookmarksString ? JSON.parse(existingBookmarksString) : [];
+      
+      // Check if verse is already bookmarked
+      const isAlreadyBookmarked = bookmarks.some(
+        (item: any) => item.surah === surah && item.verse === verse
       );
+      
+      if (!isAlreadyBookmarked) {
+        // Add new bookmark
+        bookmarks.push({
+          surah,
+          verse,
+          addedAt: Date.now(),
+        });
+        
+        await AsyncStorage.setItem('bookmarkedVerses', JSON.stringify(bookmarks));
+        alert('تم حفظ الآية في العلامات المرجعية ✓');
+      } else {
+        alert('هذه الآية محفوظة بالفعل');
+      }
     } catch (error) {
-      console.error("Error saving verse:", error);
+      console.error('Error saving verse:', error);
+      alert('حدث خطأ أثناء حفظ الآية');
     }
   };
 
@@ -181,13 +223,13 @@ export default function Quran() {
           <View style={styles.contentCard}>
             {/* Basmalah */}
             {Number(surah) !== 0 && Number(surah) !== 8 && (
-              <Text style={styles.basmalah}>
+              <Text style={[styles.basmalah, { fontSize: fontSize.size, lineHeight: fontSize.lineHeight }]}>
                 بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
               </Text>
             )}
             
             {/* Verses */}
-            <Text style={styles.versesContainer}>
+            <Text style={[styles.versesContainer, { lineHeight: fontSize.lineHeight }]}>
               {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => {
                 const words = String(item.ar || '').trim().split(/\s+/);
                 const active = isVerseActive(index);
@@ -201,7 +243,7 @@ export default function Quran() {
                   <Text
                     key={index}
                     onLongPress={() => showActionSheet(index)}
-                    style={styles.verseText}
+                    style={[styles.verseText, { fontSize: fontSize.size, lineHeight: fontSize.lineHeight }]}
                   >
                     {words.map((w: string, i: number) => (
                       <Text key={`${index}-${i}`} style={isWordActive(i) ? styles.wordActive : undefined}>
@@ -209,7 +251,7 @@ export default function Quran() {
                         <Text> </Text>
                       </Text>
                     ))}
-                    <Text style={styles.verseNumberInline}>
+                    <Text style={[styles.verseNumberInline, { fontSize: fontSize.size - 4 }]}>
                       {" "}﴿{index + 1}﴾{" "}
                     </Text>
                   </Text>
