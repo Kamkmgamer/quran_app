@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import AudioService from '../services/AudioService';
-import StorageService, { UserPreferences } from '../services/StorageService';
+import StorageService from '../services/StorageService';
 import quranDataImport from '../assets/Quran.json';
 import recitersData from '../assets/reciters.json';
 
 const quranData = quranDataImport as any[];
+const audioService = new AudioService();
 
 interface Reciter {
   id: string;
@@ -71,45 +72,8 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     currentReciter: null,
   });
 
-  // تحميل التفضيلات عند البدء
-  useEffect(() => {
-    const initialize = async () => {
-      try {
-        await loadPreferences();
-        setupAudioService();
-      } catch (error) {
-        console.error('Error initializing AudioPlayerContext:', error);
-      }
-    };
-    
-    initialize();
-  }, []);
-
-  // إعداد AudioService مع callback للتحديثات
-  const setupAudioService = () => {
-    try {
-      AudioService.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded) {
-          setState((prev) => ({
-            ...prev,
-            isPlaying: status.isPlaying,
-            position: status.positionMillis || 0,
-            duration: status.durationMillis || 0,
-          }));
-
-          // التحقق من انتهاء التشغيل
-          if (status.didJustFinish && !status.isLooping) {
-            handleVerseFinished();
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error setting up AudioService:', error);
-    }
-  };
-
   // تحميل التفضيلات المحفوظة
-  const loadPreferences = async () => {
+  const loadPreferences = useCallback(async () => {
     const preferences = await StorageService.getPreferences();
     const reciter = recitersData.reciters.find((r) => r.id === preferences.selectedReciter);
     
@@ -120,23 +84,10 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       repeatMode: preferences.repeatMode,
       currentReciter: reciter || recitersData.reciters[0],
     }));
-  };
-
-  // معالجة انتهاء الآية
-  const handleVerseFinished = async () => {
-    if (state.repeatMode === 'verse') {
-      // تكرار الآية
-      if (state.currentSurahId && state.currentVerseId) {
-        await playVerse(state.currentSurahId, state.currentVerseId, true);
-      }
-    } else if (state.repeatMode === 'surah' || state.repeatMode === 'all') {
-      // تشغيل الآية التالية
-      await playNext();
-    }
-  };
+  }, []);
 
   // تشغيل آية محددة
-  const playVerse = async (surahId: number, verseId: number, autoPlay: boolean = true) => {
+  const playVerse = useCallback(async (surahId: number, verseId: number, autoPlay: boolean = true) => {
     try {
       setState((prev) => ({ ...prev, isLoading: true }));
 
@@ -145,7 +96,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
         throw new Error('Reciter not found');
       }
 
-      await AudioService.loadAndPlayVerse(
+      await audioService.loadAndPlayVerse(
         reciter.apiPath,
         reciter.id,
         surahId,
@@ -165,20 +116,10 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       console.error('Error playing verse:', error);
       setState((prev) => ({ ...prev, isLoading: false }));
     }
-  };
-
-  // تشغيل/إيقاف
-  const togglePlayPause = async () => {
-    try {
-      await AudioService.togglePlayPause();
-      setState((prev) => ({ ...prev, isPlaying: !prev.isPlaying }));
-    } catch (error) {
-      console.error('Error toggling play/pause:', error);
-    }
-  };
+  }, [state.currentReciterId]);
 
   // تشغيل الآية التالية
-  const playNext = async () => {
+  const playNext = useCallback(async () => {
     if (!state.currentSurahId || state.currentVerseId === null) return;
 
     const surah = quranData[state.currentSurahId];
@@ -202,13 +143,73 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
         nextVerseId = 1;
       } else {
         // إيقاف التشغيل
-        await AudioService.stop();
+        await audioService.stop();
         setState((prev) => ({ ...prev, isPlaying: false }));
         return;
       }
     }
 
     await playVerse(nextSurahId, nextVerseId, true);
+  }, [state.currentSurahId, state.currentVerseId, state.repeatMode, playVerse]);
+
+  // معالجة انتهاء الآية
+  const handleVerseFinished = useCallback(async () => {
+    if (state.repeatMode === 'verse') {
+      // تكرار الآية
+      if (state.currentSurahId && state.currentVerseId) {
+        await playVerse(state.currentSurahId, state.currentVerseId, true);
+      }
+    } else if (state.repeatMode === 'surah' || state.repeatMode === 'all') {
+      // تشغيل الآية التالية
+      await playNext();
+    }
+  }, [state.repeatMode, state.currentSurahId, state.currentVerseId, playVerse, playNext]);
+
+  // إعداد AudioService مع callback للتحديثات
+  const setupAudioService = useCallback(() => {
+    try {
+      audioService.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded) {
+          setState((prev) => ({
+            ...prev,
+            isPlaying: status.isPlaying,
+            position: status.positionMillis || 0,
+            duration: status.durationMillis || 0,
+          }));
+
+          // التحقق من انتهاء التشغيل
+          if (status.didJustFinish && !status.isLooping) {
+            handleVerseFinished();
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error setting up AudioService:', error);
+    }
+  }, [handleVerseFinished]);
+
+  // تحميل التفضيلات عند البدء
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        await loadPreferences();
+        setupAudioService();
+      } catch (error) {
+        console.error('Error initializing AudioPlayerContext:', error);
+      }
+    };
+    
+    initialize();
+  }, [loadPreferences, setupAudioService]);
+
+  // تشغيل/إيقاف
+  const togglePlayPause = async () => {
+    try {
+      await audioService.togglePlayPause();
+      setState((prev) => ({ ...prev, isPlaying: !prev.isPlaying }));
+    } catch (error) {
+      console.error('Error toggling play/pause:', error);
+    }
   };
 
   // تشغيل الآية السابقة
@@ -240,7 +241,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   // تغيير سرعة التشغيل
   const setPlaybackSpeed = async (speed: number) => {
     try {
-      await AudioService.setPlaybackSpeed(speed);
+      await audioService.setPlaybackSpeed(speed);
       setState((prev) => ({ ...prev, playbackSpeed: speed }));
 
       // حفظ في التفضيلات
@@ -284,7 +285,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   // الانتقال لموضع معين
   const seekTo = async (position: number) => {
     try {
-      await AudioService.seekTo(position);
+      await audioService.seekTo(position);
       setState((prev) => ({ ...prev, position }));
     } catch (error) {
       console.error('Error seeking:', error);
@@ -294,7 +295,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   // إيقاف
   const stop = async () => {
     try {
-      await AudioService.stop();
+      await audioService.stop();
       setState((prev) => ({
         ...prev,
         isPlaying: false,
