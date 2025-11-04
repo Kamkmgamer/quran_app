@@ -28,11 +28,13 @@ interface AudioPlayerState {
   duration: number;
   isLoading: boolean;
   currentReciter: Reciter | null;
+  isPlayingSurah: boolean;
 }
 
 interface AudioPlayerContextType {
   state: AudioPlayerState;
   playVerse: (surahId: number, verseId: number, autoPlay?: boolean) => Promise<void>;
+  playSurahFromVerse: (surahId: number, startVerseId: number) => Promise<void>;
   togglePlayPause: () => Promise<void>;
   playNext: () => Promise<void>;
   playPrevious: () => Promise<void>;
@@ -70,6 +72,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     duration: 0,
     isLoading: false,
     currentReciter: null,
+    isPlayingSurah: false,
   });
 
   // تحميل التفضيلات المحفوظة
@@ -118,9 +121,22 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     }
   }, [state.currentReciterId]);
 
+  // تشغيل السورة من آية محددة إلى النهاية
+  const playSurahFromVerse = useCallback(async (surahId: number, startVerseId: number) => {
+    try {
+      setState((prev) => ({ ...prev, isPlayingSurah: true }));
+      await playVerse(surahId, startVerseId, true);
+    } catch (error) {
+      console.error('Error playing surah from verse:', error);
+      setState((prev) => ({ ...prev, isPlayingSurah: false }));
+    }
+  }, [playVerse]);
+
   // تشغيل الآية التالية
   const playNext = useCallback(async () => {
-    if (!state.currentSurahId || state.currentVerseId === null) return;
+    if (state.currentSurahId === null || state.currentSurahId === undefined || state.currentVerseId === null) {
+      return;
+    }
 
     const surah = quranData[state.currentSurahId];
     if (!surah) return;
@@ -131,7 +147,16 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
     // التحقق من نهاية السورة
     if (nextVerseId > totalVerses) {
-      if (state.repeatMode === 'surah') {
+      if (state.isPlayingSurah) {
+        // إيقاف التشغيل عند نهاية السورة في وضع التشغيل المستمر
+        await audioService.stop();
+        setState((prev) => ({ 
+          ...prev, 
+          isPlaying: false, 
+          isPlayingSurah: false 
+        }));
+        return;
+      } else if (state.repeatMode === 'surah') {
         // العودة لأول السورة
         nextVerseId = 1;
       } else if (state.repeatMode === 'all') {
@@ -144,26 +169,13 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       } else {
         // إيقاف التشغيل
         await audioService.stop();
-        setState((prev) => ({ ...prev, isPlaying: false }));
+        setState((prev) => ({ ...prev, isPlaying: false, isPlayingSurah: false }));
         return;
       }
     }
 
     await playVerse(nextSurahId, nextVerseId, true);
-  }, [state.currentSurahId, state.currentVerseId, state.repeatMode, playVerse]);
-
-  // معالجة انتهاء الآية
-  const handleVerseFinished = useCallback(async () => {
-    if (state.repeatMode === 'verse') {
-      // تكرار الآية
-      if (state.currentSurahId && state.currentVerseId) {
-        await playVerse(state.currentSurahId, state.currentVerseId, true);
-      }
-    } else if (state.repeatMode === 'surah' || state.repeatMode === 'all') {
-      // تشغيل الآية التالية
-      await playNext();
-    }
-  }, [state.repeatMode, state.currentSurahId, state.currentVerseId, playVerse, playNext]);
+  }, [state.currentSurahId, state.currentVerseId, state.repeatMode, state.isPlayingSurah, playVerse]);
 
   // إعداد AudioService مع callback للتحديثات
   const setupAudioService = useCallback(() => {
@@ -177,16 +189,35 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
             duration: status.durationMillis || 0,
           }));
 
-          // التحقق من انتهاء التشغيل
+          // التحقق من انتهاء التشغيل - use current state from setState callback
           if (status.didJustFinish && !status.isLooping) {
-            handleVerseFinished();
+            // Use setState callback to get current state
+            setState((currentState) => {
+              // Handle verse finished logic with current state
+              const handleVerseEnd = async () => {
+                if (currentState.repeatMode === 'verse') {
+                  // تكرار الآية
+                  if (currentState.currentSurahId && currentState.currentVerseId) {
+                    await playVerse(currentState.currentSurahId, currentState.currentVerseId, true);
+                  }
+                } else if (currentState.repeatMode === 'surah' || currentState.repeatMode === 'all' || currentState.isPlayingSurah) {
+                  // تشغيل الآية التالية
+                  await playNext();
+                }
+              };
+              
+              // Execute async logic
+              handleVerseEnd();
+              
+              return currentState; // Return current state unchanged
+            });
           }
         }
       });
     } catch (error) {
       console.error('Error setting up AudioService:', error);
     }
-  }, [handleVerseFinished]);
+  }, [playVerse, playNext]);
 
   // تحميل التفضيلات عند البدء
   useEffect(() => {
@@ -214,7 +245,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
   // تشغيل الآية السابقة
   const playPrevious = async () => {
-    if (!state.currentSurahId || state.currentVerseId === null) return;
+    if (state.currentSurahId === null || state.currentSurahId === undefined || state.currentVerseId === null) return;
 
     let prevSurahId = state.currentSurahId;
     let prevVerseId = state.currentVerseId - 1;
@@ -299,6 +330,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       setState((prev) => ({
         ...prev,
         isPlaying: false,
+        isPlayingSurah: false,
         position: 0,
       }));
     } catch (error) {
@@ -326,6 +358,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   const value: AudioPlayerContextType = {
     state,
     playVerse,
+    playSurahFromVerse,
     togglePlayPause,
     playNext,
     playPrevious,
