@@ -7,6 +7,7 @@ import {
   Dimensions,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
@@ -151,106 +152,98 @@ export default function QiblaCompass() {
     return Math.round(Math.abs(normalized)); // عرض القيمة المطلقة للدوران المطلوبة
   };
 
+  const statusMessage = locationLoading
+    ? 'جاري الحصول على الموقع...'
+    : locationError
+    ? `خطأ: ${locationError}`
+    : isCalibrated
+    ? 'البوصلة جاهزة'
+    : 'يرجى معايرة البوصلة';
+
+  const locationMessage = locationLoading
+    ? 'تحديد الموقع...'
+    : locationError
+    ? 'تعذر تحديد الموقع'
+    : `الموقع: ${userLocation.lat.toFixed(6)}, ${userLocation.lng.toFixed(6)}`;
+
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#10B981" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>اتجاه القبلة</Text>
-        <View style={styles.headerButton} />
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={28} color="#10B981" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>اتجاه القبلة</Text>
+          <View style={styles.headerButton} />
+        </View>
 
-      {/* Direction Info */}
-      <View style={styles.directionInfo}>
-        <Text style={styles.directionText}>{getDirectionText()}</Text>
-        <Text style={styles.angleText}>{getDisplayedAngle()}°</Text>
-      </View>
+        <View style={styles.directionInfo}>
+          <Text style={styles.directionText}>{getDirectionText()}</Text>
+          <Text style={styles.angleText}>{getDisplayedAngle()}°</Text>
+        </View>
 
-      {/* Large Pointer Arrow - Points to Qibla */}
-      <View style={styles.pointerContainer}>
-        <Image
-          source={require('../assets/images/pointer to mekka.png')}
-          style={[
-            styles.pointerImage,
-            {
-              transform: [{ rotate: `${getRelativeAngle()}deg` }],
-            },
-          ]}
-          resizeMode="contain"
-        />
-      </View>
-
-      {/* Compass */}
-      <View style={styles.compassContainer}>
-        <View style={styles.compass}>
-          {/* صورة الاتجاهات - ثابتة (N دائماً للأعلى) */}
+        <View style={styles.pointerContainer}>
           <Image
-            source={require('../assets/images/north east south west.png')}
-            style={styles.directionsImage}
+            source={require('../assets/images/pointer to mekka.png')}
+            style={[
+              styles.pointerImage,
+              { transform: [{ rotate: `${getRelativeAngle()}deg` }] },
+            ]}
             resizeMode="contain"
           />
+        </View>
 
-          {/* صورة الكعبة - تدور لتتجه نحو القبلة */}
-          <View
-            style={[
-              styles.kaabaContainer,
-              {
-                transform: [{ rotate: `${getRelativeAngle()}deg` }],
-              },
-            ]}
-          >
+        <View style={styles.compassContainer}>
+          <View style={styles.compass}>
             <Image
-              source={require('../assets/images/kaba.png')}
-              style={styles.kaabaImage}
+              source={require('../assets/images/north east south west.png')}
+              style={styles.directionsImage}
               resizeMode="contain"
             />
-          </View>
 
-          {/* مؤشر اتجاه القبلة - يشير نحو القبلة */}
-          <View
-            style={[
-              styles.userIndicatorContainer,
-              {
-                transform: [{ rotate: `${getRelativeAngle()}deg` }],
-              },
-            ]}
-          >
-            <Image
-              source={require('../assets/images/Vector.png')}
-              style={styles.centerVector}
-              resizeMode="contain"
-            />
+            <View
+              style={[
+                styles.kaabaContainer,
+                { transform: [{ rotate: `${getRelativeAngle()}deg` }] },
+              ]}
+            >
+              <Image
+                source={require('../assets/images/kaba.png')}
+                style={styles.kaabaImage}
+                resizeMode="contain"
+              />
+            </View>
+
+            <View
+              style={[
+                styles.userIndicatorContainer,
+                { transform: [{ rotate: `${getRelativeAngle()}deg` }] },
+              ]}
+            >
+              <Image
+                source={require('../assets/images/Vector.png')}
+                style={styles.centerVector}
+                resizeMode="contain"
+              />
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Status */}
-      <View style={styles.statusContainer}>
-        <Text style={styles.statusText}>
-          {locationLoading
-            ? 'جاري الحصول على الموقع...'
-            : locationError
-            ? `خطأ: ${locationError}`
-            : isCalibrated
-            ? 'البوصلة جاهزة'
-            : 'يرجى معايرة البوصلة'}
-        </Text>
-        <Text style={styles.locationText}>
-          {locationLoading
-            ? 'تحديد الموقع...'
-            : locationError
-            ? 'تعذر تحديد الموقع'
-            : `الموقع: ${userLocation.lat.toFixed(6)}, ${userLocation.lng.toFixed(6)}`}
-        </Text>
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusText}>{statusMessage}</Text>
+          <Text style={styles.locationText}>{locationMessage}</Text>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 // ======= Styles =======
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -345,10 +338,12 @@ const styles = StyleSheet.create({
     marginTop: '15%',
   },
   statusContainer: {
-    display: 'none',
     alignItems: 'center',
     paddingVertical: 16,
     backgroundColor: '#E8F5E8',
+    marginHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   statusText: {
     fontSize: 16,
