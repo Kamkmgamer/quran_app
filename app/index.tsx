@@ -86,11 +86,11 @@ export default function HomeScreen() {
   const tabs = ["سورة", "جزء", "الأذكار"];
 
   const renderSurahCard = ({ item, index }: { item: Surah; index: number }) => {
-    const isGold = index % 2 === 0;
-    const borderColor = isGold ? "#D4AF37" : "#10B981";
-    const backgroundColor = isGold ? "#D4AF37" : "#F9FAFB";
-    const textColor = isGold ? "#065F46" : "#065F46";
-    const numberColor = isGold ? "#065F46" : "#D4AF37";
+    const isLastRead = item.id - 1 === surah;
+    const backgroundColor = isLastRead ? "#D4AF37" : "#fff";
+    const textColor = isLastRead ? "#fff" : "#065F46";
+    const numberColor = isLastRead ? "#fff" : "#D4AF37";
+    const verseCountColor = isLastRead ? "#fff" : "#10B981";
     
     return (
       <TouchableOpacity
@@ -104,8 +104,8 @@ export default function HomeScreen() {
           styles.card,
           {
             backgroundColor,
-            borderColor,
-            borderWidth: isGold ? 0 : 1,
+            borderColor: isLastRead ? "#D4AF37" : "#E5E7EB",
+            borderWidth: 1,
           },
         ]}
       >
@@ -117,7 +117,7 @@ export default function HomeScreen() {
             {item.name}
           </Text>
         </View>
-        <Text style={[styles.verseCount, { color: isGold ? "#065F46" : "#10B981" }]}>
+        <Text style={[styles.verseCount, { color: verseCountColor }]}>
           {item.array.length} آيات
         </Text>
       </TouchableOpacity>
