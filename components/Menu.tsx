@@ -30,7 +30,7 @@ export default function Menu({ visible, onClose }: MenuProps) {
       iconColor: '#000',
       onPress: () => {
         onClose();
-        // Navigate to bookmarks
+        router.push('/bookmarks');
       },
     },
     {
@@ -89,8 +89,13 @@ export default function Menu({ visible, onClose }: MenuProps) {
 
             {/* Reciter Selection */}
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>صوت القارئ</Text>
-              <TouchableOpacity style={styles.dropdown}>
+              <TouchableOpacity
+                style={styles.dropdown}
+                onPress={() => {
+                  onClose();
+                  router.push('/reciters');
+                }}
+              >
                 <Text style={styles.dropdownText}>{selectedReciter}</Text>
                 <Ionicons name="chevron-down" size={20} color="#fff" />
               </TouchableOpacity>
@@ -99,7 +104,13 @@ export default function Menu({ visible, onClose }: MenuProps) {
             {/* Font Size Selection */}
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>حجم الخط</Text>
-              <TouchableOpacity style={styles.dropdown}>
+              <TouchableOpacity
+                style={styles.dropdown}
+                onPress={() => {
+                  onClose();
+                  router.push('/font-size');
+                }}
+              >
                 <Text style={styles.dropdownText}>{selectedFontSize}</Text>
                 <Ionicons name="chevron-down" size={20} color="#fff" />
               </TouchableOpacity>
