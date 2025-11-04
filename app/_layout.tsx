@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import "react-native-reanimated";
 import { I18nManager, View } from "react-native";
 import { AudioPlayerProvider } from "../contexts/AudioPlayerContext";
+import { LocationProvider } from "../contexts/LocationContext";
 import MiniPlayer from "../components/MiniPlayer";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 
@@ -19,9 +20,10 @@ export default function RootLayout() {
   return (
     <ActionSheetProvider>
       <AudioPlayerProvider>
-        <ThemeProvider value={DarkTheme}>
-          <View style={{ flex: 1 }}>
-            <Stack>
+        <LocationProvider>
+          <ThemeProvider value={DarkTheme}>
+            <View style={{ flex: 1 }}>
+              <Stack>
             <Stack.Screen
               name="index"
               options={{ headerShown: false, title: "الرئيسية" }}
@@ -73,6 +75,7 @@ export default function RootLayout() {
             <MiniPlayer />
           </View>
         </ThemeProvider>
+        </LocationProvider>
       </AudioPlayerProvider>
     </ActionSheetProvider>
   );
