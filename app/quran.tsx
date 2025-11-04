@@ -192,14 +192,14 @@ export default function Quran() {
       <View style={styles.whiteHeaderSection}>
         {/* Decorative Surah Name Banner with Pattern Background */}
         <ImageBackground
-          source={require("../app/Group 3219.png")}
+          source={require("../assets/images/Group 3219.png")}
           style={styles.patternBackground}
           imageStyle={styles.patternBackgroundImage}
           resizeMode="cover"
         >
           <View style={styles.surahBannerContainer}>
             <Image 
-              source={require("../app/Frame.png")} 
+              source={require("../assets/images/Frame.png")} 
               style={styles.decorativeFrame}
               resizeMode="contain"
             />
