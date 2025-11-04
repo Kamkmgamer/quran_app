@@ -1,6 +1,6 @@
 // Comprehensive Expo mocks for testing
 
-export const mockAudioSound = {
+export const mockAudioSound: any = {
   loadAsync: jest.fn(() => Promise.resolve({ sound: mockAudioSound, status: { isLoaded: true } })),
   playAsync: jest.fn(() => Promise.resolve()),
   pauseAsync: jest.fn(() => Promise.resolve()),
