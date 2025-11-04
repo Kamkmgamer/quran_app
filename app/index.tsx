@@ -1,4 +1,4 @@
-import { Text, View, TextInput, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import { Text, View, TextInput, FlatList, TouchableOpacity, StyleSheet, ImageBackground } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as React from "react";
@@ -45,6 +45,7 @@ export default function HomeScreen() {
   const [searchText, setSearchText] = React.useState("");
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [lastListeningPosition, setLastListeningPosition] = React.useState<any>(null);
+  const [currentTime, setCurrentTime] = React.useState<string>("");
 
   const loadSavedVerse = async () => {
     try {
@@ -68,12 +69,36 @@ export default function HomeScreen() {
     }
   };
 
+  const formatTime = () => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    
+    // Convert to 12-hour format
+    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+    const period = hours >= 12 ? "مساء" : "صباح";
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    
+    return `${displayHours}:${formattedMinutes} ${period}`;
+  };
+
+  const updateTime = () => {
+    setCurrentTime(formatTime());
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       loadSavedVerse();
       loadLastListeningPosition();
+      updateTime();
     }, [])
   );
+
+  React.useEffect(() => {
+    updateTime();
+    const interval = setInterval(updateTime, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSearch = (text: string) => {
     setSearchText(text);
@@ -87,10 +112,12 @@ export default function HomeScreen() {
 
   const renderSurahCard = ({ item, index }: { item: Surah; index: number }) => {
     const isLastRead = item.id - 1 === surah;
-    const backgroundColor = isLastRead ? "#D4AF37" : "#fff";
-    const textColor = isLastRead ? "#fff" : "#065F46";
-    const numberColor = isLastRead ? "#fff" : "#D4AF37";
-    const verseCountColor = isLastRead ? "#fff" : "#10B981";
+    const isEven = index % 2 === 0;
+    const backgroundColor = isLastRead ? "#D4AF37" : (isEven ? "#fff" : "#FEFCE8");
+    const borderColor = isLastRead ? "#D4AF37" : "#D4AF37";
+    const textColor = isLastRead ? "#fff" : "#D97706";
+    const numberColor = isLastRead ? "#fff" : "#D97706";
+    const verseCountColor = isLastRead ? "#fff" : "#D97706";
     
     return (
       <TouchableOpacity
@@ -104,8 +131,8 @@ export default function HomeScreen() {
           styles.card,
           {
             backgroundColor,
-            borderColor: isLastRead ? "#D4AF37" : "#E5E7EB",
-            borderWidth: 1,
+            borderColor,
+            borderWidth: 2,
           },
         ]}
       >
@@ -125,373 +152,241 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.headerIcon}>
-          <Ionicons name="settings-outline" size={24} color="#065F46" />
-        </TouchableOpacity>
-        <Text style={styles.headerTime}>5:30 مساء</Text>
-        <TouchableOpacity 
-          style={styles.headerIcon}
-          onPress={() => setMenuVisible(true)}
-        >
-          <Ionicons name="menu" size={24} color="#065F46" />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      {/* Header with Mosque Background */}
+      <ImageBackground
+        source={require("../assets/images/Mosque.png")}
+        style={styles.headerBackground}
+        imageStyle={styles.headerBackgroundImage}
+      >
+        <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.headerIcon}
+              onPress={() => setMenuVisible(true)}
+            >
+              <Ionicons name="menu" size={24} color="#065F46" />
+            </TouchableOpacity>
+            <Text style={styles.headerTime}>{currentTime}</Text>
+            <TouchableOpacity style={styles.headerIcon}>
+              <Ionicons name="settings-outline" size={24} color="#065F46" />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
 
       {/* Recently Read Section */}
       <View style={styles.recentCard}>
-        <Ionicons name="bookmark" size={20} color="#D4AF37" style={styles.recentIcon} />
-        <View style={styles.recentContent}>
+        <View style={styles.recentHeader}>
+          <Ionicons name="bookmark" size={20} color="#D4AF37" />
           <Text style={styles.recentTitle}>ماتم قراءته مؤخرا</Text>
-          <Text style={styles.recentSurah}>{surahList[surah as number].name}</Text>
+        </View>
+        <Text style={styles.recentSurah}>{surahList[surah as number].name}</Text>
+        <View style={styles.recentFooter}>
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: "/quran",
+                params: { surah: surah, verse: verse },
+              })
+            }
+            style={styles.continueButton}
+          >
+            <Ionicons name="chevron-forward" size={16} color="#D4AF37" />
+            <Text style={styles.continueText}>متابعة</Text>
+          </TouchableOpacity>
           <Text style={styles.recentVerse}>الأية : {verse + 1}</Text>
         </View>
-        <TouchableOpacity
-          onPress={() =>
-            router.push({
-              pathname: "/quran",
-              params: { surah: surah, verse: verse },
-            })
-          }
-          style={styles.continueButton}
-        >
-          <Text style={styles.continueText}>متابعة</Text>
-          <Ionicons name="chevron-forward" size={16} color="#fff" />
-        </TouchableOpacity>
       </View>
 
-      {/* Last Listening Position */}
-      {lastListeningPosition && (
-        <TouchableOpacity
-          style={styles.listeningCard}
-          onPress={() => resumeLastPosition()}
-        >
-          <Ionicons name="headset" size={20} color="#10B981" style={styles.listeningIcon} />
-          <View style={styles.listeningContent}>
-            <Text style={styles.listeningTitle}>استئناف الاستماع</Text>
-            <Text style={styles.listeningSurah}>
-              {surahList[lastListeningPosition.surahId]?.name} - آية {lastListeningPosition.verseId}
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => resumeLastPosition()}
-            style={styles.playSmallButton}
-          >
-            <Ionicons name="play" size={16} color="#fff" />
-          </TouchableOpacity>
-        </TouchableOpacity>
-      )}
+      <SafeAreaView edges={['bottom']} style={styles.contentContainer}>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActionsRow}>
-        <TouchableOpacity
-          style={styles.quickActionCard}
-          onPress={() => router.push("/qibla")}
-        >
-          <Ionicons name="compass" size={24} color="#D4AF37" />
-          <Text style={styles.quickActionText}>القبلة</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.quickActionCard}
-          onPress={() => router.push("/prayer-times")}
-        >
-          <Ionicons name="time" size={24} color="#10B981" />
-          <Text style={styles.quickActionText}>الصلاة</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.quickActionCard}
-          onPress={() => router.push("/reciters")}
-        >
-          <Ionicons name="person" size={24} color="#D4AF37" />
-          <Text style={styles.quickActionText}>القراء</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.quickActionCard}
-          onPress={() => router.push("/player")}
-        >
-          <Ionicons name="musical-notes" size={24} color="#10B981" />
-          <Text style={styles.quickActionText}>المشغل</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#10B981" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="بحث السور"
-          placeholderTextColor="#9CA3AF"
-          value={searchText}
-          onChangeText={handleSearch}
-        />
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tab,
-              activeTab === tab && styles.activeTab,
-            ]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text
+        {/* Tabs */}
+        <View style={styles.tabsContainer}>
+          {tabs.map((tab) => (
+            <TouchableOpacity
+              key={tab}
               style={[
-                styles.tabText,
-                activeTab === tab && styles.activeTabText,
+                styles.tab,
+                activeTab === tab && styles.activeTab,
               ]}
+              onPress={() => setActiveTab(tab)}
             >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === tab && styles.activeTabText,
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      {/* Surah Grid */}
-      <FlatList
-        data={surahSearchList}
-        renderItem={renderSurahCard}
-        keyExtractor={(item: any) => item.id.toString()}
-        numColumns={2}
-        contentContainerStyle={styles.gridContainer}
-        showsVerticalScrollIndicator={false}
-      />
+        {/* Surah Grid */}
+        <FlatList
+          data={surahSearchList}
+          renderItem={renderSurahCard}
+          keyExtractor={(item: any) => item.id.toString()}
+          numColumns={2}
+          contentContainerStyle={styles.gridContainer}
+          showsVerticalScrollIndicator={false}
+        />
+      </SafeAreaView>
 
       {/* Menu Component */}
       <Menu 
         visible={menuVisible} 
         onClose={() => setMenuVisible(false)} 
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0F9F8",
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    backgroundColor: "#FEF3C7",
+  },
+  headerBackground: {
+    width: "100%",
+    height: 280,
+    backgroundColor: "#FEF3C7",
+  },
+  headerBackgroundImage: {
+    resizeMode: "cover",
+  },
+  headerSafeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   headerIcon: {
     padding: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 8,
   },
   headerTime: {
-    fontSize: 12,
-    color: "#D4AF37",
-    fontWeight: "500",
+    fontSize: 14,
+    color: "#065F46",
+    fontWeight: "600",
+  },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
   },
   recentCard: {
     backgroundColor: "#065F46",
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
+    marginHorizontal: 16,
+    marginTop: -100,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  recentHeader: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  recentIcon: {
-    marginRight: 12,
-  },
-  recentContent: {
-    flex: 1,
+    marginBottom: 12,
+    gap: 8,
   },
   recentTitle: {
     color: "#fff",
     fontSize: 14,
-    marginBottom: 4,
+    fontWeight: "500",
   },
   recentSurah: {
     color: "#fff",
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: "bold",
-    marginBottom: 4,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  recentFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   recentVerse: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: 14,
   },
   continueButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 8,
+    gap: 4,
   },
   continueText: {
-    color: "#fff",
+    color: "#D4AF37",
     fontSize: 14,
-    marginRight: 4,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    alignItems: "center",
-    marginBottom: 16,
-    height: 48,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: "#065F46",
+    fontWeight: "500",
   },
   tabsContainer: {
     flexDirection: "row",
-    backgroundColor: "#E0F2E9",
-    borderRadius: 12,
-    padding: 4,
+    backgroundColor: "transparent",
+    borderRadius: 0,
+    padding: 0,
     marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
   },
   tab: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 12,
     alignItems: "center",
-    borderRadius: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
   },
   activeTab: {
-    backgroundColor: "#065F46",
+    borderBottomColor: "#065F46",
   },
   tabText: {
     fontSize: 14,
-    color: "#10B981",
+    color: "#9CA3AF",
     fontWeight: "500",
   },
   activeTabText: {
-    color: "#fff",
+    color: "#065F46",
+    fontWeight: "600",
   },
   gridContainer: {
-    paddingBottom: 16,
+    paddingBottom: 100,
   },
   card: {
     flex: 1,
     margin: 6,
-    borderRadius: 12,
-    padding: 16,
-    minHeight: 120,
+    borderRadius: 16,
+    padding: 20,
+    minHeight: 100,
   },
   cardContent: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   surahNumber: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
-    marginRight: 8,
   },
   surahName: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "right",
     flex: 1,
   },
   verseCount: {
     fontSize: 12,
-  },
-  qiblaCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  qiblaContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  qiblaIcon: {
-    marginRight: 12,
-  },
-  qiblaTextContainer: {
-    flex: 1,
-  },
-  qiblaTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#065F46",
-    marginBottom: 4,
-  },
-  qiblaSubtitle: {
-    fontSize: 14,
-    color: "#10B981",
-  },
-  listeningCard: {
-    backgroundColor: "#F0FDF4",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#BBF7D0",
-  },
-  listeningIcon: {
-    marginRight: 12,
-  },
-  listeningContent: {
-    flex: 1,
-  },
-  listeningTitle: {
-    fontSize: 14,
-    color: "#065F46",
-    marginBottom: 4,
-  },
-  listeningSurah: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#10B981",
-  },
-  playSmallButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#10B981",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  quickActionsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  quickActionCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 80,
-  },
-  quickActionText: {
-    fontSize: 12,
-    color: "#065F46",
-    marginTop: 8,
-    fontWeight: "500",
+    textAlign: "right",
   },
 });
