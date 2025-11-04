@@ -15,6 +15,34 @@ import AudioService from '../services/AudioService';
 import recitersData from '../assets/reciters.json';
 import quranData from '../assets/Quran.json';
 
+const audioService = new AudioService();
+
+interface Verse {
+  id: number;
+  ar: string;
+  en: string;
+  filename: string;
+  path: string;
+  dir: string;
+  size: number;
+}
+
+interface Surah {
+  id: number;
+  name: string;
+  name_en: string;
+  name_translation: string;
+  words: number;
+  letters: number;
+  type: string;
+  type_en: string;
+  ar: string;
+  en: string;
+  array: Verse[];
+}
+
+const typedQuranData = quranData as Surah[];
+
 interface Reciter {
   id: string;
   name: string;
@@ -68,12 +96,12 @@ export default function Reciters() {
     try {
       // تحميل أول 10 سور
       for (let surahId = 0; surahId < 10; surahId++) {
-        const surah = quranData[surahId];
+        const surah = typedQuranData[surahId];
         const totalVerses = surah.array.length;
         
         setDownloadProgress({ current: surahId + 1, total: 10 });
 
-        await AudioService.downloadSurah(
+        await audioService.downloadSurah(
           reciter.apiPath,
           reciter.id,
           surahId + 1,
