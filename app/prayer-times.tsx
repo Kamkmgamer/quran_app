@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
+import PrayerTimesService, { PrayerTimesData, Coordinates, CalculationMethods, PrayerConfig, PrayerInfo } from '../services/PrayerTimesService';
 
 interface PrayerTime {
   name: string;
@@ -14,50 +15,64 @@ interface PrayerTime {
 
 export default function PrayerTimesScreen() {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
-  const [location, setLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [prayerTimesData, setPrayerTimesData] = useState<PrayerTimesData | null>(null);
+  const [prayerConfig, setPrayerConfig] = useState<PrayerConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [calculationMethod, setCalculationMethod] = useState<number>(CalculationMethods.EGYPT);
 
-  const prayerNames = useMemo(() => [
-    { arabic: 'الفجر', english: 'fajr', icon: 'sunny-outline' },
-    { arabic: 'الشروق', english: 'sunrise', icon: 'sunny' },
-    { arabic: 'الظهر', english: 'dhuhr', icon: 'partly-sunny' },
-    { arabic: 'العصر', english: 'asr', icon: 'cloudy-outline' },
-    { arabic: 'المغرب', english: 'maghrib', icon: 'moon-outline' },
-    { arabic: 'العشاء', english: 'isha', icon: 'moon' }
-  ], []);
-
-  const calculatePrayerTimes = useCallback((coords: {latitude: number, longitude: number}) => {
+  const processPrayerTimes = useCallback((data: PrayerTimesData, prayers: PrayerInfo[]) => {
     try {
-      // حساب مبسط لمواقيت الصلاة
+      if (!prayers || !Array.isArray(prayers)) {
+        console.error('Prayers array is undefined or not an array');
+        // Use fallback prayer data
+        const fallbackPrayers = [
+          { arabic: 'الفجر', english: 'fajr', icon: 'sunny-outline', order: 1 },
+          { arabic: 'الشروق', english: 'sunrise', icon: 'sunny', order: 2 },
+          { arabic: 'الظهر', english: 'dhuhr', icon: 'partly-sunny', order: 3 },
+          { arabic: 'العصر', english: 'asr', icon: 'cloudy-outline', order: 4 },
+          { arabic: 'المغرب', english: 'maghrib', icon: 'moon-outline', order: 5 },
+          { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 }
+        ];
+        
+        const fallbackTimes: PrayerTime[] = fallbackPrayers.map((prayer) => ({
+          name: prayer.arabic,
+          time: '--:--',
+          isNext: false,
+          icon: prayer.icon,
+        }));
+        
+        setPrayerTimes(fallbackTimes);
+        return;
+      }
+      
       const now = new Date();
-      const times: PrayerTime[] = prayerNames.map((prayer, index) => {
-        // حساب مبسط للمواقيت (يمكن تحسينه لاحقاً)
+      const times: PrayerTime[] = prayers.map((prayer) => {
         let timeString: string;
         
         switch (prayer.english) {
           case 'fajr':
-            timeString = '05:30';
+            timeString = data.fajr || '--:--';
             break;
           case 'sunrise':
-            timeString = '06:45';
+            timeString = data.sunrise || '--:--';
             break;
           case 'dhuhr':
-            timeString = '12:00';
+            timeString = data.dhuhr || '--:--';
             break;
           case 'asr':
-            timeString = '15:30';
+            timeString = data.asr || '--:--';
             break;
           case 'maghrib':
-            timeString = '18:15';
+            timeString = data.maghrib || '--:--';
             break;
           case 'isha':
-            timeString = '19:45';
+            timeString = data.isha || '--:--';
             break;
           default:
-            timeString = '00:00';
+            timeString = '--:--';
         }
 
         // تحديد الصلاة التالية
@@ -77,12 +92,31 @@ export default function PrayerTimesScreen() {
 
       setPrayerTimes(times);
     } catch (err) {
-      console.error('خطأ في حساب مواقيت الصلاة:', err);
-      setError('فشل في حساب مواقيت الصلاة');
+      console.error('خطأ في معالجة مواقيت الصلاة:', err);
+      setError('فشل في معالجة مواقيت الصلاة');
+      
+      // Set fallback prayer times to prevent app crash
+      const fallbackPrayers = [
+        { arabic: 'الفجر', english: 'fajr', icon: 'sunny-outline', order: 1 },
+        { arabic: 'الشروق', english: 'sunrise', icon: 'sunny', order: 2 },
+        { arabic: 'الظهر', english: 'dhuhr', icon: 'partly-sunny', order: 3 },
+        { arabic: 'العصر', english: 'asr', icon: 'cloudy-outline', order: 4 },
+        { arabic: 'المغرب', english: 'maghrib', icon: 'moon-outline', order: 5 },
+        { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 }
+      ];
+      
+      const fallbackTimes: PrayerTime[] = fallbackPrayers.map((prayer) => ({
+        name: prayer.arabic,
+        time: '--:--',
+        isNext: false,
+        icon: prayer.icon,
+      }));
+      
+      setPrayerTimes(fallbackTimes);
     }
-  }, [prayerNames]);
+  }, []);
 
-  const getLocationAndCalculatePrayerTimes = useCallback(async () => {
+  const getLocationAndFetchPrayerTimes = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -90,7 +124,8 @@ export default function PrayerTimesScreen() {
       // طلب إذن الوصول للموقع
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setError('يجب السماح بالوصول للموقع لحساب مواقيت الصلاة');
+        setError('يجب السماح بالوصول للموقع للحصول على مواقيت الصلاة');
+        setLoading(false);
         return;
       }
 
@@ -99,33 +134,115 @@ export default function PrayerTimesScreen() {
         accuracy: Location.Accuracy.Balanced,
       });
 
-      const coords = {
+      const coords: Coordinates = {
         latitude: locationResult.coords.latitude,
         longitude: locationResult.coords.longitude,
       };
 
-      setLocation(coords);
-      calculatePrayerTimes(coords);
+      // جلب إعدادات الصلوات ومواقيت الصلاة من API
+      try {
+        const config = await PrayerTimesService.getPrayerConfig(calculationMethod);
+        setPrayerConfig(config);
+        
+        const prayerData = await PrayerTimesService.getPrayerTimes(coords, calculationMethod);
+        setPrayerTimesData(prayerData);
+        // processPrayerTimes will be called by the useEffect when data is set
+      } catch (apiError) {
+        console.error('API Error:', apiError);
+        setError('فشل في جلب البيانات من الخادم. يرجى المحاولة مرة أخرى.');
+        
+        // Set fallback data to prevent app crash
+        const fallbackConfig = await PrayerTimesService.getPrayerConfig(calculationMethod);
+        setPrayerConfig(fallbackConfig);
+        
+        const fallbackData: PrayerTimesData = {
+          fajr: '--:--',
+          sunrise: '--:--',
+          dhuhr: '--:--',
+          asr: '--:--',
+          maghrib: '--:--',
+          isha: '--:--',
+          date: new Date().toLocaleDateString('ar-SA'),
+          timestamp: Date.now(),
+          method: {
+            id: 5,
+            name: 'Egyptian General Authority of Survey',
+            params: { Fajr: 19.5, Isha: 17.5 },
+          },
+          location: {
+            name: 'موقع غير معروف',
+            country: '',
+            coordinates: coords,
+          },
+        };
+        setPrayerTimesData(fallbackData);
+      }
     } catch (err) {
-      console.error('خطأ في الحصول على الموقع:', err);
-      setError('فشل في الحصول على الموقع. تأكد من تفعيل خدمات الموقع.');
+      console.error('خطأ في جلب مواقيت الصلاة:', err);
+      setError('فشل في جلب مواقيت الصلاة. تأكد من اتصال الإنترنت وحاول مرة أخرى.');
+      
+      // Set minimal fallback data
+      const minimalFallback: PrayerTimesData = {
+        fajr: '--:--',
+        sunrise: '--:--',
+        dhuhr: '--:--',
+        asr: '--:--',
+        maghrib: '--:--',
+        isha: '--:--',
+        date: new Date().toLocaleDateString('ar-SA'),
+        timestamp: Date.now(),
+        method: {
+          id: 5,
+          name: 'Egyptian General Authority of Survey',
+          params: { Fajr: 19.5, Isha: 17.5 },
+        },
+        location: {
+          name: 'موقع غير معروف',
+          country: '',
+          coordinates: { latitude: 0, longitude: 0 },
+        },
+      };
+      setPrayerTimesData(minimalFallback);
     } finally {
       setLoading(false);
     }
-  }, [calculatePrayerTimes]);
+  }, [calculationMethod]);
 
+  // جلب مواقيت الصلاة عند تحميل المكون
   useEffect(() => {
-    getLocationAndCalculatePrayerTimes();
-    
-    // تحديث الوقت كل دقيقة
+    getLocationAndFetchPrayerTimes();
+  }, []); // Empty dependency array - only run once on mount
+
+  // تحديث الوقت كل دقيقة وإعادة حساب الصلاة التالية
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 60000);
 
     return () => clearInterval(timer);
-  }, [getLocationAndCalculatePrayerTimes]);
+  }, []);
+
+  // إعادة حساب الصلاة التالية عند تغير البيانات
+  useEffect(() => {
+    if (prayerTimesData && prayerConfig) {
+      processPrayerTimes(prayerTimesData, prayerConfig.prayers);
+    }
+  }, [prayerTimesData, prayerConfig, processPrayerTimes]);
+
+  const getCurrentTimeString = () => {
+    return currentTime.toLocaleTimeString('ar-SA', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+  };
 
   const formatTime = (timeString: string) => {
+    // If the time is already in HH:MM format, just return it
+    if (timeString.includes(':') && !timeString.includes('ص') && !timeString.includes('م')) {
+      return timeString;
+    }
+    
     const [hours, minutes] = timeString.split(':');
     const hour = parseInt(hours);
     const minute = parseInt(minutes);
@@ -139,22 +256,15 @@ export default function PrayerTimesScreen() {
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await getLocationAndCalculatePrayerTimes();
-    setRefreshing(false);
-  };
-
-  const getCurrentTimeString = () => {
-    return currentTime.toLocaleTimeString('ar-SA', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-  };
-
   const getNextPrayer = () => {
     return prayerTimes.find(prayer => prayer.isNext);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await PrayerTimesService.clearCache(); // Clear cache to force fresh data
+    await getLocationAndFetchPrayerTimes();
+    setRefreshing(false);
   };
 
   const renderHeader = () => (
@@ -176,7 +286,7 @@ export default function PrayerTimesScreen() {
         {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#065F46" />
-          <Text style={styles.loadingText}>جاري تحديد الموقع وحساب مواقيت الصلاة...</Text>
+          <Text style={styles.loadingText}>جاري تحديد الموقع وجلب مواقيت الصلاة...</Text>
         </View>
       </SafeAreaView>
     );
@@ -190,7 +300,7 @@ export default function PrayerTimesScreen() {
           <Ionicons name="location-outline" size={48} color="#EF4444" />
           <Text style={styles.errorTitle}>خطأ في الموقع</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={getLocationAndCalculatePrayerTimes}>
+          <TouchableOpacity style={styles.retryButton} onPress={getLocationAndFetchPrayerTimes}>
             <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
           </TouchableOpacity>
         </View>
@@ -212,7 +322,7 @@ export default function PrayerTimesScreen() {
         {/* Header Info */}
         <View style={styles.headerInfoCard}>
           <Text style={styles.headerInfoLabel}>الوقت الحالي</Text>
-          <Text style={styles.currentTime}>{formatTime(getCurrentTimeString())}</Text>
+          <Text style={styles.currentTime}>{getCurrentTimeString()}</Text>
         </View>
 
         {/* Next Prayer Card */}
@@ -233,19 +343,34 @@ export default function PrayerTimesScreen() {
         <View style={styles.prayerTimesContainer}>
           <Text style={styles.sectionTitle}>جميع مواقيت الصلاة</Text>
           {prayerTimes.map((prayer, index) => (
-            <View
+            <TouchableOpacity
               key={index}
               style={[
-                styles.prayerTimeRow,
-                prayer.isNext && styles.nextPrayerRow,
+                styles.prayerCard,
+                prayer.isNext && styles.nextPrayerCard,
               ]}
+              onPress={() => router.push({
+                pathname: './prayer-detail',
+                params: {
+                  prayerName: prayer.name,
+                  prayerTime: prayer.time,
+                  prayerIcon: prayer.icon,
+                  isNext: prayer.isNext.toString(),
+                }
+              } as any)}
+              activeOpacity={0.8}
             >
               <View style={styles.prayerInfo}>
-                <Ionicons 
-                  name={prayer.icon as any} 
-                  size={24} 
-                  color={prayer.isNext ? '#D4AF37' : '#10B981'} 
-                />
+                <View style={[
+                  styles.prayerIconContainer,
+                  prayer.isNext && styles.nextPrayerIconContainer
+                ]}>
+                  <Ionicons 
+                    name={prayer.icon as any} 
+                    size={24} 
+                    color={prayer.isNext ? '#D4AF37' : '#10B981'} 
+                  />
+                </View>
                 <Text
                   style={[
                     styles.prayerName,
@@ -255,27 +380,46 @@ export default function PrayerTimesScreen() {
                   {prayer.name}
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.prayerTime,
-                  prayer.isNext && styles.nextPrayerTime,
-                ]}
-              >
-                {formatTime(prayer.time)}
-              </Text>
-            </View>
+              <View style={styles.prayerTimeContainer}>
+                <Text
+                  style={[
+                    styles.prayerTime,
+                    prayer.isNext && styles.nextPrayerTime,
+                  ]}
+                >
+                  {formatTime(prayer.time)}
+                </Text>
+                <Ionicons 
+                  name="chevron-forward" 
+                  size={16} 
+                  color={prayer.isNext ? '#D4AF37' : '#9CA3AF'} 
+                  style={styles.chevronIcon}
+                />
+              </View>
+            </TouchableOpacity>
           ))}
         </View>
 
         {/* Location Info */}
-        {location && (
+        {prayerTimesData?.location && (
           <View style={styles.locationCard}>
             <Ionicons name="location" size={20} color="#10B981" />
             <Text style={styles.locationText}>
-              الموقع: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+              الموقع: {prayerTimesData.location.name} {prayerTimesData.location.country && `- ${prayerTimesData.location.country}`}
             </Text>
           </View>
         )}
+
+        {/* Data Source Info */}
+        <View style={styles.dataSourceCard}>
+          <Ionicons name="cloud-outline" size={16} color="#6B7280" />
+          <Text style={styles.dataSourceText}>
+            مصدر البيانات: AlAdhan API • {prayerTimesData?.method?.name || 'المصرية العامة للمساحة'} • {prayerTimesData?.date || ''}
+          </Text>
+          <Text style={styles.dataSourceSubText}>
+            زاوية الفجر: {prayerTimesData?.method?.params?.Fajr || '19.5'}° • زاوية العشاء: {prayerTimesData?.method?.params?.Isha || '17.5'}°
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -375,7 +519,7 @@ const styles = StyleSheet.create({
     color: '#10B981',
     fontWeight: '500',
   },
-  nextPrayerCard: {
+  nextPrayerCardOld: {
     backgroundColor: '#065F46',
     borderRadius: 16,
     padding: 20,
@@ -394,17 +538,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 4,
   },
-  nextPrayerName: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  nextPrayerTime: {
-    color: '#D4AF37',
-    fontSize: 18,
-    fontWeight: '600',
-  },
   prayerTimesContainer: {
     marginBottom: 20,
   },
@@ -414,38 +547,77 @@ const styles = StyleSheet.create({
     color: '#065F46',
     marginBottom: 12,
   },
-  prayerTimeRow: {
+  prayerCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 8,
-    elevation: 2,
+    borderRadius: 16,
+    marginBottom: 12,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  nextPrayerRow: {
+  nextPrayerCard: {
     backgroundColor: '#065F46',
+    borderColor: '#047857',
+    elevation: 4,
+    shadowColor: '#047857',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  nextPrayerName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  nextPrayerTime: {
+    color: '#D4AF37',
+    fontSize: 16,
+    fontWeight: '700',
   },
   prayerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+  },
+  prayerIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  nextPrayerIconContainer: {
+    backgroundColor: '#064E3B',
   },
   prayerName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#065F46',
-    marginLeft: 12,
+    flex: 1,
+  },
+  prayerTimeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   prayerTime: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#10B981',
+    marginRight: 8,
+  },
+  chevronIcon: {
+    opacity: 0.6,
   },
   locationCard: {
     flexDirection: 'row',
@@ -459,5 +631,27 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 12,
     color: '#6B7280',
+  },
+  dataSourceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  dataSourceText: {
+    marginLeft: 6,
+    fontSize: 11,
+    color: '#6B7280',
+    fontStyle: 'italic',
+  },
+  dataSourceSubText: {
+    marginLeft: 22,
+    fontSize: 10,
+    color: '#9CA3AF',
+    marginTop: 2,
   },
 });
