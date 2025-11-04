@@ -6,7 +6,6 @@ import {
   Image,
   Dimensions,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -28,12 +27,11 @@ const DEFAULT_LNG = 46.6753;
 export default function QiblaCompass() {
   const [deviceOrientation, setDeviceOrientation] = useState(0); // اتجاه الجهاز بالنسبة للشمال بالدرجات
   const [qiblaDirection, setQiblaDirection] = useState(0); // اتجاه القبلة من الموقع بالدرجات (0..360, بالنسبة للشمال)
-  const [isCalibrated, setIsCalibrated] = useState(false);
+  const [isCalibrated] = useState(false);
   const [userLocation, setUserLocation] = useState({
     lat: DEFAULT_LAT,
     lng: DEFAULT_LNG,
   });
-  const [locationPermission, setLocationPermission] = useState(false);
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
 
@@ -65,7 +63,6 @@ export default function QiblaCompass() {
           return;
         }
 
-        setLocationPermission(true);
         const location = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.High,
         });
@@ -73,7 +70,7 @@ export default function QiblaCompass() {
         const { latitude, longitude } = location.coords;
         setUserLocation({ lat: latitude, lng: longitude });
         setLocationLoading(false);
-      } catch (error) {
+      } catch {
         setLocationError('فشل في الحصول على الموقع');
         setLocationLoading(false);
       }
@@ -116,17 +113,6 @@ export default function QiblaCompass() {
     const qiblaAngle = calculateQiblaDirection(userLocation.lat, userLocation.lng);
     setQiblaDirection(qiblaAngle);
   }, [userLocation]);
-
-  const handleCalibrate = () => {
-    Alert.alert(
-      'معايرة البوصلة',
-      'قم بتحريك الجهاز على شكل رقم 8 عدة مرات لمعايرة البوصلة',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        { text: 'تم', onPress: () => setIsCalibrated(true) },
-      ]
-    );
-  };
 
   // الحصول على الزاوية النسبية بين اتجاه القبلة واتجاه الجهاز
   // نتيجة: قيمة بين 0 و 360 تمثل الاتجاه الذي يجب تدوير العنصر إليه بالنسبة للعرض الأفقي (0 = أعلى الشاشة)
