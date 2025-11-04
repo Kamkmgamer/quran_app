@@ -5,7 +5,16 @@ import AudioService from '../../services/AudioService';
 import StorageService from '../../services/StorageService';
 
 // Mock the services
-jest.mock('../../services/AudioService');
+jest.mock('../../services/AudioService', () => {
+  return jest.fn().mockImplementation(() => ({
+    setOnPlaybackStatusUpdate: jest.fn(),
+    loadAndPlayVerse: jest.fn(),
+    togglePlayPause: jest.fn(),
+    setPlaybackSpeed: jest.fn(),
+    seekTo: jest.fn(),
+    stop: jest.fn(),
+  }));
+});
 jest.mock('../../services/StorageService');
 jest.mock('../../assets/Quran.json', () => [
   {
@@ -39,8 +48,11 @@ jest.mock('../../assets/reciters.json', () => ({
   ],
 }));
 
-const mockAudioService = AudioService as jest.Mocked<typeof AudioService>;
+const mockAudioService = AudioService as jest.MockedClass<typeof AudioService>;
 const mockStorageService = StorageService as jest.Mocked<typeof StorageService>;
+
+// Helper to get mock instance
+const getMockInstance = () => mockAudioService.mock.instances[0] as any;
 
 // Test component to use the context
 const TestComponent: React.FC<{ onContext?: (context: any) => void }> = ({ onContext }) => {
@@ -67,14 +79,17 @@ describe('AudioPlayerContext', () => {
       selectedReciter: 'abdul_basit',
     });
     mockStorageService.getLastPosition.mockResolvedValue(null);
-    mockAudioService.setOnPlaybackStatusUpdate.mockImplementation(() => {});
-    mockAudioService.loadAndPlayVerse.mockResolvedValue();
-    mockAudioService.togglePlayPause.mockResolvedValue();
-    mockAudioService.playNext.mockResolvedValue();
-    mockAudioService.playPrevious.mockResolvedValue();
-    mockAudioService.setPlaybackSpeed.mockResolvedValue();
-    mockAudioService.seekTo.mockResolvedValue();
-    mockAudioService.stop.mockResolvedValue();
+    
+    // Setup AudioService instance mocks
+    const mockInstance = getMockInstance();
+    if (mockInstance) {
+      mockInstance.setOnPlaybackStatusUpdate.mockImplementation(() => {});
+      mockInstance.loadAndPlayVerse.mockResolvedValue();
+      mockInstance.togglePlayPause.mockResolvedValue();
+      mockInstance.setPlaybackSpeed.mockResolvedValue();
+      mockInstance.seekTo.mockResolvedValue();
+      mockInstance.stop.mockResolvedValue();
+    }
   });
 
   it('should provide audio player context', async () => {
@@ -116,7 +131,7 @@ describe('AudioPlayerContext', () => {
     );
 
     await waitFor(() => {
-      expect(mockAudioService.setOnPlaybackStatusUpdate).toHaveBeenCalled();
+      expect(getMockInstance().setOnPlaybackStatusUpdate).toHaveBeenCalled();
     });
   });
 
@@ -137,7 +152,7 @@ describe('AudioPlayerContext', () => {
       await contextValue.playVerse(1, 5, true);
     });
 
-    expect(mockAudioService.loadAndPlayVerse).toHaveBeenCalledWith(
+    expect(getMockInstance().loadAndPlayVerse).toHaveBeenCalledWith(
       'Abdul_Basit_Murattal_192kbps',
       'abdul_basit',
       1,
@@ -163,7 +178,7 @@ describe('AudioPlayerContext', () => {
       await contextValue.togglePlayPause();
     });
 
-    expect(mockAudioService.togglePlayPause).toHaveBeenCalled();
+    expect(getMockInstance().togglePlayPause).toHaveBeenCalled();
   });
 
   it('should play next verse correctly', async () => {
@@ -188,7 +203,7 @@ describe('AudioPlayerContext', () => {
       await contextValue.playNext();
     });
 
-    expect(mockAudioService.loadAndPlayVerse).toHaveBeenCalledWith(
+    expect(getMockInstance().loadAndPlayVerse).toHaveBeenCalledWith(
       'Abdul_Basit_Murattal_192kbps',
       'abdul_basit',
       1,
@@ -219,7 +234,7 @@ describe('AudioPlayerContext', () => {
       await contextValue.playPrevious();
     });
 
-    expect(mockAudioService.loadAndPlayVerse).toHaveBeenCalledWith(
+    expect(getMockInstance().loadAndPlayVerse).toHaveBeenCalledWith(
       'Abdul_Basit_Murattal_192kbps',
       'abdul_basit',
       1,
@@ -245,7 +260,7 @@ describe('AudioPlayerContext', () => {
       await contextValue.setPlaybackSpeed(1.5);
     });
 
-    expect(mockAudioService.setPlaybackSpeed).toHaveBeenCalledWith(1.5);
+    expect(getMockInstance().setPlaybackSpeed).toHaveBeenCalledWith(1.5);
     expect(mockStorageService.savePreferences).toHaveBeenCalledWith(
       expect.objectContaining({ playbackSpeed: 1.5 })
     );
@@ -312,7 +327,7 @@ describe('AudioPlayerContext', () => {
       await contextValue.seekTo(5000);
     });
 
-    expect(mockAudioService.seekTo).toHaveBeenCalledWith(5000);
+    expect(getMockInstance().seekTo).toHaveBeenCalledWith(5000);
   });
 
   it('should stop playback correctly', async () => {
@@ -332,7 +347,7 @@ describe('AudioPlayerContext', () => {
       await contextValue.stop();
     });
 
-    expect(mockAudioService.stop).toHaveBeenCalled();
+    expect(getMockInstance().stop).toHaveBeenCalled();
   });
 
   it('should resume last position correctly', async () => {
@@ -361,7 +376,7 @@ describe('AudioPlayerContext', () => {
       await contextValue.resumeLastPosition();
     });
 
-    expect(mockAudioService.loadAndPlayVerse).toHaveBeenCalledWith(
+    expect(getMockInstance().loadAndPlayVerse).toHaveBeenCalledWith(
       'Abdul_Basit_Murattal_192kbps',
       'abdul_basit',
       1,
@@ -374,7 +389,7 @@ describe('AudioPlayerContext', () => {
     let contextValue: any = null;
     let statusUpdateCallback: any = null;
 
-    mockAudioService.setOnPlaybackStatusUpdate.mockImplementation((callback) => {
+    getMockInstance().setOnPlaybackStatusUpdate.mockImplementation((callback: any) => {
       statusUpdateCallback = callback;
     });
 
@@ -408,7 +423,7 @@ describe('AudioPlayerContext', () => {
     let contextValue: any = null;
     let statusUpdateCallback: any = null;
 
-    mockAudioService.setOnPlaybackStatusUpdate.mockImplementation((callback) => {
+    getMockInstance().setOnPlaybackStatusUpdate.mockImplementation((callback: any) => {
       statusUpdateCallback = callback;
     });
 
@@ -429,7 +444,7 @@ describe('AudioPlayerContext', () => {
     });
 
     // Clear mock calls
-    mockAudioService.loadAndPlayVerse.mockClear();
+    getMockInstance().loadAndPlayVerse.mockClear();
 
     // Simulate verse finished
     act(() => {
@@ -442,7 +457,7 @@ describe('AudioPlayerContext', () => {
     });
 
     // Should repeat the same verse
-    expect(mockAudioService.loadAndPlayVerse).toHaveBeenCalledWith(
+    expect(getMockInstance().loadAndPlayVerse).toHaveBeenCalledWith(
       'Abdul_Basit_Murattal_192kbps',
       'abdul_basit',
       1,
