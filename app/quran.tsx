@@ -101,6 +101,14 @@ export default function Quran() {
     );
   };
 
+  // تحديد ما إذا كانت الآية هي الآية الحالية قيد التشغيل (بغض النظر عن حالة التشغيل)
+  const isCurrentVerse = (verseIndex: number) => {
+    return (
+      state.currentSurahId === Number(surah) &&
+      state.currentVerseId === verseIndex + 1
+    );
+  };
+
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
@@ -180,21 +188,33 @@ export default function Quran() {
             
             {/* Verses */}
             <Text style={styles.versesContainer}>
-              {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => (
-                <Text
-                  key={index}
-                  onLongPress={() => showActionSheet(index)}
-                  style={[
-                    styles.verseText,
-                    isVerseActive(index) && styles.verseTextActive
-                  ]}
-                >
-                  {item.ar}
-                  <Text style={styles.verseNumberInline}>
-                    {" "}﴿{index + 1}﴾{" "}
+              {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => {
+                const words = String(item.ar || '').trim().split(/\s+/);
+                const active = isVerseActive(index);
+                const ratio = state.duration > 0 ? Math.min(0.9999, Math.max(0, state.position / state.duration)) : 0;
+                // Don't highlight if we're at the very end (about to transition to next verse) or at the very beginning (transitioning in)
+                const isAtVerseEnd = ratio > 0.90;
+                const isAtVerseStart = ratio < 0.02;
+                const activeWordIndex = active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart ? Math.min(words.length - 1, Math.floor(ratio * (words.length + 0.5))) : -1;
+                const isWordActive = (i: number) => active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart && i >= activeWordIndex - 2 && i <= activeWordIndex;
+                return (
+                  <Text
+                    key={index}
+                    onLongPress={() => showActionSheet(index)}
+                    style={styles.verseText}
+                  >
+                    {words.map((w: string, i: number) => (
+                      <Text key={`${index}-${i}`} style={isWordActive(i) ? styles.wordActive : undefined}>
+                        {w}
+                        <Text> </Text>
+                      </Text>
+                    ))}
+                    <Text style={styles.verseNumberInline}>
+                      {" "}﴿{index + 1}﴾{" "}
+                    </Text>
                   </Text>
-                </Text>
-              ))}
+                );
+              })}
             </Text>
           </View>
         </ScrollView>
@@ -389,11 +409,10 @@ const styles = StyleSheet.create({
     lineHeight: 48,
     fontFamily: "System",
   },
-  verseTextActive: {
+  wordActive: {
     color: "#065F46",
     backgroundColor: "#F0FDF4",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 4,
     borderRadius: 4,
   },
   verseNumberInline: {

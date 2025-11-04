@@ -86,7 +86,25 @@ export default function Player() {
       <View style={styles.verseContainer}>
         <Text style={styles.verseNumber}>الآية {state.currentVerseId}</Text>
         <ScrollView style={styles.verseScrollView}>
-          <Text style={styles.verseText}>{currentVerse.ar}</Text>
+          <Text style={styles.verseText}>
+            {String(currentVerse.ar || '')
+              .trim()
+              .split(/\s+/)
+              .map((w: string, i: number, arr: string[]) => {
+                const ratio = state.duration > 0 ? Math.min(0.9999, Math.max(0, state.position / state.duration)) : 0;
+                // Don't highlight if we're at the very end (about to transition to next verse) or at the very beginning (transitioning in)
+                const isAtVerseEnd = ratio > 0.90;
+                const isAtVerseStart = ratio < 0.02;
+                const activeIndex = state.isPlaying && !isAtVerseEnd && !isAtVerseStart ? Math.min(arr.length - 1, Math.floor(ratio * (arr.length + 0.5))) : -1;
+                const isActive = state.isPlaying && !isAtVerseEnd && !isAtVerseStart && i >= activeIndex - 2 && i <= activeIndex;
+                return (
+                  <Text key={i} style={isActive ? styles.wordActive : undefined}>
+                    {w}
+                    <Text> </Text>
+                  </Text>
+                );
+              })}
+          </Text>
         </ScrollView>
       </View>
 
@@ -334,6 +352,12 @@ const styles = StyleSheet.create({
     color: '#065F46',
     textAlign: 'center',
     lineHeight: 40,
+  },
+  wordActive: {
+    color: '#065F46',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 4,
+    borderRadius: 4,
   },
   reciterButton: {
     backgroundColor: '#fff',
