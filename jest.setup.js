@@ -1,3 +1,5 @@
+/* global jest */
+
 import 'react-native-gesture-handler/jestSetup';
 
 // Mock expo-av
