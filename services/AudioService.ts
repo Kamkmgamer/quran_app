@@ -36,7 +36,7 @@ class AudioService {
 
   // بناء رابط الصوت من Everyayah API
   private buildAudioUrl(reciterPath: string, surahId: number, verseId: number): string {
-    const surahPadded = surahId.toString().padStart(3, '0');
+    const surahPadded = (surahId + 1).toString().padStart(3, '0');
     const versePadded = verseId.toString().padStart(3, '0');
     return `https://everyayah.com/data/${reciterPath}/${surahPadded}${versePadded}.mp3`;
   }
