@@ -144,6 +144,12 @@ android {
             useLegacyPackaging (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
         }
     }
+
+    configurations.all {
+        resolutionStrategy {
+            force 'org.xerial:sqlite-jdbc:3.43.0.0'
+        }
+    }
 }
 
 // Apply static values from `gradle.properties` to the `android.packagingOptions`

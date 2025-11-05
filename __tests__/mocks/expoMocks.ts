@@ -109,7 +109,7 @@ export const mockClipboard = {
 export const mockConstants = {
   expoConfig: {
     name: 'QuranApp',
-    slug: 'Huda-AlQuran',
+    slug: 'قرآن',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
