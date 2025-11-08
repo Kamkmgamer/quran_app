@@ -1,3 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router, useFocusEffect } from 'expo-router';
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -8,10 +11,8 @@ import {
   ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path } from 'react-native-svg';
+
 import quranImport from '../assets/Quran.json';
 
 const quran = quranImport as any[];
@@ -58,7 +59,7 @@ export default function Bookmarks() {
   useFocusEffect(
     useCallback(() => {
       loadBookmarks();
-    }, [])
+    }, []),
   );
 
   const removeBookmark = async (id: string) => {
