@@ -1,4 +1,5 @@
 import { Audio } from 'expo-av';
+
 import StorageService from './StorageService';
 
 export interface VerseAudio {
@@ -19,7 +20,7 @@ class AudioService {
   // تهيئة إعدادات الصوت
   private async initializeAudio() {
     if (this.isInitialized) return;
-    
+
     try {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
@@ -47,12 +48,12 @@ class AudioService {
     reciterId: string,
     surahId: number,
     verseId: number,
-    autoPlay: boolean = true
+    autoPlay: boolean = true,
   ): Promise<void> {
     try {
       // تهيئة Audio عند أول استخدام
       await this.initializeAudio();
-      
+
       // إيقاف التشغيل الحالي إن وجد
       if (this.sound) {
         await this.sound.unloadAsync();
@@ -68,12 +69,12 @@ class AudioService {
       // تحميل الصوت
       const { sound } = await Audio.Sound.createAsync(
         audioSource,
-        { 
+        {
           shouldPlay: autoPlay,
           rate: this.playbackSpeed,
           shouldCorrectPitch: true,
         },
-        (status) => this.onStatusUpdate(status)
+        (status) => this.onStatusUpdate(status),
       );
 
       this.sound = sound;
@@ -233,7 +234,7 @@ class AudioService {
     reciterId: string,
     surahId: number,
     verseId: number,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
   ): Promise<boolean> {
     try {
       const url = this.buildAudioUrl(reciterPath, surahId, verseId);
@@ -242,7 +243,7 @@ class AudioService {
         reciterId,
         surahId,
         verseId,
-        onProgress
+        onProgress,
       );
       return result !== null;
     } catch (error) {
@@ -257,7 +258,7 @@ class AudioService {
     reciterId: string,
     surahId: number,
     totalVerses: number,
-    onProgress?: (current: number, total: number) => void
+    onProgress?: (current: number, total: number) => void,
   ): Promise<boolean> {
     try {
       for (let verseId = 1; verseId <= totalVerses; verseId++) {
@@ -265,9 +266,9 @@ class AudioService {
           reciterPath,
           reciterId,
           surahId,
-          verseId
+          verseId,
         );
-        
+
         if (onProgress) {
           onProgress(verseId, totalVerses);
         }

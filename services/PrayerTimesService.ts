@@ -81,7 +81,7 @@ class PrayerTimesService {
     try {
       // Using OpenStreetMap Nominatim API for reverse geocoding (free)
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.latitude}&lon=${coordinates.longitude}&accept-language=ar`
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.latitude}&lon=${coordinates.longitude}&accept-language=ar`,
       );
 
       if (!response.ok) {
@@ -89,16 +89,16 @@ class PrayerTimesService {
       }
 
       const data = await response.json();
-      
+
       if (data && data.address) {
         const city = data.address.city || data.address.town || data.address.village || data.address.suburb || '';
         const country = data.address.country || '';
         return {
           name: city || 'موقع غير معروف',
-          country: country || ''
+          country: country || '',
         };
       }
-      
+
       return { name: 'موقع غير معروف', country: '' };
     } catch (error) {
       console.error('Error getting location name:', error);
@@ -116,7 +116,7 @@ class PrayerTimesService {
         { arabic: 'الظهر', english: 'dhuhr', icon: 'sunny', order: 3 },              // Noon (sun at peak)
         { arabic: 'العصر', english: 'asr', icon: 'partly-sunny', order: 4 },         // Afternoon (sun descending)
         { arabic: 'المغرب', english: 'maghrib', icon: 'partly-sunny-outline', order: 5 }, // Sunset/Dusk
-        { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 }                // Night (darkness)
+        { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 },                // Night (darkness)
       ];
 
       // Get method info with fallback
@@ -146,7 +146,7 @@ class PrayerTimesService {
           { arabic: 'الظهر', english: 'dhuhr', icon: 'sunny', order: 3 },
           { arabic: 'العصر', english: 'asr', icon: 'partly-sunny', order: 4 },
           { arabic: 'المغرب', english: 'maghrib', icon: 'partly-sunny-outline', order: 5 },
-          { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 }
+          { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 },
         ],
         method: {
           id: 5,
@@ -167,7 +167,7 @@ class PrayerTimesService {
 
       // Fetch from API with specified method for more accurate Fajr and Isha times
       const response = await fetch(
-        `${this.API_BASE_URL}/timings/${this.getTodayDate()}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&method=${method}`
+        `${this.API_BASE_URL}/timings/${this.getTodayDate()}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&method=${method}`,
       );
 
       if (!response.ok) {
@@ -175,9 +175,9 @@ class PrayerTimesService {
       }
 
       const data = await response.json();
-      
+
       if (data.code !== 200 || data.status !== 'OK') {
-        throw new Error('API returned error: ' + (data.data || 'Unknown error'));
+        throw new Error(`API returned error: ${data.data || 'Unknown error'}`);
       }
 
       const timings = data.data.timings;
@@ -202,18 +202,18 @@ class PrayerTimesService {
 
       // Cache the data
       await this.cacheData(coordinates, prayerTimes, method);
-      
+
       return prayerTimes;
     } catch (error) {
       console.error('Error fetching prayer times:', error);
-      
+
       // Try to return stale cache if available
       const staleData = await this.getStaleCache(coordinates);
       if (staleData) {
         console.warn('Using stale cache data due to API failure');
         return staleData;
       }
-      
+
       throw error;
     }
   }
@@ -262,7 +262,7 @@ class PrayerTimesService {
     try {
       const cacheString = await AsyncStorage.getItem(this.CACHE_KEY);
       const cache = cacheString ? JSON.parse(cacheString) : {};
-      
+
       const locationKey = this.getLocationKey(coordinates, method);
       cache[locationKey] = {
         data,
@@ -293,20 +293,20 @@ class PrayerTimesService {
   private async getMethodInfo(methodId: number): Promise<{ id: number; name: string; params: any }> {
     try {
       const response = await fetch(`${this.API_BASE_URL}/methods`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       if (data.code !== 200 || data.status !== 'OK') {
-        throw new Error('API returned error: ' + (data.data || 'Unknown error'));
+        throw new Error(`API returned error: ${data.data || 'Unknown error'}`);
       }
 
       const methods = data.data;
       const methodKey = Object.keys(methods).find(key => methods[key].id === methodId);
-      
+
       if (methodKey && methods[methodKey]) {
         return {
           id: methods[methodKey].id,
@@ -314,7 +314,7 @@ class PrayerTimesService {
           params: methods[methodKey].params,
         };
       }
-      
+
       // Fallback to Egyptian method if not found
       return {
         id: 5,
@@ -335,15 +335,15 @@ class PrayerTimesService {
   async getAvailableCalculationMethods(): Promise<CalculationMethod[]> {
     try {
       const response = await fetch(`${this.API_BASE_URL}/methods`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       if (data.code !== 200 || data.status !== 'OK') {
-        throw new Error('API returned error: ' + (data.data || 'Unknown error'));
+        throw new Error(`API returned error: ${data.data || 'Unknown error'}`);
       }
 
       const methods = Object.entries(data.data).map(([key, value]: [string, any]) => ({
@@ -378,7 +378,7 @@ class PrayerTimesService {
     try {
       const dateString = this.formatDate(date);
       const response = await fetch(
-        `${this.API_BASE_URL}/timings/${dateString}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&method=5`
+        `${this.API_BASE_URL}/timings/${dateString}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&method=5`,
       );
 
       if (!response.ok) {
@@ -386,9 +386,9 @@ class PrayerTimesService {
       }
 
       const data = await response.json();
-      
+
       if (data.code !== 200 || data.status !== 'OK') {
-        throw new Error('API returned error: ' + (data.data || 'Unknown error'));
+        throw new Error(`API returned error: ${data.data || 'Unknown error'}`);
       }
 
       const timings = data.data.timings;
