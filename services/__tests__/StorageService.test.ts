@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
+
 import StorageService, { LastPosition, UserPreferences, DownloadedAudio } from '../StorageService';
 
 // Mock the modules
@@ -27,7 +28,7 @@ describe('StorageService', () => {
 
       expect(mockAsyncStorage.setItem).toHaveBeenCalledWith(
         '@quran_last_position',
-        JSON.stringify(mockPosition)
+        JSON.stringify(mockPosition),
       );
     });
 
@@ -93,7 +94,7 @@ describe('StorageService', () => {
 
       expect(mockAsyncStorage.setItem).toHaveBeenCalledWith(
         '@quran_preferences',
-        JSON.stringify(mockPreferences)
+        JSON.stringify(mockPreferences),
       );
     });
 
@@ -178,7 +179,7 @@ describe('StorageService', () => {
             surahs: [2, 3, 1],
             totalSize: 3072,
           },
-        })
+        }),
       );
     });
 
@@ -198,7 +199,7 @@ describe('StorageService', () => {
             surahs: [1],
             totalSize: 1024,
           },
-        })
+        }),
       );
     });
   });
