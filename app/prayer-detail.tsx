@@ -1,8 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, router } from 'expo-router';
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, router } from 'expo-router';
 
 interface PrayerDetailParams {
   prayerName: string;
@@ -16,7 +16,7 @@ export default function PrayerDetailScreen() {
   const { prayerName, prayerTime, prayerIcon, isNext } = params;
   const [timeLeft, setTimeLeft] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
-  
+
   // Animation values wrapped in useMemo
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
   const scaleAnim = useMemo(() => new Animated.Value(0.8), []);
@@ -52,7 +52,7 @@ export default function PrayerDetailScreen() {
             duration: 1000,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
       pulseAnimation.start();
 
@@ -73,7 +73,7 @@ export default function PrayerDetailScreen() {
       }
 
       const difference = prayerDate.getTime() - now.getTime();
-      
+
       if (difference > 0) {
         const hoursLeft = Math.floor(difference / (1000 * 60 * 60));
         const minutesLeft = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
@@ -113,7 +113,7 @@ export default function PrayerDetailScreen() {
     const [hours, minutes] = time.split(':');
     const hour = parseInt(hours);
     const minute = parseInt(minutes);
-    
+
     if (hour >= 12) {
       const displayHour = hour === 12 ? 12 : hour - 12;
       return `${displayHour}:${minute.toString().padStart(2, '0')} ${hour >= 12 ? 'م' : 'ص'}`;
@@ -138,7 +138,7 @@ export default function PrayerDetailScreen() {
         <View style={styles.header}>
           <Animated.View style={{ opacity: fadeAnim }}>
             <View style={styles.headerContent}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => router.back()}
               >
@@ -171,10 +171,10 @@ export default function PrayerDetailScreen() {
             ]}
           >
             <View style={styles.prayerIconContainer}>
-              <Ionicons 
-                name={prayerIcon as any} 
-                size={48} 
-                color={getPrayerColor()} 
+              <Ionicons
+                name={prayerIcon as any}
+                size={48}
+                color={getPrayerColor()}
               />
             </View>
             <Text style={[styles.prayerName, { color: getPrayerColor() }]}>
@@ -213,13 +213,13 @@ export default function PrayerDetailScreen() {
           {/* Prayer Status */}
           <Animated.View style={[styles.statusCard, { opacity: fadeAnim }]}>
             <View style={styles.statusContent}>
-              <Ionicons 
-                name={isNext === 'true' ? 'notifications' : 'checkmark-circle'} 
-                size={20} 
-                color={isNext === 'true' ? '#D4AF37' : '#10B981'} 
+              <Ionicons
+                name={isNext === 'true' ? 'notifications' : 'checkmark-circle'}
+                size={20}
+                color={isNext === 'true' ? '#D4AF37' : '#10B981'}
               />
               <Text style={styles.statusText}>
-                {isNext === 'true' 
+                {isNext === 'true'
                   ? 'هذه هي الصلاة التالية، استعد لأداء الصلاة في وقتها'
                   : 'تم تحديد وقت هذه الصلاة بناءً على موقعك الحالي'
                 }

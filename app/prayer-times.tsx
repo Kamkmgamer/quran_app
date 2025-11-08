@@ -1,11 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import { router } from 'expo-router';
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import * as Location from 'expo-location';
-import PrayerTimesService, { PrayerTimesData, Coordinates, CalculationMethods, PrayerConfig, PrayerInfo } from '../services/PrayerTimesService';
+
 import { useLocation } from '../contexts/LocationContext';
+import PrayerTimesService, { PrayerTimesData, Coordinates, CalculationMethods, PrayerConfig, PrayerInfo } from '../services/PrayerTimesService';
 
 interface PrayerTime {
   name: string;
@@ -21,7 +22,7 @@ export default function PrayerTimesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  
+
   // استخدام البيانات من السياق
   const prayerTimesData = locationContext.prayerTimes;
   const prayerConfig = locationContext.prayerConfig;
@@ -37,24 +38,24 @@ export default function PrayerTimesScreen() {
           { arabic: 'الظهر', english: 'dhuhr', icon: 'sunny', order: 3 },
           { arabic: 'العصر', english: 'asr', icon: 'partly-sunny', order: 4 },
           { arabic: 'المغرب', english: 'maghrib', icon: 'partly-sunny-outline', order: 5 },
-          { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 }
+          { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 },
         ];
-        
+
         const fallbackTimes: PrayerTime[] = fallbackPrayers.map((prayer) => ({
           name: prayer.arabic,
           time: '--:--',
           isNext: false,
           icon: prayer.icon,
         }));
-        
+
         setPrayerTimes(fallbackTimes);
         return;
       }
-      
+
       const now = new Date();
       const times: PrayerTime[] = prayers.map((prayer) => {
         let timeString: string;
-        
+
         switch (prayer.english) {
           case 'fajr':
             timeString = data.fajr || '--:--';
@@ -82,7 +83,7 @@ export default function PrayerTimesScreen() {
         const currentTime = now.getHours() * 60 + now.getMinutes();
         const [hours, minutes] = timeString.split(':').map(Number);
         const prayerTime = hours * 60 + minutes;
-        
+
         const isNext = prayerTime > currentTime;
 
         return {
@@ -97,7 +98,7 @@ export default function PrayerTimesScreen() {
     } catch (err) {
       console.error('خطأ في معالجة مواقيت الصلاة:', err);
       setError('فشل في معالجة مواقيت الصلاة');
-      
+
       // Set fallback prayer times to prevent app crash
       const fallbackPrayers = [
         { arabic: 'الفجر', english: 'fajr', icon: 'moon-outline', order: 1 },
@@ -105,16 +106,16 @@ export default function PrayerTimesScreen() {
         { arabic: 'الظهر', english: 'dhuhr', icon: 'sunny', order: 3 },
         { arabic: 'العصر', english: 'asr', icon: 'partly-sunny', order: 4 },
         { arabic: 'المغرب', english: 'maghrib', icon: 'partly-sunny-outline', order: 5 },
-        { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 }
+        { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 },
       ];
-      
+
       const fallbackTimes: PrayerTime[] = fallbackPrayers.map((prayer) => ({
         name: prayer.arabic,
         time: '--:--',
         isNext: false,
         icon: prayer.icon,
       }));
-      
+
       setPrayerTimes(fallbackTimes);
     }
   }, []);
@@ -162,11 +163,11 @@ export default function PrayerTimesScreen() {
     if (timeString.includes(':') && !timeString.includes('ص') && !timeString.includes('م')) {
       return timeString;
     }
-    
+
     const [hours, minutes] = timeString.split(':');
     const hour = parseInt(hours);
     const minute = parseInt(minutes);
-    
+
     if (hour >= 12) {
       const displayHour = hour === 12 ? 12 : hour - 12;
       return `${displayHour}:${minute.toString().padStart(2, '0')} ${hour >= 12 ? 'م' : 'ص'}`;
@@ -275,19 +276,19 @@ export default function PrayerTimesScreen() {
                   prayerTime: prayer.time,
                   prayerIcon: prayer.icon,
                   isNext: prayer.isNext.toString(),
-                }
+                },
               } as any)}
               activeOpacity={0.8}
             >
               <View style={styles.prayerInfo}>
                 <View style={[
                   styles.prayerIconContainer,
-                  prayer.isNext && styles.nextPrayerIconContainer
+                  prayer.isNext && styles.nextPrayerIconContainer,
                 ]}>
-                  <Ionicons 
-                    name={prayer.icon as any} 
-                    size={24} 
-                    color={prayer.isNext ? '#D4AF37' : '#10B981'} 
+                  <Ionicons
+                    name={prayer.icon as any}
+                    size={24}
+                    color={prayer.isNext ? '#D4AF37' : '#10B981'}
                   />
                 </View>
                 <Text
@@ -308,10 +309,10 @@ export default function PrayerTimesScreen() {
                 >
                   {formatTime(prayer.time)}
                 </Text>
-                <Ionicons 
-                  name="chevron-forward" 
-                  size={16} 
-                  color={prayer.isNext ? '#D4AF37' : '#9CA3AF'} 
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={prayer.isNext ? '#D4AF37' : '#9CA3AF'}
                   style={styles.chevronIcon}
                 />
               </View>
