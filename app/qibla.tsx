@@ -1,3 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import { router } from 'expo-router';
+import { Magnetometer, Accelerometer, DeviceMotion } from 'expo-sensors';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -9,10 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import * as Location from 'expo-location';
-import { Magnetometer, Accelerometer, DeviceMotion } from 'expo-sensors';
+
 import { useLocation } from '../contexts/LocationContext';
 
 const { width } = Dimensions.get('window');
@@ -38,17 +39,17 @@ export default function QiblaCompass() {
   const previousAngles = React.useRef<number[]>([]);  // للتنعيم
   const magnetometerData = React.useRef({ x: 0, y: 0, z: 0 });
   const accelerometerData = React.useRef({ x: 0, y: 0, z: 0 });
-  
+
   // استخدام البيانات من السياق المحمل مسبقاً
   const qiblaDirection = locationContext.qiblaDirection;
   const locationLoading = locationContext.locationLoading;
   const locationError = locationContext.locationError;
   const userLocation = locationContext.location ? {
     lat: locationContext.location.latitude,
-    lng: locationContext.location.longitude
+    lng: locationContext.location.longitude,
   } : {
     lat: DEFAULT_LAT,
-    lng: DEFAULT_LNG
+    lng: DEFAULT_LNG,
   };
 
   // دالة لتنعيم القراءات ومنع الاهتزاز (Kalman-inspired smoothing)
@@ -57,7 +58,7 @@ export default function QiblaCompass() {
     if (previousAngles.current.length > 10) {
       previousAngles.current.shift();
     }
-    
+
     // حساب المتوسط مع مراعاة التفاف الزوايا (0-360)
     let sumSin = 0;
     let sumCos = 0;
@@ -67,7 +68,7 @@ export default function QiblaCompass() {
       sumSin += Math.sin((angle * Math.PI) / 180) * weight;
       sumCos += Math.cos((angle * Math.PI) / 180) * weight;
     });
-    
+
     const avgAngle = Math.atan2(sumSin, sumCos) * (180 / Math.PI);
     return (avgAngle + 360) % 360;
   };
@@ -77,7 +78,7 @@ export default function QiblaCompass() {
     // حساب قوة المجال المغناطيسي (μT)
     const magnitude = Math.sqrt(x * x + y * y + z * z);
     setMagneticFieldStrength(magnitude);
-    
+
     // المجال المغناطيسي للأرض: 25-65 μT
     // إذا كانت القيمة خارج هذا النطاق، هناك تداخل
     if (magnitude < 20 || magnitude > 70) {
@@ -85,37 +86,37 @@ export default function QiblaCompass() {
     } else {
       setMagneticInterference(false);
     }
-    
+
     return magnitude;
   };
 
   // حساب الاتجاه مع تعويض الميل (3D tilt compensation)
   const calculateTiltCompensatedHeading = (
     mx: number, my: number, mz: number,  // magnetometer
-    ax: number, ay: number, az: number   // accelerometer
+    ax: number, ay: number, az: number,   // accelerometer
   ) => {
     // تطبيع قراءات المقياس التسارعي
     const norm = Math.sqrt(ax * ax + ay * ay + az * az);
     if (norm === 0) return 0;
-    
+
     ax /= norm;
     ay /= norm;
     az /= norm;
-    
+
     // حساب pitch و roll
     const pitch = Math.asin(-ay);
     const roll = Math.asin(ax / Math.cos(pitch));
-    
+
     // تطبيق تعويض الميل
     const xh = mx * Math.cos(pitch) + mz * Math.sin(pitch);
-    const yh = mx * Math.sin(roll) * Math.sin(pitch) + 
-               my * Math.cos(roll) - 
+    const yh = mx * Math.sin(roll) * Math.sin(pitch) +
+               my * Math.cos(roll) -
                mz * Math.sin(roll) * Math.cos(pitch);
-    
+
     // حساب الاتجاه
     let heading = Math.atan2(yh, xh) * (180 / Math.PI);
     heading = (heading + 360) % 360;
-    
+
     return heading;
   };
 
@@ -133,7 +134,7 @@ export default function QiblaCompass() {
     let bearing = Math.atan2(y, x);
     bearing = (bearing * 180) / Math.PI;
     bearing = (bearing + 360) % 360; // 0..360 حيث 0 = شمال حقيقي
-    
+
     // Test mode: Log detailed calculations
     if (__DEV__) {
       console.log('=== Qibla Bearing Calculation ===');
@@ -141,7 +142,7 @@ export default function QiblaCompass() {
       console.log(`Kaaba Location: ${KAABA_LAT}, ${KAABA_LNG}`);
       console.log(`Calculated Bearing: ${bearing.toFixed(2)}°`);
       console.log(`Direction: ${getDirectionName(bearing)}`);
-      
+
       // Verify against known cities
       const knownCities = getKnownCityExpectedBearing(userLat, userLng);
       if (knownCities) {
@@ -149,7 +150,7 @@ export default function QiblaCompass() {
         console.log(`Difference: ${Math.abs(bearing - knownCities.expected).toFixed(2)}°`);
       }
     }
-    
+
     return bearing;
   };
 
@@ -157,7 +158,7 @@ export default function QiblaCompass() {
   const getDirectionName = (angle: number) => {
     const directions = [
       'شمال', 'شمال شرق', 'شرق', 'جنوب شرق',
-      'جنوب', 'جنوب غرب', 'غرب', 'شمال غرب'
+      'جنوب', 'جنوب غرب', 'غرب', 'شمال غرب',
     ];
     const index = Math.round(angle / 45) % 8;
     return directions[index];
@@ -210,7 +211,7 @@ export default function QiblaCompass() {
             console.log('Attempting Location Heading method...');
             headingSubscription = await Location.watchHeadingAsync((headingData) => {
               if (!isActive) return;
-              
+
               // استخدام الاتجاه الحقيقي (true north)
               const heading = headingData.trueHeading;
               const smoothed = smoothAngle(heading);
@@ -219,7 +220,7 @@ export default function QiblaCompass() {
               setIsCalibrated(true);
               setCalibrationQuality(headingData.accuracy || 0);
             });
-            
+
             console.log('Location Heading method active');
             return; // نجح - لا حاجة للطرق الاحتياطية
           } catch (headingError) {
@@ -234,14 +235,14 @@ export default function QiblaCompass() {
             console.log('Attempting DeviceMotion method...');
             deviceMotionSubscription = DeviceMotion.addListener((data) => {
               if (!isActive) return;
-              
+
               if (data.rotation) {
                 // حساب الاتجاه من مصفوفة الدوران
                 const { alpha, beta, gamma } = data.rotation;
                 // alpha هو الاتجاه حول المحور Z (البوصلة)
                 let heading = alpha * (180 / Math.PI);
                 heading = (heading + 360) % 360;
-                
+
                 const smoothed = smoothAngle(heading);
                 setDeviceOrientation(smoothed);
                 setCompassMethod('device-motion');
@@ -249,7 +250,7 @@ export default function QiblaCompass() {
                 setCalibrationQuality(3);
               }
             });
-            
+
             DeviceMotion.setUpdateInterval(100);
             console.log('DeviceMotion method active');
             return; // نجح - لا حاجة للطريقة الاحتياطية التالية
@@ -261,41 +262,41 @@ export default function QiblaCompass() {
         // الطريقة 3: دمج يدوي للمستشعرات (احتياطي 2 - مع تعويض الميل)
         const magAvailable = await Magnetometer.isAvailableAsync();
         const accelAvailable = await Accelerometer.isAvailableAsync();
-        
+
         if (magAvailable && accelAvailable) {
           console.log('Attempting Manual Sensor Fusion...');
-          
+
           // الاشتراك في كلا المستشعرين
           magnetometerSubscription = Magnetometer.addListener((data) => {
             magnetometerData.current = data;
             detectMagneticInterference(data.x, data.y, data.z);
             updateHeadingFromFusion();
           });
-          
+
           accelerometerSubscription = Accelerometer.addListener((data) => {
             accelerometerData.current = data;
             updateHeadingFromFusion();
           });
-          
+
           const updateHeadingFromFusion = () => {
             if (!isActive) return;
-            
+
             const mag = magnetometerData.current;
             const accel = accelerometerData.current;
-            
+
             // حساب الاتجاه مع تعويض الميل الكامل
             const heading = calculateTiltCompensatedHeading(
               mag.x, mag.y, mag.z,
-              accel.x, accel.y, accel.z
+              accel.x, accel.y, accel.z,
             );
-            
+
             const smoothed = smoothAngle(heading);
             setDeviceOrientation(smoothed);
             setCompassMethod('manual-fusion');
             setIsCalibrated(true);
             setCalibrationQuality(2);
           };
-          
+
           Magnetometer.setUpdateInterval(100);
           Accelerometer.setUpdateInterval(100);
           console.log('Manual Sensor Fusion active');
@@ -307,20 +308,20 @@ export default function QiblaCompass() {
           console.log('WARNING: Using raw magnetometer only (requires flat device)');
           magnetometerSubscription = Magnetometer.addListener((data) => {
             if (!isActive) return;
-            
+
             detectMagneticInterference(data.x, data.y, data.z);
-            
+
             // حساب بسيط - يعمل فقط عندما يكون الجهاز مسطحاً
             let angle = Math.atan2(data.x, data.y) * (180 / Math.PI);
             angle = (angle + 360) % 360;
-            
+
             const smoothed = smoothAngle(angle);
             setDeviceOrientation(smoothed);
             setCompassMethod('raw-magnetometer');
             setIsCalibrated(true);
             setCalibrationQuality(1);
           });
-          
+
           Magnetometer.setUpdateInterval(100);
           console.log('Raw magnetometer method active (WARNING: hold device flat)');
         } else {
@@ -410,11 +411,11 @@ export default function QiblaCompass() {
             <ActivityIndicator size="large" color="#10B981" style={styles.loadingSpinner} />
             <Text style={styles.loadingTitle}>جاري تحضير البوصلة</Text>
             <Text style={styles.loadingSubtitle}>
-              {locationLoading ? 'تحديد موقعك...' : 
-               locationError ? locationError :
-               !isCalibrated ? 'معايرة البوصلة...' : 'جاري التحميل...'}
+              {locationLoading ? 'تحديد موقعك...' :
+                locationError ? locationError :
+                  !isCalibrated ? 'معايرة البوصلة...' : 'جاري التحميل...'}
             </Text>
-            
+
             {!isCalibrated && !locationLoading && (
               <View style={styles.loadingHint}>
                 <Ionicons name="information-circle" size={20} color="#10B981" />
