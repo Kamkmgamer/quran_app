@@ -33,7 +33,7 @@ class StorageService {
     try {
       await AsyncStorage.setItem(
         StorageService.LAST_POSITION_KEY,
-        JSON.stringify(position)
+        JSON.stringify(position),
       );
     } catch (error) {
       console.error('Error saving last position:', error);
@@ -56,7 +56,7 @@ class StorageService {
     try {
       await AsyncStorage.setItem(
         StorageService.PREFERENCES_KEY,
-        JSON.stringify(preferences)
+        JSON.stringify(preferences),
       );
     } catch (error) {
       console.error('Error saving preferences:', error);
@@ -70,11 +70,11 @@ class StorageService {
       return data
         ? JSON.parse(data)
         : {
-            autoPlay: false,
-            playbackSpeed: 1.0,
-            repeatMode: 'none',
-            selectedReciter: 'abdul_basit',
-          };
+          autoPlay: false,
+          playbackSpeed: 1.0,
+          repeatMode: 'none',
+          selectedReciter: 'abdul_basit',
+        };
     } catch (error) {
       console.error('Error getting preferences:', error);
       return {
@@ -103,7 +103,7 @@ class StorageService {
 
       await AsyncStorage.setItem(
         StorageService.DOWNLOADED_AUDIO_KEY,
-        JSON.stringify(downloaded)
+        JSON.stringify(downloaded),
       );
     } catch (error) {
       console.error('Error saving downloaded audio:', error);
@@ -138,7 +138,7 @@ class StorageService {
     reciterId: string,
     surahId: number,
     verseId: number,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
   ): Promise<string | null> {
     try {
       // إنشاء المجلد إذا لم يكن موجوداً
@@ -172,7 +172,7 @@ class StorageService {
           if (onProgress) {
             onProgress(progress);
           }
-        }
+        },
       );
 
       const result = await downloadResumable.downloadAsync();
@@ -196,7 +196,7 @@ class StorageService {
     try {
       const reciterDir = `${StorageService.AUDIO_DIR}${reciterId}/`;
       const dirInfo = await FileSystem.getInfoAsync(reciterDir);
-      
+
       if (dirInfo.exists) {
         await FileSystem.deleteAsync(reciterDir, { idempotent: true });
       }
@@ -207,7 +207,7 @@ class StorageService {
       delete downloaded[reciterId];
       await AsyncStorage.setItem(
         StorageService.DOWNLOADED_AUDIO_KEY,
-        JSON.stringify(downloaded)
+        JSON.stringify(downloaded),
       );
     } catch (error) {
       console.error('Error deleting reciter audio:', error);
@@ -233,7 +233,7 @@ class StorageService {
   async getLocalAudioPath(
     reciterId: string,
     surahId: number,
-    verseId: number
+    verseId: number,
   ): Promise<string | null> {
     try {
       const surahPadded = surahId.toString().padStart(3, '0');

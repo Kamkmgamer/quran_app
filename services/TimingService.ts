@@ -1,8 +1,8 @@
 /**
  * TimingService
- * 
+ *
  * خدمة لإدارة توقيتات الآيات للمزامنة مع الصوت
- * 
+ *
  * ملاحظة: هذه نسخة بسيطة تستخدم توقيتات افتراضية.
  * للحصول على مزامنة دقيقة، يجب استخدام ملفات توقيت حقيقية من مصادر موثوقة مثل:
  * - Tanzil.net
@@ -63,7 +63,7 @@ class TimingService {
    */
   async getCurrentVerseFromPosition(
     surahId: number,
-    positionMillis: number
+    positionMillis: number,
   ): Promise<number | null> {
     const surahTimings = await this.getSurahTimings(surahId);
     if (!surahTimings) return null;
@@ -84,7 +84,7 @@ class TimingService {
   getDefaultVerseTiming(verseId: number, averageDuration: number = 5000): VerseTiming {
     const startTime = (verseId - 1) * averageDuration;
     const endTime = verseId * averageDuration;
-    
+
     return {
       id: verseId,
       startTime,
