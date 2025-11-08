@@ -1,4 +1,5 @@
 import { Audio } from 'expo-av';
+
 import AudioService, { VerseAudio } from '../AudioService';
 import StorageService from '../StorageService';
 
@@ -50,7 +51,7 @@ describe('AudioService', () => {
 
       // Initialize first time
       await (audioService as any).initializeAudio();
-      
+
       // Clear mock to track second call
       mockAudio.setAudioModeAsync.mockClear();
 
@@ -127,7 +128,7 @@ describe('AudioService', () => {
       expect(mockAudio.Sound.createAsync).toHaveBeenCalledWith(
         { uri: 'https://everyayah.com/data/Abdul_Basit_Murattal_192kbps/001005.mp3' },
         { shouldPlay: true, rate: 1.0, shouldCorrectPitch: true },
-        expect.any(Function)
+        expect.any(Function),
       );
       expect(mockStorageService.saveLastPosition).toHaveBeenCalledWith({
         surahId: 1,
@@ -148,7 +149,7 @@ describe('AudioService', () => {
       expect(mockAudio.Sound.createAsync).toHaveBeenCalledWith(
         { uri: 'https://everyayah.com/data/Abdul_Basit_Murattal_192kbps/001005.mp3' },
         { shouldPlay: false, rate: 1.0, shouldCorrectPitch: true },
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -166,7 +167,7 @@ describe('AudioService', () => {
       expect(mockAudio.Sound.createAsync).toHaveBeenCalledWith(
         { uri: localPath },
         { shouldPlay: true, rate: 1.0, shouldCorrectPitch: true },
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -274,7 +275,7 @@ describe('AudioService', () => {
       expect(mockSound.setRateAsync).toHaveBeenCalledWith(speed, true);
       expect((audioService as any).playbackSpeed).toBe(speed);
       expect(mockStorageService.savePreferences).toHaveBeenCalledWith(
-        expect.objectContaining({ playbackSpeed: speed })
+        expect.objectContaining({ playbackSpeed: speed }),
       );
     });
   });
@@ -362,7 +363,7 @@ describe('AudioService', () => {
         reciterId,
         surahId,
         verseId,
-        undefined
+        undefined,
       );
     });
 

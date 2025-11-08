@@ -1,5 +1,6 @@
-import PrayerTimesService from '../PrayerTimesService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import PrayerTimesService from '../PrayerTimesService';
 
 // Mock fetch
 global.fetch = jest.fn();
@@ -43,7 +44,7 @@ describe('PrayerTimesService', () => {
     it('should fetch prayer times from API when cache is empty', async () => {
       // Mock empty cache
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
-      
+
       // Mock successful API response
       (fetch as jest.Mock).mockResolvedValue({
         ok: true,
@@ -53,7 +54,7 @@ describe('PrayerTimesService', () => {
       const result = await PrayerTimesService.getPrayerTimes(mockCoordinates);
 
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('api.aladhan.com/v1/timings/')
+        expect.stringContaining('api.aladhan.com/v1/timings/'),
       );
       expect(result).toEqual({
         fajr: '05:30',
@@ -111,7 +112,7 @@ describe('PrayerTimesService', () => {
       };
 
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(expiredCache));
-      
+
       (fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockPrayerTimesResponse),
@@ -150,7 +151,7 @@ describe('PrayerTimesService', () => {
       };
 
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(staleCache));
-      
+
       // Mock API failure
       (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
@@ -161,7 +162,7 @@ describe('PrayerTimesService', () => {
 
     it('should throw error when both API and cache fail', async () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
-      
+
       (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       await expect(PrayerTimesService.getPrayerTimes(mockCoordinates))
@@ -170,7 +171,7 @@ describe('PrayerTimesService', () => {
 
     it('should handle API error responses', async () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
-      
+
       const errorResponse = {
         code: 400,
         status: 'Bad Request',
@@ -190,7 +191,7 @@ describe('PrayerTimesService', () => {
   describe('getPrayerTimesForDate', () => {
     it('should fetch prayer times for specific date', async () => {
       const specificDate = new Date('2025-12-25');
-      
+
       (fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockPrayerTimesResponse),
@@ -199,7 +200,7 @@ describe('PrayerTimesService', () => {
       const result = await PrayerTimesService.getPrayerTimesForDate(mockCoordinates, specificDate);
 
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining('timings/25-12-2025')
+        expect.stringContaining('timings/25-12-2025'),
       );
       expect(result.date).toBe('04 Nov 2025');
     });
