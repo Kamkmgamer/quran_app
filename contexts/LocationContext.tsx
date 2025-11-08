@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as Location from 'expo-location';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
 import PrayerTimesService, { PrayerTimesData, Coordinates, CalculationMethods, PrayerConfig } from '../services/PrayerTimesService';
 
 // موقع الكعبة بالدقة
@@ -58,7 +59,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     let bearing = Math.atan2(y, x);
     bearing = (bearing * 180) / Math.PI;
     bearing = (bearing + 360) % 360;
-    
+
     return bearing;
   };
 
@@ -77,12 +78,12 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         const qibla = calculateQiblaDirection(DEFAULT_LAT, DEFAULT_LNG);
         setQiblaDirection(qibla);
         setLocationError('لم يتم منح إذن الموقع. يتم استخدام الموقع الافتراضي (الرياض)');
-        
+
         // جلب مواقيت الصلاة للموقع الافتراضي
         try {
           const config = await PrayerTimesService.getPrayerConfig(calculationMethod);
           setPrayerConfig(config);
-          
+
           const coords: Coordinates = {
             latitude: DEFAULT_LAT,
             longitude: DEFAULT_LNG,
@@ -92,7 +93,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         } catch (err) {
           console.error('Failed to fetch prayer times with default location:', err);
         }
-        
+
         setLocationLoading(false);
         return;
       }
@@ -117,10 +118,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       try {
         const config = await PrayerTimesService.getPrayerConfig(calculationMethod);
         setPrayerConfig(config);
-        
+
         const prayerData = await PrayerTimesService.getPrayerTimes(coords, calculationMethod);
         setPrayerTimes(prayerData);
-        
+
         console.log('Location and prayer times fetched successfully on app launch');
       } catch (apiError) {
         console.error('Prayer times API error:', apiError);
@@ -129,7 +130,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     } catch (err) {
       console.error('Location fetch error:', err);
       setLocationError('فشل في الحصول على الموقع');
-      
+
       // استخدام الموقع الافتراضي في حالة الخطأ
       setLocation({ latitude: DEFAULT_LAT, longitude: DEFAULT_LNG });
       const qibla = calculateQiblaDirection(DEFAULT_LAT, DEFAULT_LNG);
@@ -156,7 +157,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         await PrayerTimesService.clearCache();
         const config = await PrayerTimesService.getPrayerConfig(calculationMethod);
         setPrayerConfig(config);
-        
+
         const prayerData = await PrayerTimesService.getPrayerTimes(location, calculationMethod);
         setPrayerTimes(prayerData);
       } catch (err) {

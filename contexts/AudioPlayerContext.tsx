@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import AudioService from '../services/AudioService';
-import StorageService from '../services/StorageService';
+
 import quranDataImport from '../assets/Quran.json';
 import recitersData from '../assets/reciters.json';
+import AudioService from '../services/AudioService';
+import StorageService from '../services/StorageService';
 
 const quranData = quranDataImport as any[];
 const audioService = new AudioService();
@@ -79,7 +80,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   const loadPreferences = useCallback(async () => {
     const preferences = await StorageService.getPreferences();
     const reciter = recitersData.reciters.find((r) => r.id === preferences.selectedReciter);
-    
+
     setState((prev) => ({
       ...prev,
       currentReciterId: preferences.selectedReciter,
@@ -104,7 +105,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
         reciter.id,
         surahId,
         verseId,
-        autoPlay
+        autoPlay,
       );
 
       setState((prev) => ({
@@ -150,10 +151,10 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       if (state.isPlayingSurah) {
         // إيقاف التشغيل عند نهاية السورة في وضع التشغيل المستمر
         await audioService.stop();
-        setState((prev) => ({ 
-          ...prev, 
-          isPlaying: false, 
-          isPlayingSurah: false 
+        setState((prev) => ({
+          ...prev,
+          isPlaying: false,
+          isPlayingSurah: false,
         }));
         return;
       } else if (state.repeatMode === 'surah') {
@@ -205,10 +206,10 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
                   await playNext();
                 }
               };
-              
+
               // Execute async logic
               handleVerseEnd();
-              
+
               return currentState; // Return current state unchanged
             });
           }
@@ -229,7 +230,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
         console.error('Error initializing AudioPlayerContext:', error);
       }
     };
-    
+
     initialize();
   }, [loadPreferences, setupAudioService]);
 
@@ -347,7 +348,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
         if (lastPosition.reciterId !== state.currentReciterId) {
           await setReciter(lastPosition.reciterId);
         }
-        
+
         await playVerse(lastPosition.surahId, lastPosition.verseId, false);
       }
     } catch (error) {
