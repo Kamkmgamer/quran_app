@@ -1,8 +1,9 @@
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
-import MiniPlayer from '../MiniPlayer';
+import React from 'react';
+
 import { useAudioPlayer } from '../../contexts/AudioPlayerContext';
+import MiniPlayer from '../MiniPlayer';
 
 // Mock the hooks
 jest.mock('expo-router');
