@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -9,13 +11,12 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useAudioPlayer } from '../contexts/AudioPlayerContext';
-import StorageService, { DownloadedAudio } from '../services/StorageService';
-import AudioService from '../services/AudioService';
-import recitersData from '../assets/reciters.json';
+
 import quranData from '../assets/Quran.json';
+import recitersData from '../assets/reciters.json';
+import { useAudioPlayer } from '../contexts/AudioPlayerContext';
+import AudioService from '../services/AudioService';
+import StorageService, { DownloadedAudio } from '../services/StorageService';
 
 const audioService = new AudioService();
 
@@ -88,26 +89,26 @@ export default function Reciters() {
           text: 'تحميل',
           onPress: () => downloadReciterSurahs(reciter),
         },
-      ]
+      ],
     );
   };
 
   const downloadReciterSurahs = async (reciter: Reciter) => {
     setDownloadingReciter(reciter.id);
-    
+
     try {
       // تحميل أول 10 سور
       for (let surahId = 0; surahId < 10; surahId++) {
         const surah = typedQuranData[surahId];
         const totalVerses = surah.array.length;
-        
+
         setDownloadProgress({ current: surahId + 1, total: 10 });
 
         await audioService.downloadSurah(
           reciter.apiPath,
           reciter.id,
           surahId + 1,
-          totalVerses
+          totalVerses,
         );
       }
 
@@ -136,7 +137,7 @@ export default function Reciters() {
             await loadDownloadedAudio();
           },
         },
-      ]
+      ],
     );
   };
 
@@ -159,13 +160,13 @@ export default function Reciters() {
           <View style={styles.reciterIcon}>
             <Ionicons name="person" size={32} color="#065F46" />
           </View>
-          
+
           <View style={styles.reciterInfo}>
             <Text style={styles.reciterName}>{item.name}</Text>
             <Text style={styles.reciterDetails}>
               {item.style} • {item.quality}
             </Text>
-            
+
             {isDownloaded && (
               <View style={styles.downloadedBadge}>
                 <Ionicons name="checkmark-circle" size={16} color="#059669" />

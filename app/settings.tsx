@@ -1,3 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,10 +13,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path } from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
 
 interface SettingsState {
   notifications: boolean;
@@ -73,7 +73,7 @@ export default function Settings() {
             Alert.alert('تم', 'تم مسح الذاكرة المؤقتة بنجاح');
           },
         },
-      ]
+      ],
     );
   };
 
@@ -100,7 +100,7 @@ export default function Settings() {
             Alert.alert('تم', 'تم إعادة تعيين الإعدادات بنجاح');
           },
         },
-      ]
+      ],
     );
   };
 
@@ -108,7 +108,7 @@ export default function Settings() {
     icon: string,
     title: string,
     description: string,
-    settingKey: keyof SettingsState
+    settingKey: keyof SettingsState,
   ) => (
     <View style={styles.settingItem}>
       <View style={styles.settingLeft}>
@@ -134,7 +134,7 @@ export default function Settings() {
     title: string,
     description: string,
     onPress: () => void,
-    danger?: boolean
+    danger?: boolean,
   ) => (
     <TouchableOpacity style={styles.actionItem} onPress={onPress}>
       <View style={styles.settingLeft}>
@@ -197,13 +197,13 @@ export default function Settings() {
                 'notifications',
                 'الإشعارات',
                 'تفعيل إشعارات التطبيق',
-                'notifications'
+                'notifications',
               )}
               {renderSettingItem(
                 'play-skip-forward',
                 'التشغيل التلقائي',
                 'تشغيل الآية التالية تلقائياً',
-                'autoPlayNext'
+                'autoPlayNext',
               )}
             </View>
           </View>
@@ -216,19 +216,19 @@ export default function Settings() {
                 'sunny',
                 'إبقاء الشاشة مضاءة',
                 'منع الشاشة من الإطفاء أثناء القراءة',
-                'keepScreenOn'
+                'keepScreenOn',
               )}
               {renderSettingItem(
                 'language',
                 'عرض الترجمة',
                 'إظهار ترجمة معاني القرآن',
-                'showTranslation'
+                'showTranslation',
               )}
               {renderSettingItem(
                 'moon',
                 'الوضع الليلي',
                 'استخدام الثيم الداكن',
-                'nightMode'
+                'nightMode',
               )}
             </View>
           </View>
@@ -241,7 +241,7 @@ export default function Settings() {
                 'wifi',
                 'التحميل عبر WiFi فقط',
                 'تحميل التلاوات عند الاتصال بشبكة WiFi فقط',
-                'downloadOnWiFiOnly'
+                'downloadOnWiFiOnly',
               )}
             </View>
           </View>
@@ -256,7 +256,7 @@ export default function Settings() {
                 'تغيير حجم خط القرآن',
                 () => {
                   router.push('/font-size');
-                }
+                },
               )}
               {renderActionItem(
                 'person',
@@ -264,7 +264,7 @@ export default function Settings() {
                 'اختيار القارئ المفضل',
                 () => {
                   router.push('/reciters');
-                }
+                },
               )}
               {renderActionItem(
                 'bookmark',
@@ -272,7 +272,7 @@ export default function Settings() {
                 'إدارة الآيات المحفوظة',
                 () => {
                   router.push('/bookmarks');
-                }
+                },
               )}
             </View>
           </View>
@@ -285,14 +285,14 @@ export default function Settings() {
                 'trash-bin',
                 'مسح الذاكرة المؤقتة',
                 'حذف الملفات المؤقتة لتوفير المساحة',
-                clearCache
+                clearCache,
               )}
               {renderActionItem(
                 'refresh',
                 'إعادة تعيين الإعدادات',
                 'استعادة الإعدادات الافتراضية',
                 resetSettings,
-                true
+                true,
               )}
             </View>
           </View>
