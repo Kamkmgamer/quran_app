@@ -1,3 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -8,11 +11,9 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAudioPlayer } from '../contexts/AudioPlayerContext';
+
 import recitersData from '../assets/reciters.json';
+import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 
 const { width } = Dimensions.get('window');
 
@@ -92,12 +93,12 @@ export default function Menu({ visible, onClose }: MenuProps) {
       transparent={true}
       onRequestClose={onClose}
     >
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.overlay}
         activeOpacity={1}
         onPress={onClose}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.menuContainer}
           activeOpacity={1}
           onPress={(e) => e.stopPropagation()}
