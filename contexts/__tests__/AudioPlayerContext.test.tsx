@@ -1,8 +1,9 @@
-import React from 'react';
 import { render, act, waitFor } from '@testing-library/react-native';
-import { AudioPlayerProvider, useAudioPlayer } from '../AudioPlayerContext';
+import React from 'react';
+
 import AudioService from '../../services/AudioService';
 import StorageService from '../../services/StorageService';
+import { AudioPlayerProvider, useAudioPlayer } from '../AudioPlayerContext';
 
 // Mock the services
 jest.mock('../../services/AudioService', () => {
@@ -57,7 +58,7 @@ const getMockInstance = () => mockAudioService.mock.instances[0] as any;
 // Test component to use the context
 const TestComponent: React.FC<{ onContext?: (context: any) => void }> = ({ onContext }) => {
   const context = useAudioPlayer();
-  
+
   React.useEffect(() => {
     if (onContext) {
       onContext(context);
@@ -70,7 +71,7 @@ const TestComponent: React.FC<{ onContext?: (context: any) => void }> = ({ onCon
 describe('AudioPlayerContext', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup default mocks
     mockStorageService.getPreferences.mockResolvedValue({
       autoPlay: false,
@@ -79,7 +80,7 @@ describe('AudioPlayerContext', () => {
       selectedReciter: 'abdul_basit',
     });
     mockStorageService.getLastPosition.mockResolvedValue(null);
-    
+
     // Setup AudioService instance mocks
     const mockInstance = getMockInstance();
     if (mockInstance) {
@@ -98,7 +99,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -115,7 +116,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -127,7 +128,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -141,7 +142,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -157,7 +158,7 @@ describe('AudioPlayerContext', () => {
       'abdul_basit',
       1,
       5,
-      true
+      true,
     );
   });
 
@@ -167,7 +168,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -187,7 +188,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -208,7 +209,7 @@ describe('AudioPlayerContext', () => {
       'abdul_basit',
       1,
       3,
-      true
+      true,
     );
   });
 
@@ -218,7 +219,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -239,7 +240,7 @@ describe('AudioPlayerContext', () => {
       'abdul_basit',
       1,
       1,
-      true
+      true,
     );
   });
 
@@ -249,7 +250,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -262,7 +263,7 @@ describe('AudioPlayerContext', () => {
 
     expect(getMockInstance().setPlaybackSpeed).toHaveBeenCalledWith(1.5);
     expect(mockStorageService.savePreferences).toHaveBeenCalledWith(
-      expect.objectContaining({ playbackSpeed: 1.5 })
+      expect.objectContaining({ playbackSpeed: 1.5 }),
     );
   });
 
@@ -272,7 +273,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -284,7 +285,7 @@ describe('AudioPlayerContext', () => {
     });
 
     expect(mockStorageService.savePreferences).toHaveBeenCalledWith(
-      expect.objectContaining({ repeatMode: 'verse' })
+      expect.objectContaining({ repeatMode: 'verse' }),
     );
   });
 
@@ -294,7 +295,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -306,7 +307,7 @@ describe('AudioPlayerContext', () => {
     });
 
     expect(mockStorageService.savePreferences).toHaveBeenCalledWith(
-      expect.objectContaining({ selectedReciter: 'abdul_basit' })
+      expect.objectContaining({ selectedReciter: 'abdul_basit' }),
     );
   });
 
@@ -316,7 +317,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -336,7 +337,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -365,7 +366,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -381,7 +382,7 @@ describe('AudioPlayerContext', () => {
       'abdul_basit',
       1,
       5,
-      false
+      false,
     );
   });
 
@@ -396,7 +397,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -430,7 +431,7 @@ describe('AudioPlayerContext', () => {
     render(
       <AudioPlayerProvider>
         <TestComponent onContext={(context) => (contextValue = context)} />
-      </AudioPlayerProvider>
+      </AudioPlayerProvider>,
     );
 
     await waitFor(() => {
@@ -462,7 +463,7 @@ describe('AudioPlayerContext', () => {
       'abdul_basit',
       1,
       5,
-      true
+      true,
     );
   });
 
