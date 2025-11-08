@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
   View,
@@ -6,10 +8,11 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useAudioPlayer } from '../contexts/AudioPlayerContext';
-import { useRouter } from 'expo-router';
+
 import quranDataImport from '../assets/Quran.json';
+import { useAudioPlayer } from '../contexts/AudioPlayerContext';
+
+
 
 const quranData = quranDataImport as any[];
 
