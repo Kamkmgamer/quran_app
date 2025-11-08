@@ -1,14 +1,15 @@
-import { Text, View, TextInput, FlatList, TouchableOpacity, StyleSheet, ImageBackground } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import * as React from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "@react-navigation/native";
-import { router } from "expo-router";
-import quran from "../assets/Quran.json";
-import Menu from "../components/Menu";
-import { useAudioPlayer } from "../contexts/AudioPlayerContext";
-import StorageService from "../services/StorageService";
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
+import * as React from 'react';
+import { Text, View, TextInput, FlatList, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import quran from '../assets/Quran.json';
+import Menu from '../components/Menu';
+import { useAudioPlayer } from '../contexts/AudioPlayerContext';
+import StorageService from '../services/StorageService';
 
 interface Verse {
   id: number;
@@ -41,22 +42,22 @@ export default function HomeScreen() {
   const [surah, setSurah] = React.useState(0);
   const [verse, setVerse] = React.useState(0);
   const [surahSearchList, setSurahSearchList] = React.useState<Surah[]>(surahList);
-  const [activeTab, setActiveTab] = React.useState("سورة");
-  const [searchText, setSearchText] = React.useState("");
+  const [activeTab, setActiveTab] = React.useState('سورة');
+  const [searchText, setSearchText] = React.useState('');
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [lastListeningPosition, setLastListeningPosition] = React.useState<any>(null);
-  const [currentTime, setCurrentTime] = React.useState<string>("");
+  const [currentTime, setCurrentTime] = React.useState<string>('');
 
   const loadSavedVerse = async () => {
     try {
-      const existingData = await AsyncStorage.getItem("savedVerses");
-      let savedVerse = existingData
+      const existingData = await AsyncStorage.getItem('savedVerses');
+      const savedVerse = existingData
         ? JSON.parse(existingData)
         : { surah: 0, verse: 0 };
       setSurah(savedVerse.surah);
       setVerse(savedVerse.verse);
     } catch (error) {
-      console.error("Error loading saved verse:", error);
+      console.error('Error loading saved verse:', error);
     }
   };
 
@@ -65,7 +66,7 @@ export default function HomeScreen() {
       const position = await StorageService.getLastPosition();
       setLastListeningPosition(position);
     } catch (error) {
-      console.error("Error loading last listening position:", error);
+      console.error('Error loading last listening position:', error);
     }
   };
 
@@ -73,12 +74,12 @@ export default function HomeScreen() {
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
-    
+
     // Convert to 12-hour format
     const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    const period = hours >= 12 ? "مساء" : "صباح";
+    const period = hours >= 12 ? 'مساء' : 'صباح';
     const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-    
+
     return `${displayHours}:${formattedMinutes} ${period}`;
   };
 
@@ -91,7 +92,7 @@ export default function HomeScreen() {
       loadSavedVerse();
       loadLastListeningPosition();
       updateTime();
-    }, [])
+    }, []),
   );
 
   React.useEffect(() => {
@@ -103,27 +104,27 @@ export default function HomeScreen() {
   const handleSearch = (text: string) => {
     setSearchText(text);
     const results = surahList.filter((item: Surah) =>
-      item.name.includes(text)
+      item.name.includes(text),
     );
     setSurahSearchList(results);
   };
 
-  const tabs = ["سورة", "جزء", "الأذكار"];
+  const tabs = ['سورة', 'جزء', 'الأذكار'];
 
   const renderSurahCard = ({ item, index }: { item: Surah; index: number }) => {
     const isLastRead = item.id - 1 === surah;
     const isEven = index % 2 === 0;
-    const backgroundColor = isLastRead ? "#D4AF37" : (isEven ? "#fff" : "#FEFCE8");
-    const borderColor = isLastRead ? "#D4AF37" : "#D4AF37";
-    const textColor = isLastRead ? "#fff" : "#D97706";
-    const numberColor = isLastRead ? "#fff" : "#D97706";
-    const verseCountColor = isLastRead ? "#fff" : "#D97706";
-    
+    const backgroundColor = isLastRead ? '#D4AF37' : (isEven ? '#fff' : '#FEFCE8');
+    const borderColor = isLastRead ? '#D4AF37' : '#D4AF37';
+    const textColor = isLastRead ? '#fff' : '#D97706';
+    const numberColor = isLastRead ? '#fff' : '#D97706';
+    const verseCountColor = isLastRead ? '#fff' : '#D97706';
+
     return (
       <TouchableOpacity
         onPress={() =>
           router.push({
-            pathname: "/quran",
+            pathname: '/quran',
             params: { surah: item.id - 1, verse: 0 },
           })
         }
@@ -155,20 +156,20 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {/* Header with Mosque Background */}
       <ImageBackground
-        source={require("../assets/images/Mosque.png")}
+        source={require('../assets/images/Mosque.png')}
         style={styles.headerBackground}
         imageStyle={styles.headerBackgroundImage}
       >
         <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
           <View style={styles.header}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.headerIcon}
               onPress={() => setMenuVisible(true)}
             >
               <Ionicons name="menu" size={24} color="#065F46" />
             </TouchableOpacity>
             <Text style={styles.headerTime}>{currentTime}</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.headerIcon}
               onPress={() => router.push('/settings')}
             >
@@ -189,7 +190,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             onPress={() =>
               router.push({
-                pathname: "/quran",
+                pathname: '/quran',
                 params: { surah: surah, verse: verse },
               })
             }
@@ -239,9 +240,9 @@ export default function HomeScreen() {
       </SafeAreaView>
 
       {/* Menu Component */}
-      <Menu 
-        visible={menuVisible} 
-        onClose={() => setMenuVisible(false)} 
+      <Menu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
       />
     </View>
   );
@@ -250,117 +251,117 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FEF3C7",
+    backgroundColor: '#FEF3C7',
   },
   headerBackground: {
-    width: "100%",
+    width: '100%',
     height: 280,
-    backgroundColor: "#FEF3C7",
+    backgroundColor: '#FEF3C7',
   },
   headerBackgroundImage: {
-    resizeMode: "cover",
+    resizeMode: 'cover',
   },
   headerSafeArea: {
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 8,
   },
   headerIcon: {
     padding: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: 8,
   },
   headerTime: {
     fontSize: 14,
-    color: "#065F46",
-    fontWeight: "600",
+    color: '#065F46',
+    fontWeight: '600',
   },
   contentContainer: {
     flex: 1,
     paddingHorizontal: 16,
   },
   recentCard: {
-    backgroundColor: "#065F46",
+    backgroundColor: '#065F46',
     borderRadius: 20,
     padding: 20,
     marginHorizontal: 16,
     marginTop: -100,
     marginBottom: 16,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 8,
   },
   recentHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
     gap: 8,
   },
   recentTitle: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   recentSurah: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 32,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 12,
   },
   recentFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   recentVerse: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 14,
   },
   continueButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
   continueText: {
-    color: "#D4AF37",
+    color: '#D4AF37',
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   tabsContainer: {
-    flexDirection: "row",
-    backgroundColor: "transparent",
+    flexDirection: 'row',
+    backgroundColor: 'transparent',
     borderRadius: 0,
     padding: 0,
     marginBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: '#E5E7EB',
   },
   tab: {
     flex: 1,
     paddingVertical: 12,
-    alignItems: "center",
+    alignItems: 'center',
     borderBottomWidth: 2,
-    borderBottomColor: "transparent",
+    borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: "#065F46",
+    borderBottomColor: '#065F46',
   },
   tabText: {
     fontSize: 14,
-    color: "#9CA3AF",
-    fontWeight: "500",
+    color: '#9CA3AF',
+    fontWeight: '500',
   },
   activeTabText: {
-    color: "#065F46",
-    fontWeight: "600",
+    color: '#065F46',
+    fontWeight: '600',
   },
   gridContainer: {
     paddingBottom: 100,
@@ -373,23 +374,23 @@ const styles = StyleSheet.create({
     minHeight: 100,
   },
   cardContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
   surahNumber: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   surahName: {
     fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "right",
+    fontWeight: 'bold',
+    textAlign: 'right',
     flex: 1,
   },
   verseCount: {
     fontSize: 12,
-    textAlign: "right",
+    textAlign: 'right',
   },
 });

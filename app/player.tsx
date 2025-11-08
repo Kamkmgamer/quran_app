@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   View,
@@ -7,11 +8,11 @@ import {
   ScrollView,
   Modal,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useAudioPlayer } from '../contexts/AudioPlayerContext';
+
 // import Slider from '@react-native-community/slider'; // معطل مؤقتاً
 import quranDataImport from '../assets/Quran.json';
 import recitersData from '../assets/reciters.json';
+import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 
 const quranData = quranDataImport as any[];
 
