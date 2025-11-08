@@ -173,67 +173,67 @@ export const resetAllMocks = () => {
       mock.mockReset();
     }
   });
-  
+
   Object.values(mockFileSystem).forEach(mock => {
     if (jest.isMockFunction(mock)) {
       mock.mockReset();
     }
   });
-  
+
   Object.values(mockAsyncStorage).forEach(mock => {
     if (jest.isMockFunction(mock)) {
       mock.mockReset();
     }
   });
-  
+
   Object.values(mockLocation).forEach(mock => {
     if (jest.isMockFunction(mock)) {
       mock.mockReset();
     }
   });
-  
+
   Object.values(mockSensors.Magnetometer).forEach(mock => {
     if (jest.isMockFunction(mock)) {
       mock.mockReset();
     }
   });
-  
+
   Object.values(mockClipboard).forEach(mock => {
     if (jest.isMockFunction(mock)) {
       mock.mockReset();
     }
   });
-  
+
   Object.values(mockConstants).forEach(value => {
     if (jest.isMockFunction(value)) {
       value.mockReset();
     }
   });
-  
+
   Object.values(mockSplashScreen).forEach(mock => {
     if (jest.isMockFunction(mock)) {
       mock.mockReset();
     }
   });
-  
+
   Object.values(mockStatusBar).forEach(mock => {
     if (jest.isMockFunction(mock)) {
       mock.mockReset();
     }
   });
-  
+
   Object.values(mockWebBrowser).forEach(mock => {
     if (jest.isMockFunction(mock)) {
       mock.mockReset();
     }
   });
-  
+
   Object.values(mockSystemUI).forEach(mock => {
     if (jest.isMockFunction(mock)) {
       mock.mockReset();
     }
   });
-  
+
   Object.values(mockUpdates).forEach(mock => {
     if (jest.isMockFunction(mock)) {
       mock.mockReset();

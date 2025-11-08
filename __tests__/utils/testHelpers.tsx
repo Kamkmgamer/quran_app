@@ -1,8 +1,9 @@
-import React from 'react';
-import { render, RenderOptions } from '@testing-library/react-native';
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { ThemeProvider } from '@react-navigation/native';
 import { DarkTheme } from '@react-navigation/native';
-import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import { render, RenderOptions } from '@testing-library/react-native';
+import React from 'react';
+
 import { AudioPlayerProvider } from '../../contexts/AudioPlayerContext';
 
 // Mock theme for testing
@@ -39,7 +40,7 @@ const AllTheProviders: React.FC<AllTheProvidersProps> = ({ children }) => {
 // Custom render function
 const customRender = (
   ui: React.ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
+  options?: Omit<RenderOptions, 'wrapper'>,
 ) => render(ui, { wrapper: AllTheProviders, ...options });
 
 // Re-export everything from testing-library
