@@ -1,7 +1,8 @@
-import React from 'react';
 import { render } from '@testing-library/react-native';
-import { ThemedText } from '../ThemedText';
+import React from 'react';
+
 import { useThemeColor } from '../../hooks/useThemeColor';
+import { ThemedText } from '../ThemedText';
 
 // Mock the hook
 jest.mock('../../hooks/useThemeColor');
@@ -93,7 +94,7 @@ describe('ThemedText', () => {
     const { getByText } = render(
       <ThemedText numberOfLines={2} ellipsizeMode="tail">
         Long Text
-      </ThemedText>
+      </ThemedText>,
     );
 
     const textElement = getByText('Long Text');
@@ -108,12 +109,12 @@ describe('ThemedText', () => {
     render(
       <ThemedText lightColor={lightColor} darkColor={darkColor}>
         Test Text
-      </ThemedText>
+      </ThemedText>,
     );
 
     expect(mockUseThemeColor).toHaveBeenCalledWith(
       { light: lightColor, dark: darkColor },
-      'text'
+      'text',
     );
   });
 
@@ -124,7 +125,7 @@ describe('ThemedText', () => {
     const { getByText } = render(
       <ThemedText type="title" style={customStyle}>
         Styled Text
-      </ThemedText>
+      </ThemedText>,
     );
 
     const textElement = getByText('Styled Text');
