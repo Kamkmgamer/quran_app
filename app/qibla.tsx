@@ -8,15 +8,30 @@ import {
   Text,
   StyleSheet,
   Image,
-  Dimensions,
   TouchableOpacity,
   ActivityIndicator,
+  useWindowDimensions,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLocation } from '../contexts/LocationContext';
 
-const { width } = Dimensions.get('window');
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+const AnimatedView = Animated.createAnimatedComponent(View);
+
+const normalizeAngle = (angle: number) => ((angle % 360) + 360) % 360;
+
+const shortestAngleDelta = (from: number, to: number) => {
+  return ((to - from + 540) % 360) - 180;
+};
+
+type HeadingStabilizerState = {
+  lastRawAngle?: number;
+  lastAcceptedTime: number;
+  jitterScore: number;
+  holdUntil: number;
+};
 
 // موقع الكعبة بالدقة التي قدمتها (من DMS -> عشري)
 // 21°25'21" N = 21.4225
@@ -36,9 +51,27 @@ export default function QiblaCompass() {
   const [magneticInterference, setMagneticInterference] = useState(false);
   const [magneticFieldStrength, setMagneticFieldStrength] = useState(0);
   const [calibrationQuality, setCalibrationQuality] = useState(0);
-  const previousAngles = React.useRef<number[]>([]);  // للتنعيم
   const magnetometerData = React.useRef({ x: 0, y: 0, z: 0 });
   const accelerometerData = React.useRef({ x: 0, y: 0, z: 0 });
+  const pointerRotation = React.useRef(new Animated.Value(0)).current;
+  const compassRotation = React.useRef(new Animated.Value(0)).current;
+  const kaabaRotation = React.useRef(new Animated.Value(0)).current;
+  const pointerAngleRef = React.useRef<number | undefined>(undefined);
+  const compassAngleRef = React.useRef<number | undefined>(undefined);
+  const kaabaAngleRef = React.useRef<number | undefined>(undefined);
+  const magneticInterferenceRef = React.useRef(false);
+  const headingStabilizerRef = React.useRef<HeadingStabilizerState>({
+    lastAcceptedTime: 0,
+    jitterScore: 0,
+    holdUntil: 0,
+  });
+  const filteredAngleRef = React.useRef<number | undefined>(undefined);
+
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const isLandscape = screenWidth > screenHeight;
+  const shortestSide = Math.min(screenWidth, screenHeight);
+  const compassSize = shortestSide * (isLandscape ? 0.65 : 0.75);
+  const pointerIconSize = Math.max(Math.min(shortestSide * 0.22, 140), 90);
 
   // استخدام البيانات من السياق المحمل مسبقاً
   const qiblaDirection = locationContext.qiblaDirection;
@@ -52,26 +85,31 @@ export default function QiblaCompass() {
     lng: DEFAULT_LNG,
   };
 
-  // دالة لتنعيم القراءات ومنع الاهتزاز (Kalman-inspired smoothing)
-  const smoothAngle = (newAngle: number) => {
-    previousAngles.current.push(newAngle);
-    if (previousAngles.current.length > 10) {
-      previousAngles.current.shift();
+  // دالة لتنعيم القراءات ومنع الاهتزاز عبر مرشح منخفض التمرير يعتمد على مستوى الضجيج
+  const smoothAngle = React.useCallback((newAngle: number, jitterScore: number) => {
+    const cappedJitter = Math.min(Math.max(jitterScore, 0), 8);
+
+    const smoothingFactor =
+      cappedJitter >= 5 ? 0.08 :
+        cappedJitter >= 3 ? 0.12 :
+          0.18;
+
+    const maxStep =
+      cappedJitter >= 5 ? 6 :
+        cappedJitter >= 3 ? 9 :
+          14;
+
+    if (filteredAngleRef.current === undefined) {
+      filteredAngleRef.current = newAngle;
+      return newAngle;
     }
 
-    // حساب المتوسط مع مراعاة التفاف الزوايا (0-360)
-    let sumSin = 0;
-    let sumCos = 0;
-    previousAngles.current.forEach((angle, index) => {
-      // وزن أكبر للقراءات الأحدث
-      const weight = (index + 1) / previousAngles.current.length;
-      sumSin += Math.sin((angle * Math.PI) / 180) * weight;
-      sumCos += Math.cos((angle * Math.PI) / 180) * weight;
-    });
-
-    const avgAngle = Math.atan2(sumSin, sumCos) * (180 / Math.PI);
-    return (avgAngle + 360) % 360;
-  };
+    const delta = shortestAngleDelta(filteredAngleRef.current, newAngle);
+    const clampedDelta = Math.max(-maxStep, Math.min(maxStep, delta));
+    const nextAngle = normalizeAngle(filteredAngleRef.current + clampedDelta * smoothingFactor);
+    filteredAngleRef.current = nextAngle;
+    return nextAngle;
+  }, []);
 
   // كشف التداخل المغناطيسي
   const detectMagneticInterference = (x: number, y: number, z: number) => {
@@ -89,6 +127,10 @@ export default function QiblaCompass() {
 
     return magnitude;
   };
+
+  useEffect(() => {
+    magneticInterferenceRef.current = magneticInterference;
+  }, [magneticInterference]);
 
   // حساب الاتجاه مع تعويض الميل (3D tilt compensation)
   const calculateTiltCompensatedHeading = (
@@ -214,8 +256,7 @@ export default function QiblaCompass() {
 
               // استخدام الاتجاه الحقيقي (true north)
               const heading = headingData.trueHeading;
-              const smoothed = smoothAngle(heading);
-              setDeviceOrientation(smoothed);
+              handleHeadingUpdate(heading);
               setCompassMethod('location-heading');
               setIsCalibrated(true);
               setCalibrationQuality(headingData.accuracy || 0);
@@ -243,8 +284,7 @@ export default function QiblaCompass() {
                 let heading = alpha * (180 / Math.PI);
                 heading = (heading + 360) % 360;
 
-                const smoothed = smoothAngle(heading);
-                setDeviceOrientation(smoothed);
+                handleHeadingUpdate(heading);
                 setCompassMethod('device-motion');
                 setIsCalibrated(true);
                 setCalibrationQuality(3);
@@ -290,8 +330,7 @@ export default function QiblaCompass() {
               accel.x, accel.y, accel.z,
             );
 
-            const smoothed = smoothAngle(heading);
-            setDeviceOrientation(smoothed);
+            handleHeadingUpdate(heading);
             setCompassMethod('manual-fusion');
             setIsCalibrated(true);
             setCalibrationQuality(2);
@@ -315,8 +354,7 @@ export default function QiblaCompass() {
             let angle = Math.atan2(data.x, data.y) * (180 / Math.PI);
             angle = (angle + 360) % 360;
 
-            const smoothed = smoothAngle(angle);
-            setDeviceOrientation(smoothed);
+            handleHeadingUpdate(angle);
             setCompassMethod('raw-magnetometer');
             setIsCalibrated(true);
             setCalibrationQuality(1);
@@ -393,9 +431,177 @@ export default function QiblaCompass() {
     return Math.round(Math.abs(normalized)); // عرض القيمة المطلقة للدوران المطلوبة
   };
 
-
-  // Check if compass is ready
   const isQiblaReady = isCalibrated && !locationLoading && !locationError;
+
+  const handleHeadingUpdate = React.useCallback((rawAngle: number) => {
+    if (!Number.isFinite(rawAngle)) {
+      return false;
+    }
+
+    const normalized = normalizeAngle(rawAngle);
+    const now = Date.now();
+    const state = headingStabilizerRef.current;
+
+    if (state.holdUntil && now < state.holdUntil) {
+      state.lastRawAngle = normalized;
+      return false;
+    }
+
+    if (state.lastRawAngle === undefined) {
+      state.lastRawAngle = normalized;
+      state.lastAcceptedTime = now;
+      state.jitterScore = 0;
+      const smoothed = smoothAngle(normalized, state.jitterScore);
+      setDeviceOrientation(smoothed);
+      return true;
+    }
+
+    const delta = Math.abs(shortestAngleDelta(state.lastRawAngle, normalized));
+    const timeDelta = now - state.lastAcceptedTime;
+
+    const highVariance = delta > 18 && timeDelta < 180;
+    const mediumVariance = delta > 8 && timeDelta < 150;
+    const microVariance = delta < 1;
+
+    if (highVariance) {
+      state.jitterScore = Math.min(state.jitterScore + 2, 8);
+    } else if (mediumVariance) {
+      state.jitterScore = Math.min(state.jitterScore + 1, 8);
+    } else if (!microVariance) {
+      state.jitterScore = Math.max(state.jitterScore - 1, 0);
+    } else {
+      state.jitterScore = Math.max(state.jitterScore - 0.5, 0);
+    }
+
+    if (magneticInterferenceRef.current) {
+      state.jitterScore = Math.min(state.jitterScore + 1, 8);
+    }
+
+    let minimumInterval = 90;
+    if (state.jitterScore >= 5) {
+      minimumInterval = 300;
+    } else if (state.jitterScore >= 3) {
+      minimumInterval = 220;
+    }
+
+    if (timeDelta < minimumInterval) {
+      state.lastRawAngle = normalized;
+      return false;
+    }
+
+    if (state.jitterScore >= 5 && highVariance) {
+      state.holdUntil = now + 200;
+      state.lastRawAngle = normalized;
+      return false;
+    }
+
+    state.holdUntil = 0;
+    state.lastRawAngle = normalized;
+    state.lastAcceptedTime = now;
+
+    const smoothed = smoothAngle(normalized, state.jitterScore);
+    setDeviceOrientation(smoothed);
+    return true;
+  }, [smoothAngle]);
+
+  const animateRotation = React.useCallback(
+    (
+      animatedValue: Animated.Value,
+      angleRef: React.MutableRefObject<number | undefined>,
+      targetAngle: number,
+    ) => {
+      if (!Number.isFinite(targetAngle)) {
+        return;
+      }
+
+      const normalizedTarget = ((targetAngle % 360) + 360) % 360;
+
+      if (angleRef.current === undefined) {
+        angleRef.current = normalizedTarget;
+        animatedValue.setValue(normalizedTarget);
+        return;
+      }
+
+      const currentAbsolute = angleRef.current;
+      const currentNormalized = ((currentAbsolute % 360) + 360) % 360;
+      let delta = normalizedTarget - currentNormalized;
+      delta = ((delta + 540) % 360) - 180;
+      const nextAbsolute = currentAbsolute + delta;
+      angleRef.current = nextAbsolute;
+
+      const magnitude = Math.abs(delta);
+      const stiffness =
+        magnitude > 60 ? 130 :
+          magnitude > 30 ? 110 :
+            90;
+      const damping =
+        magnitude > 60 ? 22 :
+          magnitude > 30 ? 18 :
+            15;
+
+      Animated.spring(animatedValue, {
+        toValue: nextAbsolute,
+        stiffness,
+        damping,
+        mass: 0.85,
+        useNativeDriver: true,
+      }).start();
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!isCalibrated) {
+      return;
+    }
+
+    const heading = ((-deviceOrientation % 360) + 360) % 360;
+    animateRotation(compassRotation, compassAngleRef, heading);
+  }, [animateRotation, compassRotation, deviceOrientation, isCalibrated]);
+
+  useEffect(() => {
+    if (!isQiblaReady) {
+      return;
+    }
+
+    const relative = getRelativeAngle();
+    animateRotation(pointerRotation, pointerAngleRef, relative);
+    animateRotation(kaabaRotation, kaabaAngleRef, relative);
+  }, [
+    animateRotation,
+    deviceOrientation,
+    isQiblaReady,
+    kaabaRotation,
+    pointerRotation,
+    qiblaDirection,
+  ]);
+
+  const pointerRotate = React.useMemo(
+    () => pointerRotation.interpolate({
+      inputRange: [-360, 0, 360],
+      outputRange: ['-360deg', '0deg', '360deg'],
+      extrapolate: 'extend',
+    }),
+    [pointerRotation],
+  );
+
+  const compassRotate = React.useMemo(
+    () => compassRotation.interpolate({
+      inputRange: [-360, 0, 360],
+      outputRange: ['-360deg', '0deg', '360deg'],
+      extrapolate: 'extend',
+    }),
+    [compassRotation],
+  );
+
+  const relativeRotate = React.useMemo(
+    () => kaabaRotation.interpolate({
+      inputRange: [-360, 0, 360],
+      outputRange: ['-360deg', '0deg', '360deg'],
+      extrapolate: 'extend',
+    }),
+    [kaabaRotation],
+  );
 
   // Loading Screen
   if (!isQiblaReady) {
@@ -432,7 +638,7 @@ export default function QiblaCompass() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <View style={[styles.container, isLandscape && styles.containerLandscape]}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color="#10B981" />
@@ -441,57 +647,62 @@ export default function QiblaCompass() {
           <View style={styles.headerButton} />
         </View>
 
-        <View style={styles.directionInfo}>
-          <Text style={styles.directionText}>{getDirectionText()}</Text>
-          <Text style={styles.angleText}>{getDisplayedAngle()}°</Text>
-        </View>
+        <View style={[styles.contentWrapper, isLandscape && styles.contentWrapperLandscape]}>
+          <View style={[styles.infoPanel, isLandscape && styles.infoPanelLandscape]}>
+            <View style={[styles.directionInfo, isLandscape && styles.directionInfoLandscape]}>
+              <Text style={styles.directionText}>{getDirectionText()}</Text>
+              <Text style={styles.angleText}>{getDisplayedAngle()}°</Text>
+            </View>
 
-        <View style={styles.pointerContainer}>
-          <Image
-            source={require('../assets/images/pointer to mekka.png')}
-            style={[
-              styles.pointerImage,
-              { transform: [{ rotate: `${getRelativeAngle()}deg` }] },
-            ]}
-            resizeMode="contain"
-          />
-        </View>
-
-        <View style={styles.compassContainer}>
-          <View style={styles.compass}>
-            <Image
-              source={require('../assets/images/north east south west.png')}
-              style={[
-                styles.directionsImage,
-                { transform: [{ rotate: `${-deviceOrientation}deg` }] },
-              ]}
-              resizeMode="contain"
-            />
-
-            <View
-              style={[
-                styles.kaabaContainer,
-                { transform: [{ rotate: `${getRelativeAngle()}deg` }] },
-              ]}
-            >
-              <Image
-                source={require('../assets/images/kaba.png')}
-                style={styles.kaabaImage}
+            <View style={[styles.pointerContainer, isLandscape && styles.pointerContainerLandscape]}>
+              <AnimatedImage
+                source={require('../assets/images/pointer to mekka.png')}
+                style={[
+                  styles.pointerImage,
+                  { width: pointerIconSize, height: pointerIconSize },
+                  { transform: [{ rotate: pointerRotate }] },
+                ]}
                 resizeMode="contain"
               />
             </View>
+          </View>
 
-            <View
-              style={[
-                styles.userIndicatorContainer,
-                { transform: [{ rotate: `${getRelativeAngle()}deg` }] },
-              ]}
-            >
-              <Image
-                source={require('../assets/images/Vector.png')}
-                style={styles.centerVector}
+          <View style={[styles.compassContainer, isLandscape && styles.compassContainerLandscape]}>
+            <View style={[styles.compass, { width: compassSize, height: compassSize }]}>
+              <AnimatedImage
+                source={require('../assets/images/north east south west.png')}
+                style={[
+                  styles.directionsImage,
+                  { transform: [{ rotate: compassRotate }] },
+                ]}
                 resizeMode="contain"
               />
+
+              <AnimatedView
+                style={[
+                  styles.kaabaContainer,
+                  { transform: [{ rotate: relativeRotate }] },
+                ]}
+              >
+                <Image
+                  source={require('../assets/images/kaba.png')}
+                  style={styles.kaabaImage}
+                  resizeMode="contain"
+                />
+              </AnimatedView>
+
+              <AnimatedView
+                style={[
+                  styles.userIndicatorContainer,
+                  { transform: [{ rotate: relativeRotate }] },
+                ]}
+              >
+                <Image
+                  source={require('../assets/images/Vector.png')}
+                  style={styles.centerVector}
+                  resizeMode="contain"
+                />
+              </AnimatedView>
             </View>
           </View>
         </View>
@@ -510,6 +721,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  containerLandscape: {
+    paddingHorizontal: 16,
   },
   header: {
     flexDirection: 'row',
@@ -551,9 +765,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 24,
   },
+  pointerContainerLandscape: {
+    marginVertical: 12,
+  },
   pointerImage: {
-    width: 100,
-    height: 100,
+    width: 110,
+    height: 110,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
   },
   compassContainer: {
     flex: 1,
@@ -561,9 +782,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 40,
   },
+  compassContainerLandscape: {
+    flex: 1,
+    paddingBottom: 16,
+    justifyContent: 'flex-end',
+  },
   compass: {
-    width: width * 0.75,
-    height: width * 0.75,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -599,6 +823,26 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     marginTop: '15%',
+  },
+  contentWrapper: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  contentWrapperLandscape: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  infoPanel: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoPanelLandscape: {
+    flex: 1,
+    paddingRight: 24,
+  },
+  directionInfoLandscape: {
+    paddingVertical: 0,
   },
   loadingContainer: {
     flex: 1,

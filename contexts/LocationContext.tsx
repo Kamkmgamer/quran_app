@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 
 import PrayerTimesService, { PrayerTimesData, Coordinates, CalculationMethods, PrayerConfig } from '../services/PrayerTimesService';
 
@@ -63,6 +63,72 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     return bearing;
   };
 
+  const loadPrayerData = async (coords: Coordinates) => {
+    const config = await PrayerTimesService.getPrayerConfig(calculationMethod);
+    setPrayerConfig(config);
+
+    const prayerData = await PrayerTimesService.getPrayerTimes(coords, calculationMethod);
+    setPrayerTimes(prayerData);
+  };
+
+  const NETWORK_LOCATION_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  const networkLocationCacheRef = useRef<{ coords: Coordinates; timestamp: number } | null>(null);
+
+  const getNetworkLocation = async (): Promise<Coordinates | null> => {
+    if (
+      networkLocationCacheRef.current &&
+      Date.now() - networkLocationCacheRef.current.timestamp < NETWORK_LOCATION_CACHE_DURATION
+    ) {
+      return networkLocationCacheRef.current.coords;
+    }
+
+    try {
+      const response = await fetch('https://ipapi.co/json/', {
+        headers: {
+          'User-Agent': 'QuranApp/1.0 (contact@quranapp.local)',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const latitude = parseFloat(data.latitude);
+      const longitude = parseFloat(data.longitude);
+
+      if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+        const coords = { latitude, longitude };
+        networkLocationCacheRef.current = {
+          coords,
+          timestamp: Date.now(),
+        };
+        return coords;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Network location fetch error:', error);
+      return null;
+    }
+  };
+
+  const applyFallbackLocation = async (
+    coords: Coordinates,
+    errorMessage: string,
+  ) => {
+    setLocation(coords);
+    const qibla = calculateQiblaDirection(coords.latitude, coords.longitude);
+    setQiblaDirection(qibla);
+    setLocationError(errorMessage);
+
+    try {
+      await loadPrayerData(coords);
+    } catch (err) {
+      console.error('Failed to fetch prayer times for fallback location:', err);
+    }
+  };
+
   // جلب الموقع ومواقيت الصلاة
   const fetchLocationAndPrayerTimes = async () => {
     try {
@@ -72,26 +138,21 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       // طلب إذن الوصول للموقع
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        console.log('Location permission denied, using default location');
-        // استخدام الموقع الافتراضي (الرياض)
-        setLocation({ latitude: DEFAULT_LAT, longitude: DEFAULT_LNG });
-        const qibla = calculateQiblaDirection(DEFAULT_LAT, DEFAULT_LNG);
-        setQiblaDirection(qibla);
-        setLocationError('لم يتم منح إذن الموقع. يتم استخدام الموقع الافتراضي (الرياض)');
+        console.log('Location permission denied, attempting network-based location');
 
-        // جلب مواقيت الصلاة للموقع الافتراضي
-        try {
-          const config = await PrayerTimesService.getPrayerConfig(calculationMethod);
-          setPrayerConfig(config);
+        const networkCoords = await getNetworkLocation();
 
-          const coords: Coordinates = {
-            latitude: DEFAULT_LAT,
-            longitude: DEFAULT_LNG,
-          };
-          const prayerData = await PrayerTimesService.getPrayerTimes(coords, calculationMethod);
-          setPrayerTimes(prayerData);
-        } catch (err) {
-          console.error('Failed to fetch prayer times with default location:', err);
+        if (networkCoords) {
+          await applyFallbackLocation(
+            networkCoords,
+            'لم يتم منح إذن الموقع. تم استخدام تقدير الموقع عبر الشبكة',
+          );
+        } else {
+          console.log('Network-based location unavailable, using default location');
+          await applyFallbackLocation(
+            { latitude: DEFAULT_LAT, longitude: DEFAULT_LNG },
+            'لم يتم منح إذن الموقع. يتم استخدام الموقع الافتراضي (الرياض)',
+          );
         }
 
         setLocationLoading(false);
@@ -116,12 +177,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 
       // جلب مواقيت الصلاة
       try {
-        const config = await PrayerTimesService.getPrayerConfig(calculationMethod);
-        setPrayerConfig(config);
-
-        const prayerData = await PrayerTimesService.getPrayerTimes(coords, calculationMethod);
-        setPrayerTimes(prayerData);
-
+        await loadPrayerData(coords);
         console.log('Location and prayer times fetched successfully on app launch');
       } catch (apiError) {
         console.error('Prayer times API error:', apiError);
@@ -129,12 +185,21 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       }
     } catch (err) {
       console.error('Location fetch error:', err);
-      setLocationError('فشل في الحصول على الموقع');
+      setLocationError('فشل في الحصول على الموقع بدقة. نحاول استخدام موقع الشبكة');
 
-      // استخدام الموقع الافتراضي في حالة الخطأ
-      setLocation({ latitude: DEFAULT_LAT, longitude: DEFAULT_LNG });
-      const qibla = calculateQiblaDirection(DEFAULT_LAT, DEFAULT_LNG);
-      setQiblaDirection(qibla);
+      const networkCoords = await getNetworkLocation();
+
+      if (networkCoords) {
+        await applyFallbackLocation(
+          networkCoords,
+          'تعذر الحصول على الموقع الدقيق. تم استخدام تقدير الموقع عبر الشبكة',
+        );
+      } else {
+        await applyFallbackLocation(
+          { latitude: DEFAULT_LAT, longitude: DEFAULT_LNG },
+          'تعذر الحصول على الموقع. يتم استخدام الموقع الافتراضي (الرياض)',
+        );
+      }
     } finally {
       setLocationLoading(false);
     }

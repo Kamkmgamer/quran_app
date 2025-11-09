@@ -82,6 +82,11 @@ class PrayerTimesService {
       // Using OpenStreetMap Nominatim API for reverse geocoding (free)
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.latitude}&lon=${coordinates.longitude}&accept-language=ar`,
+        {
+          headers: {
+            'User-Agent': 'QuranApp/1.0 (contact@quranapp.local)',
+          },
+        },
       );
 
       if (!response.ok) {
