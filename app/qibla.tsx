@@ -34,23 +34,12 @@ type HeadingStabilizerState = {
 };
 
 // موقع الكعبة بالدقة التي قدمتها (من DMS -> عشري)
-// 21°25'21" N = 21.4225
-// 39°49'34" E = 39.82611111111111
-const KAABA_LAT = 21.4225;
-const KAABA_LNG = 39.82611111111111;
-
-// موقع افتراضي (الرياض) حتى نحصل على صلاحية الموقع
-const DEFAULT_LAT = 24.7136;
-const DEFAULT_LNG = 46.6753;
 
 export default function QiblaCompass() {
   const locationContext = useLocation();
   const [deviceOrientation, setDeviceOrientation] = useState(0); // اتجاه الجهاز بالنسبة للشمال بالدرجات
   const [isCalibrated, setIsCalibrated] = useState(false);
-  const [compassMethod, setCompassMethod] = useState<string>('initializing');
-  const [magneticInterference, setMagneticInterference] = useState(false);
-  const [magneticFieldStrength, setMagneticFieldStrength] = useState(0);
-  const [calibrationQuality, setCalibrationQuality] = useState(0);
+  const [magneticInterference] = useState(false);
   const magnetometerData = React.useRef({ x: 0, y: 0, z: 0 });
   const accelerometerData = React.useRef({ x: 0, y: 0, z: 0 });
   const pointerRotation = React.useRef(new Animated.Value(0)).current;
@@ -61,6 +50,7 @@ export default function QiblaCompass() {
   const kaabaAngleRef = React.useRef<number | undefined>(undefined);
   const magneticInterferenceRef = React.useRef(false);
   const headingStabilizerRef = React.useRef<HeadingStabilizerState>({
+    lastRawAngle: undefined,
     lastAcceptedTime: 0,
     jitterScore: 0,
     holdUntil: 0,
@@ -77,14 +67,6 @@ export default function QiblaCompass() {
   const qiblaDirection = locationContext.qiblaDirection;
   const locationLoading = locationContext.locationLoading;
   const locationError = locationContext.locationError;
-  const userLocation = locationContext.location ? {
-    lat: locationContext.location.latitude,
-    lng: locationContext.location.longitude,
-  } : {
-    lat: DEFAULT_LAT,
-    lng: DEFAULT_LNG,
-  };
-
   // دالة لتنعيم القراءات ومنع الاهتزاز عبر مرشح منخفض التمرير يعتمد على مستوى الضجيج
   const smoothAngle = React.useCallback((newAngle: number, jitterScore: number) => {
     const cappedJitter = Math.min(Math.max(jitterScore, 0), 8);
@@ -110,23 +92,6 @@ export default function QiblaCompass() {
     filteredAngleRef.current = nextAngle;
     return nextAngle;
   }, []);
-
-  // كشف التداخل المغناطيسي
-  const detectMagneticInterference = (x: number, y: number, z: number) => {
-    // حساب قوة المجال المغناطيسي (μT)
-    const magnitude = Math.sqrt(x * x + y * y + z * z);
-    setMagneticFieldStrength(magnitude);
-
-    // المجال المغناطيسي للأرض: 25-65 μT
-    // إذا كانت القيمة خارج هذا النطاق، هناك تداخل
-    if (magnitude < 20 || magnitude > 70) {
-      setMagneticInterference(true);
-    } else {
-      setMagneticInterference(false);
-    }
-
-    return magnitude;
-  };
 
   useEffect(() => {
     magneticInterferenceRef.current = magneticInterference;
@@ -162,75 +127,33 @@ export default function QiblaCompass() {
     return heading;
   };
 
-  // تحويل إحداثيات المستخدم و الكعبة إلى زاوية البوصلة تجاه الكعبة (bearing)
-  const calculateQiblaDirection = (userLat: number, userLng: number) => {
-    const lat1 = (userLat * Math.PI) / 180;
-    const lat2 = (KAABA_LAT * Math.PI) / 180;
-    const deltaLng = ((KAABA_LNG - userLng) * Math.PI) / 180;
-
-    const y = Math.sin(deltaLng) * Math.cos(lat2);
-    const x =
-      Math.cos(lat1) * Math.sin(lat2) -
-      Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
-
-    let bearing = Math.atan2(y, x);
-    bearing = (bearing * 180) / Math.PI;
-    bearing = (bearing + 360) % 360; // 0..360 حيث 0 = شمال حقيقي
-
-    // Test mode: Log detailed calculations
-    if (__DEV__) {
-      console.log('=== Qibla Bearing Calculation ===');
-      console.log(`User Location: ${userLat.toFixed(6)}, ${userLng.toFixed(6)}`);
-      console.log(`Kaaba Location: ${KAABA_LAT}, ${KAABA_LNG}`);
-      console.log(`Calculated Bearing: ${bearing.toFixed(2)}°`);
-      console.log(`Direction: ${getDirectionName(bearing)}`);
-
-      // Verify against known cities
-      const knownCities = getKnownCityExpectedBearing(userLat, userLng);
-      if (knownCities) {
-        console.log(`Expected for ${knownCities.name}: ${knownCities.expected}°`);
-        console.log(`Difference: ${Math.abs(bearing - knownCities.expected).toFixed(2)}°`);
-      }
-    }
-
-    return bearing;
+  // Helper functions that are still used
+  const detectMagneticInterference = (x: number, y: number, z: number) => {
+    const magnitude = Math.sqrt(x * x + y * y + z * z);
+    return magnitude > 100 || magnitude < 20;
   };
 
-  // الحصول على اسم الاتجاه من الزاوية
-  const getDirectionName = (angle: number) => {
-    const directions = [
-      'شمال', 'شمال شرق', 'شرق', 'جنوب شرق',
-      'جنوب', 'جنوب غرب', 'غرب', 'شمال غرب',
-    ];
-    const index = Math.round(angle / 45) % 8;
-    return directions[index];
-  };
+  const handleHeadingUpdate = (heading: number) => {
+    const now = Date.now();
+    const timeSinceLastUpdate = now - headingStabilizerRef.current.lastAcceptedTime;
 
-  // التحقق من المواقع المعروفة
-  const getKnownCityExpectedBearing = (lat: number, lng: number) => {
-    const knownCities = [
-      { name: 'الرياض', lat: 24.7136, lng: 46.6753, expected: 241 },
-      { name: 'جدة', lat: 21.5433, lng: 39.1728, expected: 85 },
-      { name: 'الدمام', lat: 26.4207, lng: 50.0888, expected: 253 },
-      { name: 'أبها', lat: 18.2164, lng: 42.5053, expected: 340 },
-      { name: 'حائل', lat: 27.5219, lng: 41.6901, expected: 178 },
-      { name: 'القاهرة', lat: 30.0444, lng: 31.2357, expected: 135 },
-      { name: 'دبي', lat: 25.2048, lng: 55.2708, expected: 258 },
-      { name: 'إسطنبول', lat: 41.0082, lng: 28.9784, expected: 147 },
-      { name: 'لندن', lat: 51.5074, lng: -0.1278, expected: 119 },
-      { name: 'نيويورك', lat: 40.7128, lng: -74.006, expected: 58 },
-    ];
-
-    for (const city of knownCities) {
-      // التحقق إذا كان الموقع قريباً من مدينة معروفة (ضمن 0.5 درجة)
-      if (
-        Math.abs(lat - city.lat) < 0.5 &&
-        Math.abs(lng - city.lng) < 0.5
-      ) {
-        return city;
-      }
+    // Calculate jitter score
+    let jitterScore = 0;
+    if (headingStabilizerRef.current.lastRawAngle !== undefined) {
+      const angleDiff = Math.abs(heading - headingStabilizerRef.current.lastRawAngle);
+      const normalizedDiff = Math.min(angleDiff, 360 - angleDiff);
+      jitterScore = normalizedDiff;
     }
-    return null;
+
+    headingStabilizerRef.current.lastRawAngle = heading;
+
+    // Only update if enough time has passed or angle changed significantly
+    if (timeSinceLastUpdate > 200 || jitterScore > 5) {
+      const smoothedAngle = smoothAngle(heading, jitterScore);
+      setDeviceOrientation(smoothedAngle);
+      headingStabilizerRef.current.lastAcceptedTime = now;
+      headingStabilizerRef.current.jitterScore = jitterScore;
+    }
   };
 
   // الموقع يتم جلبه تلقائياً من السياق عند بدء التطبيق
@@ -257,9 +180,7 @@ export default function QiblaCompass() {
               // استخدام الاتجاه الحقيقي (true north)
               const heading = headingData.trueHeading;
               handleHeadingUpdate(heading);
-              setCompassMethod('location-heading');
               setIsCalibrated(true);
-              setCalibrationQuality(headingData.accuracy || 0);
             });
 
             console.log('Location Heading method active');
@@ -279,15 +200,13 @@ export default function QiblaCompass() {
 
               if (data.rotation) {
                 // حساب الاتجاه من مصفوفة الدوران
-                const { alpha, beta, gamma } = data.rotation;
+                const { alpha } = data.rotation;
                 // alpha هو الاتجاه حول المحور Z (البوصلة)
                 let heading = alpha * (180 / Math.PI);
                 heading = (heading + 360) % 360;
 
                 handleHeadingUpdate(heading);
-                setCompassMethod('device-motion');
                 setIsCalibrated(true);
-                setCalibrationQuality(3);
               }
             });
 
@@ -331,9 +250,7 @@ export default function QiblaCompass() {
             );
 
             handleHeadingUpdate(heading);
-            setCompassMethod('manual-fusion');
             setIsCalibrated(true);
-            setCalibrationQuality(2);
           };
 
           Magnetometer.setUpdateInterval(100);
@@ -355,20 +272,18 @@ export default function QiblaCompass() {
             angle = (angle + 360) % 360;
 
             handleHeadingUpdate(angle);
-            setCompassMethod('raw-magnetometer');
             setIsCalibrated(true);
-            setCalibrationQuality(1);
           });
 
           Magnetometer.setUpdateInterval(100);
           console.log('Raw magnetometer method active (WARNING: hold device flat)');
         } else {
           console.error('No compass sensors available!');
-          setCompassMethod('none');
+          setIsCalibrated(false);
         }
       } catch (error) {
         console.error('Error setting up compass:', error);
-        setCompassMethod('error');
+        setIsCalibrated(false);
       }
     };
 
@@ -432,77 +347,6 @@ export default function QiblaCompass() {
   };
 
   const isQiblaReady = isCalibrated && !locationLoading && !locationError;
-
-  const handleHeadingUpdate = React.useCallback((rawAngle: number) => {
-    if (!Number.isFinite(rawAngle)) {
-      return false;
-    }
-
-    const normalized = normalizeAngle(rawAngle);
-    const now = Date.now();
-    const state = headingStabilizerRef.current;
-
-    if (state.holdUntil && now < state.holdUntil) {
-      state.lastRawAngle = normalized;
-      return false;
-    }
-
-    if (state.lastRawAngle === undefined) {
-      state.lastRawAngle = normalized;
-      state.lastAcceptedTime = now;
-      state.jitterScore = 0;
-      const smoothed = smoothAngle(normalized, state.jitterScore);
-      setDeviceOrientation(smoothed);
-      return true;
-    }
-
-    const delta = Math.abs(shortestAngleDelta(state.lastRawAngle, normalized));
-    const timeDelta = now - state.lastAcceptedTime;
-
-    const highVariance = delta > 18 && timeDelta < 180;
-    const mediumVariance = delta > 8 && timeDelta < 150;
-    const microVariance = delta < 1;
-
-    if (highVariance) {
-      state.jitterScore = Math.min(state.jitterScore + 2, 8);
-    } else if (mediumVariance) {
-      state.jitterScore = Math.min(state.jitterScore + 1, 8);
-    } else if (!microVariance) {
-      state.jitterScore = Math.max(state.jitterScore - 1, 0);
-    } else {
-      state.jitterScore = Math.max(state.jitterScore - 0.5, 0);
-    }
-
-    if (magneticInterferenceRef.current) {
-      state.jitterScore = Math.min(state.jitterScore + 1, 8);
-    }
-
-    let minimumInterval = 90;
-    if (state.jitterScore >= 5) {
-      minimumInterval = 300;
-    } else if (state.jitterScore >= 3) {
-      minimumInterval = 220;
-    }
-
-    if (timeDelta < minimumInterval) {
-      state.lastRawAngle = normalized;
-      return false;
-    }
-
-    if (state.jitterScore >= 5 && highVariance) {
-      state.holdUntil = now + 200;
-      state.lastRawAngle = normalized;
-      return false;
-    }
-
-    state.holdUntil = 0;
-    state.lastRawAngle = normalized;
-    state.lastAcceptedTime = now;
-
-    const smoothed = smoothAngle(normalized, state.jitterScore);
-    setDeviceOrientation(smoothed);
-    return true;
-  }, [smoothAngle]);
 
   const animateRotation = React.useCallback(
     (
