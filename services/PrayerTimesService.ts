@@ -351,7 +351,7 @@ class PrayerTimesService {
         throw new Error(`API returned error: ${data.data || 'Unknown error'}`);
       }
 
-      const methods = Object.entries(data.data).map(([key, value]: [string, any]) => ({
+      const methods = Object.entries(data.data).map(([_key, value]: [string, any]) => ({
         id: value.id,
         name: value.name,
         params: value.params,
