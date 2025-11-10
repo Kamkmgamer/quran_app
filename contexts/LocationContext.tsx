@@ -11,6 +11,8 @@ const KAABA_LNG = 39.82611111111111;
 const DEFAULT_LAT = 24.7136;
 const DEFAULT_LNG = 46.6753;
 
+type LocationSource = 'gps' | 'network' | 'default';
+
 interface LocationContextType {
   location: { latitude: number; longitude: number } | null;
   qiblaDirection: number;
@@ -18,6 +20,9 @@ interface LocationContextType {
   prayerConfig: PrayerConfig | null;
   locationLoading: boolean;
   locationError: string | null;
+  locationSource: LocationSource;
+  locationNotice: string | null;
+  lastUpdated: number | null;
   refreshLocation: () => Promise<void>;
   refreshPrayerTimes: () => Promise<void>;
 }
@@ -43,6 +48,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [prayerConfig, setPrayerConfig] = useState<PrayerConfig | null>(null);
   const [locationLoading, setLocationLoading] = useState<boolean>(true);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationSource, setLocationSource] = useState<LocationSource>('gps');
+  const [locationNotice, setLocationNotice] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [calculationMethod] = useState<number>(CalculationMethods.EGYPT);
 
   // حساب اتجاه القبلة بناءً على موقع المستخدم
@@ -69,6 +77,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 
     const prayerData = await PrayerTimesService.getPrayerTimes(coords, calculationMethod);
     setPrayerTimes(prayerData);
+    setLastUpdated(Date.now());
+    setLocationError(null);
   };
 
   const NETWORK_LOCATION_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -116,11 +126,14 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const applyFallbackLocation = async (
     coords: Coordinates,
     errorMessage: string,
+    source: LocationSource,
   ) => {
     setLocation(coords);
+    setLocationSource(source);
     const qibla = calculateQiblaDirection(coords.latitude, coords.longitude);
     setQiblaDirection(qibla);
-    setLocationError(errorMessage);
+    setLocationNotice(errorMessage);
+    setLocationError(null);
 
     try {
       await loadPrayerData(coords);
@@ -134,6 +147,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     try {
       setLocationLoading(true);
       setLocationError(null);
+      setLocationNotice(null);
+      setLocationSource('gps');
 
       // طلب إذن الوصول للموقع
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -146,12 +161,14 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           await applyFallbackLocation(
             networkCoords,
             'لم يتم منح إذن الموقع. تم استخدام تقدير الموقع عبر الشبكة',
+            'network',
           );
         } else {
           console.log('Network-based location unavailable, using default location');
           await applyFallbackLocation(
             { latitude: DEFAULT_LAT, longitude: DEFAULT_LNG },
             'لم يتم منح إذن الموقع. يتم استخدام الموقع الافتراضي (الرياض)',
+            'default',
           );
         }
 
@@ -170,6 +187,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       };
 
       setLocation(coords);
+      setLocationSource('gps');
+      setLocationNotice(null);
 
       // حساب اتجاه القبلة
       const qibla = calculateQiblaDirection(coords.latitude, coords.longitude);
@@ -185,7 +204,6 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       }
     } catch (err) {
       console.error('Location fetch error:', err);
-      setLocationError('فشل في الحصول على الموقع بدقة. نحاول استخدام موقع الشبكة');
 
       const networkCoords = await getNetworkLocation();
 
@@ -193,11 +211,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         await applyFallbackLocation(
           networkCoords,
           'تعذر الحصول على الموقع الدقيق. تم استخدام تقدير الموقع عبر الشبكة',
+          'network',
         );
       } else {
         await applyFallbackLocation(
           { latitude: DEFAULT_LAT, longitude: DEFAULT_LNG },
           'تعذر الحصول على الموقع. يتم استخدام الموقع الافتراضي (الرياض)',
+          'default',
         );
       }
     } finally {
@@ -220,11 +240,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     if (location) {
       try {
         await PrayerTimesService.clearCache();
-        const config = await PrayerTimesService.getPrayerConfig(calculationMethod);
-        setPrayerConfig(config);
-
-        const prayerData = await PrayerTimesService.getPrayerTimes(location, calculationMethod);
-        setPrayerTimes(prayerData);
+        await loadPrayerData(location);
       } catch (err) {
         console.error('Failed to refresh prayer times:', err);
       }
@@ -238,6 +254,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     prayerConfig,
     locationLoading,
     locationError,
+    locationSource,
+    locationNotice,
+    lastUpdated,
     refreshLocation,
     refreshPrayerTimes,
   };

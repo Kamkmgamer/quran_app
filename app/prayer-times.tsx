@@ -26,6 +26,9 @@ export default function PrayerTimesScreen() {
   // استخدام البيانات من السياق
   const prayerTimesData = locationContext.prayerTimes;
   const prayerConfig = locationContext.prayerConfig;
+  const locationNotice = locationContext.locationNotice;
+  const locationSource = locationContext.locationSource;
+  const lastUpdated = locationContext.lastUpdated;
 
   const processPrayerTimes = useCallback((data: PrayerTimesData, prayers: PrayerInfo[]) => {
     try {
@@ -53,7 +56,8 @@ export default function PrayerTimesScreen() {
       }
 
       const now = new Date();
-      const times: PrayerTime[] = prayers.map((prayer) => {
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const timesWithMeta = prayers.map((prayer) => {
         let timeString: string;
 
         switch (prayer.english) {
@@ -79,20 +83,53 @@ export default function PrayerTimesScreen() {
             timeString = '--:--';
         }
 
-        // تحديد الصلاة التالية
-        const currentTime = now.getHours() * 60 + now.getMinutes();
-        const [hours, minutes] = timeString.split(':').map(Number);
-        const prayerTime = hours * 60 + minutes;
-
-        const isNext = prayerTime > currentTime;
+        const [hoursStr, minutesStr] = timeString.split(':');
+        const hours = Number(hoursStr);
+        const minutes = Number(minutesStr);
+        const isValidTime = Number.isFinite(hours) && Number.isFinite(minutes);
+        const prayerTimeMinutes = isValidTime ? hours * 60 + minutes : null;
 
         return {
           name: prayer.arabic,
           time: timeString,
-          isNext,
           icon: prayer.icon,
+          minutesSinceMidnight: prayerTimeMinutes,
         };
       });
+
+      const validTimes = timesWithMeta.filter(
+        (prayer) => prayer.minutesSinceMidnight !== null,
+      ) as Array<typeof timesWithMeta[number] & { minutesSinceMidnight: number }>;
+
+      let nextPrayerMinutes: number | null = null;
+
+      if (validTimes.length > 0) {
+        const upcoming = validTimes.filter(
+          (prayer) => prayer.minutesSinceMidnight > currentMinutes,
+        );
+
+        if (upcoming.length > 0) {
+          nextPrayerMinutes = upcoming.reduce(
+            (min, prayer) => Math.min(min, prayer.minutesSinceMidnight),
+            Number.POSITIVE_INFINITY,
+          );
+        } else {
+          nextPrayerMinutes = validTimes.reduce(
+            (min, prayer) => Math.min(min, prayer.minutesSinceMidnight),
+            Number.POSITIVE_INFINITY,
+          );
+        }
+      }
+
+      const times: PrayerTime[] = timesWithMeta.map((prayer) => ({
+        name: prayer.name,
+        time: prayer.time,
+        icon: prayer.icon,
+        isNext:
+          nextPrayerMinutes !== null &&
+          prayer.minutesSinceMidnight !== null &&
+          prayer.minutesSinceMidnight === nextPrayerMinutes,
+      }));
 
       setPrayerTimes(times);
     } catch (err) {
@@ -159,14 +196,29 @@ export default function PrayerTimesScreen() {
   };
 
   const formatTime = (timeString: string) => {
-    // If the time is already in HH:MM format, just return it
-    if (timeString.includes(':') && !timeString.includes('ص') && !timeString.includes('م')) {
-      return timeString;
+    if (!timeString || timeString === '--:--') {
+      return '--:--';
     }
 
-    const [hours, minutes] = timeString.split(':');
-    const hour = parseInt(hours);
-    const minute = parseInt(minutes);
+    const cleaned = timeString.trim();
+
+    // If the time is already in HH:MM format, just return it
+    if (
+      cleaned.includes(':') &&
+      !cleaned.includes('ص') &&
+      !cleaned.includes('م') &&
+      /^\d{1,2}:\d{2}$/.test(cleaned)
+    ) {
+      return cleaned;
+    }
+
+    const [hours, minutes] = cleaned.split(':');
+    const hour = parseInt(hours, 10);
+    const minute = parseInt(minutes, 10);
+
+    if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+      return '--:--';
+    }
 
     if (hour >= 12) {
       const displayHour = hour === 12 ? 12 : hour - 12;
@@ -174,6 +226,43 @@ export default function PrayerTimesScreen() {
     } else {
       const displayHour = hour === 0 ? 12 : hour;
       return `${displayHour}:${minute.toString().padStart(2, '0')} ${hour >= 12 ? 'م' : 'ص'}`;
+    }
+  };
+
+  const getLastUpdatedLabel = () => {
+    if (!lastUpdated) {
+      return '—';
+    }
+
+    const date = new Date(lastUpdated);
+    return date.toLocaleTimeString('ar-SA', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getLocationSourceLabel = () => {
+    switch (locationSource) {
+      case 'gps':
+        return 'الموقع من نظام GPS';
+      case 'network':
+        return 'الموقع عبر الشبكة';
+      case 'default':
+        return 'موقع افتراضي (الرياض)';
+      default:
+        return 'مصدر موقع غير معروف';
+    }
+  };
+
+  const getLocationSourceBadgeStyle = () => {
+    switch (locationSource) {
+      case 'gps':
+        return styles.locationSourceBadgeSuccess;
+      case 'network':
+        return styles.locationSourceBadgeInfo;
+      case 'default':
+      default:
+        return styles.locationSourceBadgeNeutral;
     }
   };
 
@@ -187,6 +276,39 @@ export default function PrayerTimesScreen() {
     setRefreshing(false);
   };
 
+  const handleManualRefresh = () => {
+    if (!refreshing) {
+      onRefresh();
+    }
+  };
+
+  const renderStatusBanner = () => {
+    if (!locationNotice) {
+      return null;
+    }
+
+    const isDefault = locationSource === 'default';
+    const iconName = isDefault ? 'alert-circle' : 'information-circle';
+    const iconColor = isDefault ? '#B45309' : '#2563EB';
+
+    return (
+      <View
+        style={[
+          styles.statusBanner,
+          isDefault ? styles.statusBannerWarning : styles.statusBannerInfo,
+        ]}
+      >
+        <Ionicons
+          name={iconName as any}
+          size={18}
+          color={iconColor}
+          style={styles.statusBannerIcon}
+        />
+        <Text style={styles.statusBannerText}>{locationNotice}</Text>
+      </View>
+    );
+  };
+
   const renderHeader = () => (
     <View style={styles.headerRow}>
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -196,7 +318,21 @@ export default function PrayerTimesScreen() {
         <Text style={styles.headerTitle}>مواقيت الصلاة</Text>
         <Text style={styles.headerSubtitle}>تحديث لحظي حسب موقعك الحالي</Text>
       </View>
-      <View style={styles.backButton} />
+      <TouchableOpacity
+        style={[
+          styles.refreshButton,
+          refreshing && styles.refreshButtonDisabled,
+        ]}
+        onPress={handleManualRefresh}
+        disabled={refreshing}
+        activeOpacity={0.7}
+      >
+        {refreshing ? (
+          <ActivityIndicator size="small" color="#065F46" />
+        ) : (
+          <Ionicons name="refresh" size={22} color="#065F46" />
+        )}
+      </TouchableOpacity>
     </View>
   );
 
@@ -233,6 +369,7 @@ export default function PrayerTimesScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {renderHeader()}
+      {renderStatusBanner()}
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -241,7 +378,13 @@ export default function PrayerTimesScreen() {
       >
         {/* Current Time Card */}
         <View style={styles.currentTimeCard}>
-          <Text style={styles.currentTimeLabel}>الوقت الحالي</Text>
+          <View style={styles.currentTimeInfo}>
+            <Text style={styles.currentTimeLabel}>الوقت الحالي</Text>
+            <View style={styles.lastUpdatedRow}>
+              <Ionicons name="time-outline" size={16} color="#047857" />
+              <Text style={styles.lastUpdatedText}>آخر تحديث: {getLastUpdatedLabel()}</Text>
+            </View>
+          </View>
           <Text style={styles.currentTime}>{getCurrentTimeString()}</Text>
         </View>
 
@@ -324,9 +467,24 @@ export default function PrayerTimesScreen() {
         {prayerTimesData?.location && (
           <View style={styles.locationCard}>
             <Ionicons name="location" size={20} color="#10B981" />
-            <Text style={styles.locationText}>
-              الموقع: {prayerTimesData.location.name} {prayerTimesData.location.country && `- ${prayerTimesData.location.country}`}
-            </Text>
+            <View style={styles.locationDetails}>
+              <Text style={styles.locationText}>
+                الموقع: {prayerTimesData.location.name}
+                {prayerTimesData.location.country && ` - ${prayerTimesData.location.country}`}
+              </Text>
+              <View style={styles.locationMetaRow}>
+                <View style={[styles.locationSourceBadge, getLocationSourceBadgeStyle()]}>
+                  <Ionicons
+                    name={locationSource === 'gps' ? 'navigate' : locationSource === 'network' ? 'globe-outline' : 'location-outline'}
+                    size={14}
+                    color="#fff"
+                    style={styles.locationSourceIcon}
+                  />
+                  <Text style={styles.locationSourceText}>{getLocationSourceLabel()}</Text>
+                </View>
+                <Text style={styles.locationUpdatedText}>آخر تحديث: {getLastUpdatedLabel()}</Text>
+              </View>
+            </View>
           </View>
         )}
 
@@ -363,6 +521,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+  },
+  refreshButtonDisabled: {
+    opacity: 0.6,
+  },
   headerDetails: {
     flex: 1,
     alignItems: 'center',
@@ -377,6 +546,30 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 2,
   },
+  statusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  statusBannerInfo: {
+    backgroundColor: '#DBEAFE',
+  },
+  statusBannerWarning: {
+    backgroundColor: '#FEF3C7',
+  },
+  statusBannerIcon: {
+    marginRight: 8,
+  },
+  statusBannerText: {
+    flex: 1,
+    color: '#1F2937',
+    fontSize: 13,
+    lineHeight: 18,
+  },
   currentTimeCard: {
     backgroundColor: '#D1FAE5',
     borderRadius: 16,
@@ -387,10 +580,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  currentTimeInfo: {
+    flex: 1,
+    paddingRight: 16,
+  },
   currentTimeLabel: {
     fontSize: 16,
     color: '#065F46',
     fontWeight: '600',
+  },
+  lastUpdatedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  lastUpdatedText: {
+    marginLeft: 6,
+    fontSize: 12,
+    color: '#047857',
   },
   scrollView: {
     flex: 1,
@@ -570,11 +777,49 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
-  locationText: {
+  locationDetails: {
     marginLeft: 10,
+    flex: 1,
+  },
+  locationText: {
+    marginBottom: 4,
     fontSize: 13,
     color: '#6B7280',
-    flex: 1,
+    flexShrink: 1,
+  },
+  locationMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  locationSourceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  locationSourceBadgeSuccess: {
+    backgroundColor: '#065F46',
+  },
+  locationSourceBadgeInfo: {
+    backgroundColor: '#2563EB',
+  },
+  locationSourceBadgeNeutral: {
+    backgroundColor: '#6B7280',
+  },
+  locationSourceIcon: {
+    marginRight: 4,
+  },
+  locationSourceText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  locationUpdatedText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginLeft: 12,
   },
   dataSourceCard: {
     backgroundColor: '#F9FAFB',
