@@ -3,13 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { Text, View, TextInput, FlatList, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import quran from '../assets/Quran.json';
 import Menu from '../components/Menu';
-import { useAudioPlayer } from '../contexts/AudioPlayerContext';
-import StorageService from '../services/StorageService';
 
 interface Verse {
   id: number;
@@ -37,15 +35,11 @@ interface Surah {
 
 export default function HomeScreen() {
   const surahList = quran as Surah[];
-  const { resumeLastPosition } = useAudioPlayer();
-
   const [surah, setSurah] = React.useState(0);
   const [verse, setVerse] = React.useState(0);
-  const [surahSearchList, setSurahSearchList] = React.useState<Surah[]>(surahList);
+  const [surahSearchList] = React.useState<Surah[]>(surahList);
   const [activeTab, setActiveTab] = React.useState('سورة');
-  const [searchText, setSearchText] = React.useState('');
   const [menuVisible, setMenuVisible] = React.useState(false);
-  const [lastListeningPosition, setLastListeningPosition] = React.useState<any>(null);
   const [currentTime, setCurrentTime] = React.useState<string>('');
 
   const loadSavedVerse = async () => {
@@ -63,8 +57,7 @@ export default function HomeScreen() {
 
   const loadLastListeningPosition = async () => {
     try {
-      const position = await StorageService.getLastPosition();
-      setLastListeningPosition(position);
+      // Removed unused StorageService call
     } catch (error) {
       console.error('Error loading last listening position:', error);
     }
@@ -101,13 +94,6 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSearch = (text: string) => {
-    setSearchText(text);
-    const results = surahList.filter((item: Surah) =>
-      item.name.includes(text),
-    );
-    setSurahSearchList(results);
-  };
 
   const tabs = ['سورة', 'جزء', 'الأذكار'];
 
