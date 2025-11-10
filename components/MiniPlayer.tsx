@@ -25,7 +25,7 @@ const MiniPlayer: React.FC = () => {
     return null;
   }
 
-  const currentSurah = quranData[state.currentSurahId];
+  const currentSurah = quranData[state.currentSurahId - 1];
   const surahName = currentSurah?.name || '';
 
   const handlePress = () => {
