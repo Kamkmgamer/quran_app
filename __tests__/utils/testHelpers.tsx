@@ -1,6 +1,5 @@
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
-import { ThemeProvider } from '@react-navigation/native';
-import { DarkTheme } from '@react-navigation/native';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { render, RenderOptions } from '@testing-library/react-native';
 import React from 'react';
 
