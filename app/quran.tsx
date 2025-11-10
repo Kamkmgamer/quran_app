@@ -71,13 +71,12 @@ export default function Quran() {
         });
 
         await AsyncStorage.setItem('bookmarkedVerses', JSON.stringify(bookmarks));
-        alert('تم حفظ الآية في العلامات المرجعية ✓');
+        console.log('تم حفظ الآية في العلامات المرجعية ✓');
       } else {
-        alert('هذه الآية محفوظة بالفعل');
+        console.log('هذه الآية محفوظة بالفعل');
       }
     } catch (error) {
       console.error('Error saving verse:', error);
-      alert('حدث خطأ أثناء حفظ الآية');
     }
   };
 
