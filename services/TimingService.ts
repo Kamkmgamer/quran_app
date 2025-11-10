@@ -37,9 +37,9 @@ class TimingService {
 
     try {
       // محاولة تحميل ملف التوقيت إذا كان موجوداً
-      const timingFile = require(`../assets/timings/${surahId.toString().padStart(3, '0')}.json`);
-      this.timingsCache.set(surahId, timingFile);
-      return timingFile;
+      const timingFile = await import(`../assets/timings/${surahId.toString().padStart(3, '0')}.json`);
+      this.timingsCache.set(surahId, timingFile.default);
+      return timingFile.default;
     } catch {
       // إذا لم يكن الملف موجوداً، نستخدم توقيتات افتراضية
       console.log(`No timing file found for surah ${surahId}, using default timings`);
