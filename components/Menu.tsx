@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
   },
   menuContainer: {
     width: width * 0.7,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   menuItem: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 20,
@@ -207,6 +207,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#fff',
     fontWeight: '500',
+    textAlign: 'right',
   },
   section: {
     marginTop: 30,
@@ -217,9 +218,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 10,
     fontWeight: '500',
+    textAlign: 'right',
   },
   dropdown: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -233,5 +235,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     flex: 1,
+    textAlign: 'right',
   },
 });
