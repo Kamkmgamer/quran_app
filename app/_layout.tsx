@@ -4,18 +4,21 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { I18nManager, View } from 'react-native';
+import { I18nManager, View, Platform } from 'react-native';
 
 import MiniPlayer from '../components/MiniPlayer';
 import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
 import { LocationProvider } from '../contexts/LocationContext';
+
+// Force RTL before app loads
+I18nManager.allowRTL(true);
+I18nManager.forceRTL(true);
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useEffect(() => {
     SplashScreen.hideAsync();
-    I18nManager.forceRTL(true);
   }, []);
 
   return (
@@ -69,6 +72,20 @@ export default function RootLayout() {
                   options={{
                     headerShown: false,
                     title: 'القراء',
+                  }}
+                />
+                <Stack.Screen
+                  name="bookmarks"
+                  options={{
+                    headerShown: false,
+                    title: 'العلامات المرجعية',
+                  }}
+                />
+                <Stack.Screen
+                  name="font-size"
+                  options={{
+                    headerShown: false,
+                    title: 'حجم الخط',
                   }}
                 />
                 <Stack.Screen name="+not-found" />
