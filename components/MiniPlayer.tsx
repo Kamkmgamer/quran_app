@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   content: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
