@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#D1F3E5',
   },
   headerRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   settingItem: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 16,
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
   },
   actionItem: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 16,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDF4',
     borderRadius: 12,
     padding: 20,
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
