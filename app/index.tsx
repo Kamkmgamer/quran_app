@@ -99,12 +99,11 @@ export default function HomeScreen() {
 
   const renderSurahCard = ({ item, index }: { item: Surah; index: number }) => {
     const isLastRead = item.id - 1 === surah;
-    const isEven = index % 2 === 0;
-    const backgroundColor = isLastRead ? '#D4AF37' : (isEven ? '#fff' : '#FEFCE8');
-    const borderColor = isLastRead ? '#D4AF37' : '#D4AF37';
-    const textColor = isLastRead ? '#fff' : '#D97706';
-    const numberColor = isLastRead ? '#fff' : '#D97706';
-    const verseCountColor = isLastRead ? '#fff' : '#D97706';
+    const backgroundColor = isLastRead ? '#D4AF37' : '#fff';
+    const borderColor = isLastRead ? '#D4AF37' : '#E5E7EB';
+    const textColor = isLastRead ? '#fff' : '#065F46';
+    const numberColor = isLastRead ? '#fff' : '#065F46';
+    const verseCountColor = isLastRead ? '#fff' : '#065F46';
 
     return (
       <TouchableOpacity
@@ -251,7 +250,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -285,7 +284,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   recentHeader: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     marginBottom: 12,
     gap: 8,
@@ -294,6 +293,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '500',
+    textAlign: 'right',
   },
   recentSurah: {
     color: '#fff',
@@ -303,16 +303,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   recentFooter: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   recentVerse: {
     color: '#fff',
     fontSize: 14,
+    textAlign: 'right',
   },
   continueButton: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 4,
   },
@@ -320,9 +321,10 @@ const styles = StyleSheet.create({
     color: '#D4AF37',
     fontSize: 14,
     fontWeight: '500',
+    textAlign: 'right',
   },
   tabsContainer: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     backgroundColor: 'transparent',
     borderRadius: 0,
     padding: 0,
@@ -344,10 +346,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9CA3AF',
     fontWeight: '500',
+    textAlign: 'center',
   },
   activeTabText: {
     color: '#065F46',
     fontWeight: '600',
+    textAlign: 'center',
   },
   gridContainer: {
     paddingBottom: 100,
@@ -360,7 +364,7 @@ const styles = StyleSheet.create({
     minHeight: 100,
   },
   cardContent: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
@@ -374,6 +378,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'right',
     flex: 1,
+    marginRight: 8,
   },
   verseCount: {
     fontSize: 12,
