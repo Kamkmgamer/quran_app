@@ -35,7 +35,7 @@ export default function Quran() {
   const [renderCount, setRenderCount] = useState(50 + Number(verse));
   const [fontSize, setFontSize] = useState(fontSizeOptions.medium);
   const scrollViewRef = useRef<ScrollView>(null);
-  const verseRefs = useRef<{ [key: number]: View | null }>({});
+  const verseRefs = useRef<{ [key: number]: Text | null }>({});
   const verseLayouts = useRef<{ [key: number]: { y: number; height: number } }>({});
   const verseLineMaps = useRef<{ [key: number]: { ys: number[]; heights: number[]; lineCount: number } }>({});
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -46,54 +46,59 @@ export default function Quran() {
     loadFontSize();
   }, []);
 
-  const ensureVerseVisibility = (verseIndex: number, progress = 1, attempt = 0) => {
+  const measureVerseLayout = (verseIndex: number, onMeasured?: () => void, attempt = 0) => {
+    const verseText = verseRefs.current[verseIndex];
+    if (!verseText || !scrollViewRef.current) return;
+
+    // Use measureLayout for reliable positioning relative to ScrollView
+    verseText.measureLayout(
+      scrollViewRef.current.getScrollableNode(),
+      (fx, fy, width, height) => {
+        // fx, fy are the coordinates relative to the ScrollView
+        const layout = { y: fy, height: height || fontSize.lineHeight };
+        verseLayouts.current[verseIndex] = layout;
+        onMeasured?.();
+      },
+      () => {
+        console.warn('measureLayout failed for verse', verseIndex);
+        if (attempt < 3) {
+          // Retry with a delay
+          setTimeout(() => {
+            measureVerseLayout(verseIndex, onMeasured, attempt + 1);
+          }, 100);
+        }
+      },
+    );
+  };
+
+  const ensureVerseVisibility = (verseIndex: number, attempt = 0) => {
     if (!scrollViewRef.current || viewportHeight === 0) return;
 
     const layout = verseLayouts.current[verseIndex];
     if (!layout) {
-      const verseContainer = verseRefs.current[verseIndex];
-      if (verseContainer && attempt < 3) {
-        verseContainer.measureLayout(
-      scrollViewRef.current as any,
-      (_x: number, verseY: number, _w: number, verseHeight: number) => {
-            verseLayouts.current[verseIndex] = { y: verseY, height: verseHeight };
-            requestAnimationFrame(() => ensureVerseVisibility(verseIndex, progress, attempt + 1));
-          },
-          () => {},
-        );
+      if (attempt < 3) {
+        measureVerseLayout(verseIndex, () => ensureVerseVisibility(verseIndex, attempt + 1), attempt + 1);
       }
       return;
     }
 
-    const bufferBottom = fontSize.lineHeight * 3;
-    const bufferTop = fontSize.lineHeight * 1.5;
-        const visibleTop = scrollYRef.current;
-    const visibleBottom = visibleTop + viewportHeight;
+    // Calculate desired scroll position
+    // layout.y is relative to ScrollView content, we need to scroll to make it visible
+    const currentScrollY = scrollYRef.current;
+    const verseTopInViewport = layout.y - currentScrollY;
 
-    let targetLineTop = layout.y;
-    let targetLineBottom = layout.y + layout.height;
+    // Position verse at 1/3 from top of viewport
+    const desiredVerseTop = viewportHeight / 3;
+    const desiredY = Math.max(0, layout.y - desiredVerseTop);
 
-    const lineMap = verseLineMaps.current[verseIndex];
-    if (lineMap && lineMap.lineCount > 0) {
-      const clampedProgress = Math.min(0.9999, Math.max(0, progress));
-      const lineIdx = Math.min(lineMap.lineCount - 1, Math.floor(clampedProgress * lineMap.lineCount));
-      const lineY = lineMap.ys[lineIdx] ?? 0;
-      const lineHeight = lineMap.heights[lineIdx] ?? fontSize.lineHeight;
-      targetLineTop = layout.y + lineY;
-      targetLineBottom = targetLineTop + lineHeight;
-    }
+    // Skip scrolling if already positioned correctly
+    const delta = Math.abs(desiredY - currentScrollY);
+    if (delta > 20) { // Increased threshold for smoother experience
+      scrollViewRef.current.scrollTo({ y: desiredY, animated: true });
+      scrollYRef.current = desiredY;
 
-    if (targetLineBottom > visibleBottom - bufferBottom) {
-      const targetY = targetLineBottom - viewportHeight + bufferBottom;
-      if (targetY > visibleTop) {
-        scrollViewRef.current.scrollTo({ y: Math.max(0, targetY), animated: true });
-        scrollYRef.current = Math.max(0, targetY);
-      }
-    } else if (targetLineTop < visibleTop + bufferTop) {
-      const targetY = Math.max(0, targetLineTop - bufferTop);
-      if (targetY < visibleTop) {
-        scrollViewRef.current.scrollTo({ y: targetY, animated: true });
-        scrollYRef.current = targetY;
+      if (__DEV__) {
+        console.log(`[Autoscroll] Verse ${verseIndex + 1}: scrolling from ${currentScrollY} to ${desiredY}`);
       }
     }
   };
@@ -101,28 +106,53 @@ export default function Quran() {
   const currentVerseProgress =
     state.duration > 0 ? Math.min(0.9999, Math.max(0, state.position / state.duration)) : 0;
 
-  // Auto-scroll to keep active verse visible with buffer
+  // Auto-scroll to keep active verse visible during playback
   useEffect(() => {
     const currentSurahId = Number(surah);
-    if (!viewportHeight || state.currentSurahId !== currentSurahId) return;
+    if (!viewportHeight || state.currentSurahId !== currentSurahId || !state.isPlaying) return;
 
     const verseIndex = Math.max(0, (state.currentVerseId || 1) - 1);
-    if (!verseRefs.current[verseIndex] && !verseLayouts.current[verseIndex]) return;
 
-    ensureVerseVisibility(verseIndex, currentVerseProgress);
-    lastScrolledVerseRef.current = verseIndex;
+    // Only scroll when verse changes
+    const verseChanged = lastScrolledVerseRef.current !== verseIndex;
+
+    if (verseChanged) {
+      // Multiple attempts with increasing delays
+      const attemptScroll = (attempt = 0) => {
+        const checkAndScroll = () => {
+          if (verseLayouts.current[verseIndex]) {
+            ensureVerseVisibility(verseIndex);
+            lastScrolledVerseRef.current = verseIndex;
+          } else if (verseRefs.current[verseIndex] && attempt < 3) {
+            // Measure first, then scroll
+            measureVerseLayout(verseIndex, () => {
+              if (verseLayouts.current[verseIndex]) {
+                ensureVerseVisibility(verseIndex);
+                lastScrolledVerseRef.current = verseIndex;
+              }
+            });
+          }
+        };
+
+        if (attempt === 0) {
+          checkAndScroll(); // Immediate attempt
+        } else {
+          setTimeout(checkAndScroll, attempt * 200); // Retry with delay
+        }
+      };
+
+      attemptScroll();
+    }
   }, [
     state.currentVerseId,
     state.currentSurahId,
-    state.position,
-    state.duration,
+    state.isPlaying,
     viewportHeight,
-    fontSize.lineHeight,
     surah,
-    currentVerseProgress,
   ]);
 
   useEffect(() => {
+    // Reset scroll tracking when surah changes or viewport changes
     lastScrolledVerseRef.current = null;
   }, [state.currentSurahId, surah, viewportHeight]);
 
@@ -182,6 +212,16 @@ export default function Quran() {
   const handlePlayVerse = async (verseIndex: number) => {
     try {
       await playVerse(Number(surah), verseIndex + 1, true);
+
+      // Force scroll to verse when manually played
+      setTimeout(() => {
+        if (verseRefs.current[verseIndex]) {
+          measureVerseLayout(verseIndex, () => {
+            ensureVerseVisibility(verseIndex);
+            lastScrolledVerseRef.current = verseIndex;
+          });
+        }
+      }, 200);
     } catch (error) {
       console.error('Error playing verse:', error);
     }
@@ -203,7 +243,7 @@ export default function Quran() {
   };
 
   const showActionSheet = (verseIndex: number) => {
-    const options = ['إلغاء', 'تشغيل الآية 🎵', 'حفظ الآية 🔖', 'نسخ الآية 📋'];
+    const options = ['إلغاء', 'تشغيل الآية 🎵', 'حفظ الآية 🔖', 'نسخ الآية 📋', 'اختبار التمرير 📍'];
     const cancelButtonIndex = 0;
 
     showActionSheetWithOptions(
@@ -218,6 +258,13 @@ export default function Quran() {
           saveVerseToStorage(Number(surah), verseIndex);
         } else if (buttonIndex === 3) {
           Clipboard.setString(quran[Number(surah)].array[verseIndex].ar);
+        } else if (buttonIndex === 4) {
+          // Test scroll to this verse
+          console.log(`[Test] Scrolling to verse ${verseIndex + 1}`);
+          measureVerseLayout(verseIndex, () => {
+            ensureVerseVisibility(verseIndex);
+            console.log(`[Test] Layout for verse ${verseIndex + 1}:`, verseLayouts.current[verseIndex]);
+          });
         }
       },
     );
@@ -327,69 +374,62 @@ export default function Quran() {
             )}
 
             {/* Verses */}
-            {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => {
-              const words = String(item.ar || '').trim().split(/\s+/);
-              const active = isVerseActive(index);
-              const ratio = state.duration > 0 ? Math.min(0.9999, Math.max(0, state.position / state.duration)) : 0;
-              const isAtVerseEnd = ratio > 0.90;
-              const isAtVerseStart = ratio < 0.02;
-              const activeWordIndex = active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart ? Math.min(words.length - 1, Math.floor(ratio * (words.length + 0.5))) : -1;
-              const isWordActive = (i: number) => active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart && i >= activeWordIndex - 2 && i <= activeWordIndex;
-              return (
-                <View
-                  key={index}
-                  ref={(r) => (verseRefs.current[index] = r as any)}
-                  onLayout={(e) => {
-                    const { y, height } = e.nativeEvent.layout;
-                    verseLayouts.current[index] = { y, height };
-                    const currentSurahId = Number(surah);
-                    if (
-                      state.currentSurahId === currentSurahId &&
-                      Math.max(0, (state.currentVerseId || 1) - 1) === index
-                    ) {
-                      ensureVerseVisibility(index);
-                      lastScrolledVerseRef.current = index;
-                    }
-                  }}
-                  style={[
-                    styles.verseWrapper,
-                    active && styles.verseWrapperActive,
-                  ]}
-                >
-                  <View style={styles.verseContent}>
-                    <View style={styles.verseTextWrapper}>
+            <Text style={[styles.versesContainer, { fontSize: fontSize.size, lineHeight: fontSize.lineHeight }]}>
+              {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => {
+                const words = String(item.ar || '').trim().split(/\s+/);
+                const active = isVerseActive(index);
+                const ratio = state.duration > 0 ? Math.min(0.9999, Math.max(0, state.position / state.duration)) : 0;
+                const isAtVerseEnd = ratio > 0.90;
+                const isAtVerseStart = ratio < 0.02;
+                const activeWordIndex = active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart ? Math.min(words.length - 1, Math.floor(ratio * (words.length + 0.5))) : -1;
+                const isWordActive = (i: number) => active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart && i >= Math.max(0, activeWordIndex - 2) && i <= activeWordIndex && activeWordIndex >= 0;
+                return (
+                  <Text
+                    key={index}
+                    ref={(r) => (verseRefs.current[index] = r as any)}
+                    onTextLayout={(e) => {
+                      const lines = (e.nativeEvent as any).lines || [];
+                      const ys: number[] = [];
+                      const heights: number[] = [];
+                      for (const line of lines) {
+                        const lineY = line.y || 0;
+                        const lineHeight = line.height || fontSize.lineHeight;
+                        ys.push(lineY);
+                        heights.push(lineHeight);
+                      }
+                      verseLineMaps.current[index] = { ys, heights, lineCount: ys.length };
+
+                      // Only measure layout if this is the current playing verse
+                      const currentSurahId = Number(surah);
+                      if (
+                        state.currentSurahId === currentSurahId &&
+                        Math.max(0, (state.currentVerseId || 1) - 1) === index
+                      ) {
+                        measureVerseLayout(index, () => {
+                          ensureVerseVisibility(index);
+                          lastScrolledVerseRef.current = index;
+                        });
+                      }
+                    }}
+                    onLongPress={() => showActionSheet(index)}
+                  >
+                    {words.map((w: string, i: number) => (
                       <Text
-                        style={[styles.versesContainer, { fontSize: fontSize.size, lineHeight: fontSize.lineHeight }]}
-                        onLongPress={() => showActionSheet(index)}
-                        onTextLayout={(e) => {
-                          const lines = (e.nativeEvent as any).lines || [];
-                          const ys: number[] = [];
-                          const heights: number[] = [];
-                          for (const line of lines) {
-                            ys.push(line.y || 0);
-                            heights.push(line.height || fontSize.lineHeight);
-                          }
-                          verseLineMaps.current[index] = { ys, heights, lineCount: ys.length };
-                        }}
+                        key={`${index}-${i}`}
+                        style={isWordActive(i) ? styles.wordActive : undefined}
                       >
-                        {words.map((w: string, i: number) => (
-                          <Text
-                            key={`${index}-${i}`}
-                            style={isWordActive(i) ? styles.wordActive : undefined}
-                          >
-                            {w}
-                            <Text> </Text>
-                          </Text>
-                        ))}
+                        {w}
+                        <Text> </Text>
                       </Text>
-                    </View>
-                    <View style={styles.verseNumberBadge}>
-                      <Text style={styles.verseNumberText}>{index + 1}</Text>
-                    </View>
-                  </View>
-                </View>
-              );
-            })}
+                    ))}
+                    <Text style={styles.verseNumberBadgeInline}>
+                      {index + 1}
+                    </Text>
+                    <Text> </Text>
+                  </Text>
+                );
+              })}
+            </Text>
           </View>
         </ScrollView>
       </ImageBackground>
@@ -570,52 +610,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 40,
   },
-  verseWrapper: {
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 0,
-    marginHorizontal: -16,
-    alignSelf: 'stretch',
-  },
-  verseWrapperActive: {
-    backgroundColor: '#FFF9C4',
-  },
-  verseContent: {
-    flexDirection: 'row-reverse',
-    alignItems: 'flex-start',
-    width: '100%',
-  },
-  verseTextWrapper: {
-    flex: 1,
-    marginLeft: 12,
-  },
   versesContainer: {
     textAlign: 'justify',
     color: '#1F2937',
     fontFamily: 'System',
   },
   wordActive: {
+    backgroundColor: '#FFF9C4',
     color: '#065F46',
-    backgroundColor: 'transparent',
-    fontWeight: '700',
+    fontWeight: 'normal',
+    paddingHorizontal: 2,
+    paddingVertical: 1,
+    borderRadius: 3,
   },
-  verseNumberBadge: {
-    minWidth: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-    paddingHorizontal: 4,
-  },
-  verseNumberText: {
-    fontSize: 12,
+  verseNumberBadgeInline: {
+    fontSize: 11,
     color: '#9CA3AF',
     fontWeight: '500',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    marginHorizontal: 4,
+    textAlign: 'center',
   },
   footerSafeArea: {
     backgroundColor: '#10B981',
