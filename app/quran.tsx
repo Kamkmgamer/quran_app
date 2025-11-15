@@ -18,6 +18,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import quranImport from '../assets/Quran.json';
 import { useAudioPlayer } from '../contexts/AudioPlayerContext';
+import MiniPlayer from '../components/MiniPlayer';
 
 const quran = quranImport as any[];
 
@@ -431,43 +432,9 @@ export default function Quran() {
               })}
             </Text>
           </View>
+          <MiniPlayer embedded />
         </ScrollView>
       </ImageBackground>
-
-      {/* Footer Navigation */}
-      <SafeAreaView edges={['bottom']} style={styles.footerSafeArea}>
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={() => {
-              if (Number(surah) > 0) {
-                router.push({
-                  pathname: '/quran',
-                  params: { surah: Number(surah) - 1, verse: 0 },
-                });
-              }
-            }}
-          >
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-
-          <Text style={styles.pageNumber}>{quran[Number(surah)].id}/1</Text>
-
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={() => {
-              if (Number(surah) < quran.length - 1) {
-                router.push({
-                  pathname: '/quran',
-                  params: { surah: Number(surah) + 1, verse: 0 },
-                });
-              }
-            }}
-          >
-            <Text style={styles.navText}>السابق</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
     </View>
   );
 }
@@ -634,30 +601,5 @@ const styles = StyleSheet.create({
   },
   footerSafeArea: {
     backgroundColor: '#10B981',
-  },
-  footer: {
-    backgroundColor: '#10B981',
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderTopWidth: 0,
-  },
-  navButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  navText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '500',
-  },
-  pageNumber: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '500',
   },
 });

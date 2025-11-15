@@ -12,11 +12,13 @@ import {
 import quranDataImport from '../assets/Quran.json';
 import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 
-
+interface MiniPlayerProps {
+  embedded?: boolean;
+}
 
 const quranData = quranDataImport as any[];
 
-const MiniPlayer: React.FC = () => {
+const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
   const { state, togglePlayPause, playNext, playPrevious } = useAudioPlayer();
   const router = useRouter();
 
@@ -25,15 +27,20 @@ const MiniPlayer: React.FC = () => {
     return null;
   }
 
-  const currentSurah = quranData[state.currentSurahId - 1];
+  const currentSurah = quranData[state.currentSurahId] || null;
   const surahName = currentSurah?.name || '';
 
   const handlePress = () => {
     router.push('/player');
   };
 
+  const containerStyles = [
+    styles.container,
+    embedded ? styles.embeddedContainer : styles.floatingContainer,
+  ];
+
   return (
-    <View style={styles.container} testID="mini-player">
+    <View style={containerStyles} testID="mini-player">
       <Pressable onPress={handlePress} style={styles.content} testID="mini-player-content">
         {/* معلومات التشغيل */}
         <View style={styles.info}>
@@ -93,10 +100,6 @@ const MiniPlayer: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
@@ -107,8 +110,26 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  floatingContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     elevation: 5,
     zIndex: 1000,
+  },
+  embeddedContainer: {
+    borderTopWidth: 0,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: '#F0FDF4',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   content: {
     flexDirection: 'row-reverse',

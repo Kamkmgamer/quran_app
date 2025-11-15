@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 
 import quranDataImport from '../assets/Quran.json';
 import recitersData from '../assets/reciters.json';
@@ -75,6 +75,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     currentReciter: null,
     isPlayingSurah: false,
   });
+  const isLoadingRef = useRef(false);
 
   // تحميل التفضيلات المحفوظة
   const loadPreferences = useCallback(async () => {
@@ -92,7 +93,12 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
   // تشغيل آية محددة
   const playVerse = useCallback(async (surahId: number, verseId: number, autoPlay: boolean = true) => {
+    if (isLoadingRef.current) {
+      return;
+    }
+
     try {
+      isLoadingRef.current = true;
       setState((prev) => ({ ...prev, isLoading: true }));
 
       const reciter = recitersData.reciters.find((r) => r.id === state.currentReciterId);
@@ -119,6 +125,8 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     } catch (error) {
       console.error('Error playing verse:', error);
       setState((prev) => ({ ...prev, isLoading: false }));
+    } finally {
+      isLoadingRef.current = false;
     }
   }, [state.currentReciterId]);
 
