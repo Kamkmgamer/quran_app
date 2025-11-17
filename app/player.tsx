@@ -15,6 +15,7 @@ import recitersData from '../assets/reciters.json';
 import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 
 const quranData = quranDataImport as any[];
+const HIGHLIGHT_END_THRESHOLD_MS = 1750;
 
 const formatTime = (milliseconds: number): string => {
   const totalSeconds = Math.floor(milliseconds / 1000);
@@ -92,9 +93,12 @@ export default function Player() {
               .trim()
               .split(/\s+/)
               .map((w: string, i: number, arr: string[]) => {
-                const ratio = state.duration > 0 ? Math.min(0.9999, Math.max(0, state.position / state.duration)) : 0;
+                const durationMs = state.duration || 0;
+                const positionMs = state.position || 0;
+                const ratio = durationMs > 0 ? Math.min(0.9999, Math.max(0, positionMs / durationMs)) : 0;
                 // Don't highlight if we're at the very end (about to transition to next verse) or at the very beginning (transitioning in)
-                const isAtVerseEnd = ratio > 0.90;
+                const remainingMs = Math.max(0, durationMs - positionMs);
+                const isAtVerseEnd = durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
                 const isAtVerseStart = ratio < 0.02;
                 const activeIndex = state.isPlaying && !isAtVerseEnd && !isAtVerseStart ? Math.min(arr.length - 1, Math.floor(ratio * (arr.length + 0.5))) : -1;
                 const isActive = state.isPlaying && !isAtVerseEnd && !isAtVerseStart && i >= activeIndex - 2 && i <= activeIndex;
