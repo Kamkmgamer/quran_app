@@ -7,6 +7,7 @@ import StorageService from '../services/StorageService';
 
 const quranData = quranDataImport as any[];
 const audioService = new AudioService();
+const EARLY_NEXT_THRESHOLD_MS = 1750;
 
 interface Reciter {
   id: string;
@@ -76,6 +77,28 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     isPlayingSurah: false,
   });
   const isLoadingRef = useRef(false);
+  const earlyNextTriggeredRef = useRef(false);
+
+  const preloadNextVerseAudio = useCallback(
+    async (surahId: number, verseId: number, reciter: Reciter) => {
+      const surah = quranData[surahId];
+      if (!surah) {
+        return;
+      }
+
+      const totalVerses = surah.array.length;
+      if (verseId >= totalVerses) {
+        return;
+      }
+
+      try {
+        await audioService.preloadVerse(reciter.apiPath, reciter.id, surahId, verseId + 1);
+      } catch (error) {
+        console.error('Error preloading next verse:', error);
+      }
+    },
+    [],
+  );
 
   // تحميل التفضيلات المحفوظة
   const loadPreferences = useCallback(async () => {
@@ -92,43 +115,54 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   }, []);
 
   // تشغيل آية محددة
-  const playVerse = useCallback(async (surahId: number, verseId: number, autoPlay: boolean = true) => {
-    if (isLoadingRef.current) {
-      return;
-    }
-
-    try {
-      isLoadingRef.current = true;
-      setState((prev) => ({ ...prev, isLoading: true }));
-
-      const reciter = recitersData.reciters.find((r) => r.id === state.currentReciterId);
-      if (!reciter) {
-        throw new Error('Reciter not found');
+  const playVerse = useCallback(
+    async (surahId: number, verseId: number, autoPlay: boolean = true) => {
+      if (isLoadingRef.current) {
+        return;
       }
 
-      await audioService.loadAndPlayVerse(
-        reciter.apiPath,
-        reciter.id,
-        surahId,
-        verseId,
-        autoPlay,
-      );
+      try {
+        isLoadingRef.current = true;
+        setState((prev) => ({ ...prev, isLoading: true }));
 
-      setState((prev) => ({
-        ...prev,
-        currentSurahId: surahId,
-        currentVerseId: verseId,
-        isPlaying: autoPlay,
-        isLoading: false,
-        currentReciter: reciter,
-      }));
-    } catch (error) {
-      console.error('Error playing verse:', error);
-      setState((prev) => ({ ...prev, isLoading: false }));
-    } finally {
-      isLoadingRef.current = false;
-    }
-  }, [state.currentReciterId]);
+        const reciter = recitersData.reciters.find((r) => r.id === state.currentReciterId);
+        if (!reciter) {
+          throw new Error('Reciter not found');
+        }
+
+        // reset early-next trigger for the new verse
+        earlyNextTriggeredRef.current = false;
+
+        await audioService.loadAndPlayVerse(
+          reciter.apiPath,
+          reciter.id,
+          surahId,
+          verseId,
+          autoPlay,
+        );
+
+        // pre-buffer the next verse audio (download to local storage) when auto-playing
+        if (autoPlay) {
+          preloadNextVerseAudio(surahId, verseId, reciter);
+        }
+
+        setState((prev) => ({
+          ...prev,
+          currentSurahId: surahId,
+          currentVerseId: verseId,
+          isPlaying: autoPlay,
+          isLoading: false,
+          currentReciter: reciter,
+        }));
+      } catch (error) {
+        console.error('Error playing verse:', error);
+        setState((prev) => ({ ...prev, isLoading: false }));
+      } finally {
+        isLoadingRef.current = false;
+      }
+    },
+    [state.currentReciterId, preloadNextVerseAudio],
+  );
 
   // تشغيل السورة من آية محددة إلى النهاية
   const playSurahFromVerse = useCallback(async (surahId: number, startVerseId: number) => {
@@ -191,12 +225,41 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     try {
       audioService.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded) {
+          const position = status.positionMillis || 0;
+          const duration = status.durationMillis || 0;
+
           setState((prev) => ({
             ...prev,
             isPlaying: status.isPlaying,
-            position: status.positionMillis || 0,
-            duration: status.durationMillis || 0,
+            position,
+            duration,
           }));
+
+          // Early trigger: start the next verse slightly before the current one ends
+          if (!status.didJustFinish && !status.isLooping && duration > 0) {
+            const remaining = duration - position;
+
+            if (remaining <= EARLY_NEXT_THRESHOLD_MS && !earlyNextTriggeredRef.current) {
+              earlyNextTriggeredRef.current = true;
+
+              setState((currentState) => {
+                const handleEarlyNext = async () => {
+                  if (
+                    currentState.repeatMode === 'surah' ||
+                    currentState.repeatMode === 'all' ||
+                    currentState.isPlayingSurah
+                  ) {
+                    await playNext();
+                  }
+                };
+
+                // Execute async logic
+                handleEarlyNext();
+
+                return currentState; // Return current state unchanged
+              });
+            }
+          }
 
           // التحقق من انتهاء التشغيل - use current state from setState callback
           if (status.didJustFinish && !status.isLooping) {
@@ -209,9 +272,15 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
                   if (currentState.currentSurahId && currentState.currentVerseId) {
                     await playVerse(currentState.currentSurahId, currentState.currentVerseId, true);
                   }
-                } else if (currentState.repeatMode === 'surah' || currentState.repeatMode === 'all' || currentState.isPlayingSurah) {
-                  // تشغيل الآية التالية
-                  await playNext();
+                } else if (
+                  currentState.repeatMode === 'surah' ||
+                  currentState.repeatMode === 'all' ||
+                  currentState.isPlayingSurah
+                ) {
+                  // تشغيل الآية التالية (في حال لم يتم تشغيلها مبكراً)
+                  if (!earlyNextTriggeredRef.current) {
+                    await playNext();
+                  }
                 }
               };
 
