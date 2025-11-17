@@ -38,9 +38,11 @@ export default function Quran() {
   const scrollViewRef = useRef<ScrollView>(null);
   const verseRefs = useRef<{ [key: number]: Text | null }>({});
   const verseLayouts = useRef<{ [key: number]: { y: number; height: number } }>({});
-  const verseLineMaps = useRef<{ [key: number]: { ys: number[]; heights: number[]; lineCount: number } }>({});
   const [viewportHeight, setViewportHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
   const scrollYRef = useRef(0);
+  const lastAudioPositionRef = useRef(0);
+  const lastStepIndexRef = useRef(0);
   const lastScrolledVerseRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -49,21 +51,24 @@ export default function Quran() {
 
   const measureVerseLayout = (verseIndex: number, onMeasured?: () => void, attempt = 0) => {
     const verseText = verseRefs.current[verseIndex];
-    if (!verseText || !scrollViewRef.current) return;
+    const scrollView = scrollViewRef.current;
+    if (!verseText || !scrollView) return;
 
-    // Use measureLayout for reliable positioning relative to ScrollView
-    verseText.measureLayout(
-      scrollViewRef.current.getScrollableNode(),
-      (fx, fy, width, height) => {
-        // fx, fy are the coordinates relative to the ScrollView
-        const layout = { y: fy, height: height || fontSize.lineHeight };
+    const scrollViewAny: any = scrollView;
+    const relativeNode =
+      typeof scrollViewAny.getScrollableNode === 'function'
+        ? scrollViewAny.getScrollableNode()
+        : scrollViewAny;
+
+    (verseText as any).measureLayout(
+      relativeNode,
+      (_x: number, y: number, _width: number, height: number) => {
+        const layout = { y, height: height || fontSize.lineHeight };
         verseLayouts.current[verseIndex] = layout;
         onMeasured?.();
       },
       () => {
-        console.warn('measureLayout failed for verse', verseIndex);
         if (attempt < 3) {
-          // Retry with a delay
           setTimeout(() => {
             measureVerseLayout(verseIndex, onMeasured, attempt + 1);
           }, 100);
@@ -83,23 +88,20 @@ export default function Quran() {
       return;
     }
 
-    // Calculate desired scroll position
-    // layout.y is relative to ScrollView content, we need to scroll to make it visible
+    // layout.y is the verse top relative to the ScrollView content
     const currentScrollY = scrollYRef.current;
-    const verseTopInViewport = layout.y - currentScrollY;
+    const desiredTopInViewport = viewportHeight / 3;
+    const desiredScrollY = Math.max(0, layout.y - desiredTopInViewport);
 
-    // Position verse at 1/3 from top of viewport
-    const desiredVerseTop = viewportHeight / 3;
-    const desiredY = Math.max(0, layout.y - desiredVerseTop);
-
-    // Skip scrolling if already positioned correctly
-    const delta = Math.abs(desiredY - currentScrollY);
-    if (delta > 20) { // Increased threshold for smoother experience
-      scrollViewRef.current.scrollTo({ y: desiredY, animated: true });
-      scrollYRef.current = desiredY;
+    const delta = Math.abs(desiredScrollY - currentScrollY);
+    if (delta > 10) {
+      scrollViewRef.current.scrollTo({ y: desiredScrollY, animated: true });
+      scrollYRef.current = desiredScrollY;
 
       if (__DEV__) {
-        console.log(`[Autoscroll] Verse ${verseIndex + 1}: scrolling from ${currentScrollY} to ${desiredY}`);
+        console.log(
+          `[Autoscroll] Verse ${verseIndex + 1}: scrolling from ${currentScrollY} to ${desiredScrollY}`,
+        );
       }
     }
   };
@@ -107,54 +109,58 @@ export default function Quran() {
   const currentVerseProgress =
     state.duration > 0 ? Math.min(0.9999, Math.max(0, state.position / state.duration)) : 0;
 
-  // Auto-scroll to keep active verse visible during playback
   useEffect(() => {
     const currentSurahId = Number(surah);
-    if (!viewportHeight || state.currentSurahId !== currentSurahId || !state.isPlaying) return;
+    if (!viewportHeight || !contentHeight) return;
+    if (!state.isPlaying) return;
+    if (state.currentSurahId !== currentSurahId) return;
 
-    const verseIndex = Math.max(0, (state.currentVerseId || 1) - 1);
+    if (state.position < lastAudioPositionRef.current) {
+      lastStepIndexRef.current = 0;
+    }
+    lastAudioPositionRef.current = state.position;
 
-    // Only scroll when verse changes
-    const verseChanged = lastScrolledVerseRef.current !== verseIndex;
+    const stepSeconds = 15;
+    const stepIndex = Math.floor(state.position / (stepSeconds * 1000));
 
-    if (verseChanged) {
-      // Multiple attempts with increasing delays
-      const attemptScroll = (attempt = 0) => {
-        const checkAndScroll = () => {
-          if (verseLayouts.current[verseIndex]) {
-            ensureVerseVisibility(verseIndex);
-            lastScrolledVerseRef.current = verseIndex;
-          } else if (verseRefs.current[verseIndex] && attempt < 3) {
-            // Measure first, then scroll
-            measureVerseLayout(verseIndex, () => {
-              if (verseLayouts.current[verseIndex]) {
-                ensureVerseVisibility(verseIndex);
-                lastScrolledVerseRef.current = verseIndex;
-              }
-            });
-          }
-        };
+    if (stepIndex <= lastStepIndexRef.current) return;
 
-        if (attempt === 0) {
-          checkAndScroll(); // Immediate attempt
-        } else {
-          setTimeout(checkAndScroll, attempt * 200); // Retry with delay
-        }
-      };
+    lastStepIndexRef.current = stepIndex;
 
-      attemptScroll();
+    const lineHeight = fontSize.lineHeight || 48;
+    const maxScroll = Math.max(0, contentHeight - viewportHeight);
+    const currentY = scrollYRef.current;
+    const stepSize = lineHeight * 3.3;
+    const targetY = Math.min(maxScroll, currentY + stepSize);
+
+    if (!scrollViewRef.current) return;
+
+    if (targetY <= currentY) return;
+
+    scrollViewRef.current.scrollTo({ y: targetY, animated: true });
+    scrollYRef.current = targetY;
+
+    if (__DEV__) {
+      console.log(
+        `[Autoscroll-Step] stepIndex=${stepIndex}, from ${currentY.toFixed(
+          1,
+        )} to ${targetY.toFixed(1)}`,
+      );
     }
   }, [
-    state.currentVerseId,
     state.currentSurahId,
     state.isPlaying,
+    state.position,
     viewportHeight,
+    contentHeight,
+    fontSize.lineHeight,
     surah,
   ]);
 
   useEffect(() => {
-    // Reset scroll tracking when surah changes or viewport changes
     lastScrolledVerseRef.current = null;
+    scrollYRef.current = 0;
+    lastStepIndexRef.current = 0;
   }, [state.currentSurahId, surah, viewportHeight]);
 
   const loadFontSize = async () => {
@@ -213,16 +219,6 @@ export default function Quran() {
   const handlePlayVerse = async (verseIndex: number) => {
     try {
       await playVerse(Number(surah), verseIndex + 1, true);
-
-      // Force scroll to verse when manually played
-      setTimeout(() => {
-        if (verseRefs.current[verseIndex]) {
-          measureVerseLayout(verseIndex, () => {
-            ensureVerseVisibility(verseIndex);
-            lastScrolledVerseRef.current = verseIndex;
-          });
-        }
-      }, 200);
     } catch (error) {
       console.error('Error playing verse:', error);
     }
@@ -261,11 +257,9 @@ export default function Quran() {
           Clipboard.setString(quran[Number(surah)].array[verseIndex].ar);
         } else if (buttonIndex === 4) {
           // Test scroll to this verse
-          console.log(`[Test] Scrolling to verse ${verseIndex + 1}`);
-          measureVerseLayout(verseIndex, () => {
-            ensureVerseVisibility(verseIndex);
-            console.log(`[Test] Layout for verse ${verseIndex + 1}:`, verseLayouts.current[verseIndex]);
-          });
+          console.log(
+            `[Test] Continuous scroll mode active for verse ${verseIndex + 1} (no direct verse jump)`,
+          );
         }
       },
     );
@@ -362,6 +356,7 @@ export default function Quran() {
             if (__DEV__) console.log('[Quran] viewportHeight:', h);
           }}
           onContentSizeChange={(_w, h) => {
+            setContentHeight(h);
             if (__DEV__) console.log('[Quran] contentHeight:', h);
           }}
           contentContainerStyle={styles.scrollContent}
@@ -375,43 +370,44 @@ export default function Quran() {
             )}
 
             {/* Verses */}
-            <Text style={[styles.versesContainer, { fontSize: fontSize.size, lineHeight: fontSize.lineHeight }]}>
+            <Text
+              style={[
+                styles.versesContainer,
+                { fontSize: fontSize.size, lineHeight: fontSize.lineHeight },
+              ]}
+            >
               {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => {
                 const words = String(item.ar || '').trim().split(/\s+/);
                 const active = isVerseActive(index);
-                const ratio = state.duration > 0 ? Math.min(0.9999, Math.max(0, state.position / state.duration)) : 0;
-                const isAtVerseEnd = ratio > 0.90;
+                const ratio =
+                  state.duration > 0
+                    ? Math.min(0.9999, Math.max(0, state.position / state.duration))
+                    : 0;
+                const isAtVerseEnd = ratio > 0.9;
                 const isAtVerseStart = ratio < 0.02;
-                const activeWordIndex = active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart ? Math.min(words.length - 1, Math.floor(ratio * (words.length + 0.5))) : -1;
-                const isWordActive = (i: number) => active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart && i >= Math.max(0, activeWordIndex - 2) && i <= activeWordIndex && activeWordIndex >= 0;
+                const activeWordIndex =
+                  active &&
+                  isCurrentVerse(index) &&
+                  !isAtVerseEnd &&
+                  !isAtVerseStart
+                    ? Math.min(
+                        words.length - 1,
+                        Math.floor(ratio * (words.length + 0.5)),
+                      )
+                    : -1;
+                const isWordActive = (i: number) =>
+                  active &&
+                  isCurrentVerse(index) &&
+                  !isAtVerseEnd &&
+                  !isAtVerseStart &&
+                  i >= Math.max(0, activeWordIndex - 2) &&
+                  i <= activeWordIndex &&
+                  activeWordIndex >= 0;
+
                 return (
                   <Text
                     key={index}
-                    ref={(r) => (verseRefs.current[index] = r as any)}
-                    onTextLayout={(e) => {
-                      const lines = (e.nativeEvent as any).lines || [];
-                      const ys: number[] = [];
-                      const heights: number[] = [];
-                      for (const line of lines) {
-                        const lineY = line.y || 0;
-                        const lineHeight = line.height || fontSize.lineHeight;
-                        ys.push(lineY);
-                        heights.push(lineHeight);
-                      }
-                      verseLineMaps.current[index] = { ys, heights, lineCount: ys.length };
-
-                      // Only measure layout if this is the current playing verse
-                      const currentSurahId = Number(surah);
-                      if (
-                        state.currentSurahId === currentSurahId &&
-                        Math.max(0, (state.currentVerseId || 1) - 1) === index
-                      ) {
-                        measureVerseLayout(index, () => {
-                          ensureVerseVisibility(index);
-                          lastScrolledVerseRef.current = index;
-                        });
-                      }
-                    }}
+                    ref={(r) => (verseRefs.current[index] = r)}
                     onLongPress={() => showActionSheet(index)}
                   >
                     {words.map((w: string, i: number) => (
@@ -423,9 +419,7 @@ export default function Quran() {
                         <Text> </Text>
                       </Text>
                     ))}
-                    <Text style={styles.verseNumberBadgeInline}>
-                      {index + 1}
-                    </Text>
+                    <Text style={styles.verseNumberBadgeInline}>{index + 1}</Text>
                     <Text> </Text>
                   </Text>
                 );
