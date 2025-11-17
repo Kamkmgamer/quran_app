@@ -21,6 +21,7 @@ import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 import MiniPlayer from '../components/MiniPlayer';
 
 const quran = quranImport as any[];
+const HIGHLIGHT_END_THRESHOLD_MS = 1750;
 
 const fontSizeOptions: { [key: string]: { size: number; lineHeight: number } } = {
   small: { size: 20, lineHeight: 40 },
@@ -379,11 +380,14 @@ export default function Quran() {
               {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => {
                 const words = String(item.ar || '').trim().split(/\s+/);
                 const active = isVerseActive(index);
+                const durationMs = state.duration || 0;
+                const positionMs = state.position || 0;
                 const ratio =
-                  state.duration > 0
-                    ? Math.min(0.9999, Math.max(0, state.position / state.duration))
+                  durationMs > 0
+                    ? Math.min(0.9999, Math.max(0, positionMs / durationMs))
                     : 0;
-                const isAtVerseEnd = ratio > 0.9;
+                const remainingMs = Math.max(0, durationMs - positionMs);
+                const isAtVerseEnd = durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
                 const isAtVerseStart = ratio < 0.02;
                 const activeWordIndex =
                   active &&
