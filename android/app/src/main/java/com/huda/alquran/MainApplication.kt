@@ -1,4 +1,4 @@
-package com.huda.alquran
+package com.alquran
 
 import android.app.Application
 import android.content.res.Configuration
