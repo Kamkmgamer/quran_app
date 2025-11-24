@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "قرآن",
-    "slug": "قرآن",
-    "version": "1.0.0",
+    "slug": "Quran",
+    "version": "0.2.1",
     "orientation": "portrait",
     "icon": "./assets/images/adaptive-icon.png",
     "scheme": "myapp",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.huda.alquran",
+      "bundleIdentifier": "com.alquran.quran",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -24,7 +24,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#065F46"
       },
-      "package": "com.huda.alquran",
+      "package": "com.alquran.quran",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
@@ -59,8 +59,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "8b961b84-6f9f-4d86-8af7-161395212698"
+        "projectId": "a8b1b0ef-7931-4aa1-8626-f8b2ebb8b4c2"
       }
-    }
+    },
+    "owner": "kamkmgamer"
   }
 }
