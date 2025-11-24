@@ -1,0 +1,44 @@
+# Exclude test files and coverage from EAS builds
+**/__tests__/**
+**/*.test.*
+**/*.spec.*
+**/coverage/**
+**/.expo/**
+**/node_modules/**
+
+# Exclude entire Android directory for iOS builds
+**/android/**
+
+# Exclude source files and development artifacts
+**/desktop.ini
+**/.DS_Store
+**/.idea/**
+
+# Exclude documentation and build guides
+**/docs/**
+**/*.md
+!README.md
+
+# Exclude font source files (keep only .ttf files)
+**/fonts/Othmani/**
+**/fonts/*.zip
+**/*.sql
+**/*.xlsx
+**/*.xls
+**/*.docx
+**/*.doc
+
+# Exclude SQLite database (app uses Quran.json instead)
+**/*.sqlite
+**/*.db
+
+# Exclude scripts (not needed in build)
+**/scripts/**
+
+# Exclude other development files
+**/eas-hooks/**
+**/*.log
+**/.vscode/**
+**/.vs/**
+**/Thumbs.db
+
