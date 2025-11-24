@@ -109,13 +109,13 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.huda.alquran'
+    namespace 'com.alquran'
     defaultConfig {
-        applicationId 'com.huda.alquran'
+        applicationId 'com.alquran'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0.0"
+        versionName "0.2.1"
     }
     signingConfigs {
         debug {
