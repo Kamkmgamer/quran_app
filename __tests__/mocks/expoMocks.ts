@@ -110,7 +110,7 @@ export const mockConstants = {
   expoConfig: {
     name: 'QuranApp',
     slug: 'قرآن',
-    version: '1.0.0',
+    version: '0.2.1',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     splash: {
