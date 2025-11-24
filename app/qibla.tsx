@@ -71,15 +71,9 @@ export default function QiblaCompass() {
   const smoothAngle = React.useCallback((newAngle: number, jitterScore: number) => {
     const cappedJitter = Math.min(Math.max(jitterScore, 0), 8);
 
-    const smoothingFactor =
-      cappedJitter >= 5 ? 0.08 :
-        cappedJitter >= 3 ? 0.12 :
-          0.18;
+    const smoothingFactor = cappedJitter >= 5 ? 0.15 : cappedJitter >= 3 ? 0.25 : 0.35;
 
-    const maxStep =
-      cappedJitter >= 5 ? 6 :
-        cappedJitter >= 3 ? 9 :
-          14;
+    const maxStep = cappedJitter >= 5 ? 8 : cappedJitter >= 3 ? 12 : 18;
 
     if (filteredAngleRef.current === undefined) {
       filteredAngleRef.current = newAngle;
@@ -99,8 +93,12 @@ export default function QiblaCompass() {
 
   // حساب الاتجاه مع تعويض الميل (3D tilt compensation)
   const calculateTiltCompensatedHeading = (
-    mx: number, my: number, mz: number,  // magnetometer
-    ax: number, ay: number, az: number,   // accelerometer
+    mx: number,
+    my: number,
+    mz: number,
+    ax: number,
+    ay: number,
+    az: number,
   ) => {
     // تطبيع قراءات المقياس التسارعي
     const norm = Math.sqrt(ax * ax + ay * ay + az * az);
@@ -116,9 +114,10 @@ export default function QiblaCompass() {
 
     // تطبيق تعويض الميل
     const xh = mx * Math.cos(pitch) + mz * Math.sin(pitch);
-    const yh = mx * Math.sin(roll) * Math.sin(pitch) +
-               my * Math.cos(roll) -
-               mz * Math.sin(roll) * Math.cos(pitch);
+    const yh =
+      mx * Math.sin(roll) * Math.sin(pitch) +
+      my * Math.cos(roll) -
+      mz * Math.sin(roll) * Math.cos(pitch);
 
     // حساب الاتجاه
     let heading = Math.atan2(yh, xh) * (180 / Math.PI);
@@ -147,8 +146,7 @@ export default function QiblaCompass() {
 
     headingStabilizerRef.current.lastRawAngle = heading;
 
-    // Only update if enough time has passed or angle changed significantly
-    if (timeSinceLastUpdate > 200 || jitterScore > 5) {
+    if (timeSinceLastUpdate > 16 || jitterScore > 0.5) {
       const smoothedAngle = smoothAngle(heading, jitterScore);
       setDeviceOrientation(smoothedAngle);
       headingStabilizerRef.current.lastAcceptedTime = now;
@@ -174,7 +172,7 @@ export default function QiblaCompass() {
         if (status === 'granted') {
           try {
             console.log('Attempting Location Heading method...');
-            headingSubscription = await Location.watchHeadingAsync((headingData) => {
+            headingSubscription = await Location.watchHeadingAsync(headingData => {
               if (!isActive) return;
 
               // استخدام الاتجاه الحقيقي (true north)
@@ -195,7 +193,7 @@ export default function QiblaCompass() {
         if (deviceMotionAvailable) {
           try {
             console.log('Attempting DeviceMotion method...');
-            deviceMotionSubscription = DeviceMotion.addListener((data) => {
+            deviceMotionSubscription = DeviceMotion.addListener(data => {
               if (!isActive) return;
 
               if (data.rotation) {
@@ -210,9 +208,9 @@ export default function QiblaCompass() {
               }
             });
 
-            DeviceMotion.setUpdateInterval(100);
+            DeviceMotion.setUpdateInterval(20);
             console.log('DeviceMotion method active');
-            return; // نجح - لا حاجة للطريقة الاحتياطية التالية
+            return;
           } catch (motionError) {
             console.log('DeviceMotion failed, trying manual fusion...', motionError);
           }
@@ -226,13 +224,13 @@ export default function QiblaCompass() {
           console.log('Attempting Manual Sensor Fusion...');
 
           // الاشتراك في كلا المستشعرين
-          magnetometerSubscription = Magnetometer.addListener((data) => {
+          magnetometerSubscription = Magnetometer.addListener(data => {
             magnetometerData.current = data;
             detectMagneticInterference(data.x, data.y, data.z);
             updateHeadingFromFusion();
           });
 
-          accelerometerSubscription = Accelerometer.addListener((data) => {
+          accelerometerSubscription = Accelerometer.addListener(data => {
             accelerometerData.current = data;
             updateHeadingFromFusion();
           });
@@ -245,16 +243,20 @@ export default function QiblaCompass() {
 
             // حساب الاتجاه مع تعويض الميل الكامل
             const heading = calculateTiltCompensatedHeading(
-              mag.x, mag.y, mag.z,
-              accel.x, accel.y, accel.z,
+              mag.x,
+              mag.y,
+              mag.z,
+              accel.x,
+              accel.y,
+              accel.z,
             );
 
             handleHeadingUpdate(heading);
             setIsCalibrated(true);
           };
 
-          Magnetometer.setUpdateInterval(100);
-          Accelerometer.setUpdateInterval(100);
+          Magnetometer.setUpdateInterval(20);
+          Accelerometer.setUpdateInterval(20);
           console.log('Manual Sensor Fusion active');
           return;
         }
@@ -262,7 +264,7 @@ export default function QiblaCompass() {
         // الطريقة 4: مقياس المغناطيسية الخام فقط (الملاذ الأخير - تحذير!)
         if (magAvailable) {
           console.log('WARNING: Using raw magnetometer only (requires flat device)');
-          magnetometerSubscription = Magnetometer.addListener((data) => {
+          magnetometerSubscription = Magnetometer.addListener(data => {
             if (!isActive) return;
 
             detectMagneticInterference(data.x, data.y, data.z);
@@ -275,7 +277,7 @@ export default function QiblaCompass() {
             setIsCalibrated(true);
           });
 
-          Magnetometer.setUpdateInterval(100);
+          Magnetometer.setUpdateInterval(20);
           console.log('Raw magnetometer method active (WARNING: hold device flat)');
         } else {
           console.error('No compass sensors available!');
@@ -374,20 +376,14 @@ export default function QiblaCompass() {
       angleRef.current = nextAbsolute;
 
       const magnitude = Math.abs(delta);
-      const stiffness =
-        magnitude > 60 ? 130 :
-          magnitude > 30 ? 110 :
-            90;
-      const damping =
-        magnitude > 60 ? 22 :
-          magnitude > 30 ? 18 :
-            15;
+      const stiffness = magnitude > 60 ? 200 : magnitude > 30 ? 170 : 140;
+      const damping = magnitude > 60 ? 18 : magnitude > 30 ? 15 : 12;
 
       Animated.spring(animatedValue, {
         toValue: nextAbsolute,
         stiffness,
         damping,
-        mass: 0.85,
+        mass: 0.6,
         useNativeDriver: true,
       }).start();
     },
@@ -421,29 +417,32 @@ export default function QiblaCompass() {
   ]);
 
   const pointerRotate = React.useMemo(
-    () => pointerRotation.interpolate({
-      inputRange: [-360, 0, 360],
-      outputRange: ['-360deg', '0deg', '360deg'],
-      extrapolate: 'extend',
-    }),
+    () =>
+      pointerRotation.interpolate({
+        inputRange: [-360, 0, 360],
+        outputRange: ['-360deg', '0deg', '360deg'],
+        extrapolate: 'extend',
+      }),
     [pointerRotation],
   );
 
   const compassRotate = React.useMemo(
-    () => compassRotation.interpolate({
-      inputRange: [-360, 0, 360],
-      outputRange: ['-360deg', '0deg', '360deg'],
-      extrapolate: 'extend',
-    }),
+    () =>
+      compassRotation.interpolate({
+        inputRange: [-360, 0, 360],
+        outputRange: ['-360deg', '0deg', '360deg'],
+        extrapolate: 'extend',
+      }),
     [compassRotation],
   );
 
   const relativeRotate = React.useMemo(
-    () => kaabaRotation.interpolate({
-      inputRange: [-360, 0, 360],
-      outputRange: ['-360deg', '0deg', '360deg'],
-      extrapolate: 'extend',
-    }),
+    () =>
+      kaabaRotation.interpolate({
+        inputRange: [-360, 0, 360],
+        outputRange: ['-360deg', '0deg', '360deg'],
+        extrapolate: 'extend',
+      }),
     [kaabaRotation],
   );
 
@@ -461,17 +460,19 @@ export default function QiblaCompass() {
             <ActivityIndicator size="large" color="#10B981" style={styles.loadingSpinner} />
             <Text style={styles.loadingTitle}>جاري تحضير البوصلة</Text>
             <Text style={styles.loadingSubtitle}>
-              {locationLoading ? 'تحديد موقعك...' :
-                locationError ? locationError :
-                  !isCalibrated ? 'معايرة البوصلة...' : 'جاري التحميل...'}
+              {locationLoading
+                ? 'تحديد موقعك...'
+                : locationError
+                  ? locationError
+                  : !isCalibrated
+                    ? 'معايرة البوصلة...'
+                    : 'جاري التحميل...'}
             </Text>
 
             {!isCalibrated && !locationLoading && (
               <View style={styles.loadingHint}>
                 <Ionicons name="information-circle" size={20} color="#10B981" />
-                <Text style={styles.loadingHintText}>
-                  قد تحتاج لتحريك جهازك بشكل رقم 8
-                </Text>
+                <Text style={styles.loadingHintText}>قد تحتاج لتحريك جهازك بشكل رقم 8</Text>
               </View>
             )}
           </View>
@@ -498,7 +499,9 @@ export default function QiblaCompass() {
               <Text style={styles.angleText}>{getDisplayedAngle()}°</Text>
             </View>
 
-            <View style={[styles.pointerContainer, isLandscape && styles.pointerContainerLandscape]}>
+            <View
+              style={[styles.pointerContainer, isLandscape && styles.pointerContainerLandscape]}
+            >
               <AnimatedImage
                 source={require('../assets/images/pointer to mekka.png')}
                 style={[
@@ -515,18 +518,12 @@ export default function QiblaCompass() {
             <View style={[styles.compass, { width: compassSize, height: compassSize }]}>
               <AnimatedImage
                 source={require('../assets/images/north east south west.png')}
-                style={[
-                  styles.directionsImage,
-                  { transform: [{ rotate: compassRotate }] },
-                ]}
+                style={[styles.directionsImage, { transform: [{ rotate: compassRotate }] }]}
                 resizeMode="contain"
               />
 
               <AnimatedView
-                style={[
-                  styles.kaabaContainer,
-                  { transform: [{ rotate: relativeRotate }] },
-                ]}
+                style={[styles.kaabaContainer, { transform: [{ rotate: relativeRotate }] }]}
               >
                 <Image
                   source={require('../assets/images/kaba.png')}
@@ -536,10 +533,7 @@ export default function QiblaCompass() {
               </AnimatedView>
 
               <AnimatedView
-                style={[
-                  styles.userIndicatorContainer,
-                  { transform: [{ rotate: relativeRotate }] },
-                ]}
+                style={[styles.userIndicatorContainer, { transform: [{ rotate: relativeRotate }] }]}
               >
                 <Image
                   source={require('../assets/images/Vector.png')}
@@ -550,7 +544,6 @@ export default function QiblaCompass() {
             </View>
           </View>
         </View>
-
       </View>
     </SafeAreaView>
   );
