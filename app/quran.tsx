@@ -241,7 +241,7 @@ export default function Quran() {
   };
 
   const showActionSheet = (verseIndex: number) => {
-    const options = ['إلغاء', 'تشغيل الآية 🎵', 'حفظ الآية 🔖', 'نسخ الآية 📋', 'اختبار التمرير 📍'];
+    const options = ['إلغاء', 'تشغيل الآية 🎵', 'حفظ الآية 🔖', 'نسخ الآية 📋'];
     const cancelButtonIndex = 0;
 
     showActionSheetWithOptions(
@@ -256,11 +256,6 @@ export default function Quran() {
           saveVerseToStorage(Number(surah), verseIndex);
         } else if (buttonIndex === 3) {
           Clipboard.setString(quran[Number(surah)].array[verseIndex].ar);
-        } else if (buttonIndex === 4) {
-          // Test scroll to this verse
-          console.log(
-            `[Test] Continuous scroll mode active for verse ${verseIndex + 1} (no direct verse jump)`,
-          );
         }
       },
     );
