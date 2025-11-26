@@ -102,9 +102,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
       try {
         await audioService.preloadVerse(reciter.apiPath, reciter.id, surahId, verseId + 1);
-      } catch (error) {
-        console.error('Error preloading next verse:', error);
-      }
+      } catch (error) {}
     },
     [],
   );
@@ -180,7 +178,6 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
         setState(prev => ({ ...prev, isPlayingSurah: true }));
         await playVerse(surahId, startVerseId, true);
       } catch (error) {
-        console.error('Error playing surah from verse:', error);
         setState(prev => ({ ...prev, isPlayingSurah: false }));
       }
     },
@@ -314,9 +311,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
           }
         }
       });
-    } catch (error) {
-      console.error('Error setting up AudioService:', error);
-    }
+    } catch (error) {}
   }, [playVerse, playNext]);
 
   // تحميل التفضيلات عند البدء
@@ -325,9 +320,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       try {
         await loadPreferences();
         setupAudioService();
-      } catch (error) {
-        console.error('Error initializing AudioPlayerContext:', error);
-      }
+      } catch (error) {}
     };
 
     initialize();
@@ -338,9 +331,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     try {
       await audioService.togglePlayPause();
       setState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
-    } catch (error) {
-      console.error('Error toggling play/pause:', error);
-    }
+    } catch (error) {}
   };
 
   // تشغيل الآية السابقة
@@ -423,9 +414,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     try {
       await audioService.seekTo(position);
       setState(prev => ({ ...prev, position }));
-    } catch (error) {
-      console.error('Error seeking:', error);
-    }
+    } catch (error) {}
   };
 
   // إيقاف
@@ -438,9 +427,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
         isPlayingSurah: false,
         position: 0,
       }));
-    } catch (error) {
-      console.error('Error stopping:', error);
-    }
+    } catch (error) {}
   };
 
   // استئناف آخر موضع
@@ -455,9 +442,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
         await playVerse(lastPosition.surahId, lastPosition.verseId, false);
       }
-    } catch (error) {
-      console.error('Error resuming last position:', error);
-    }
+    } catch (error) {}
   };
 
   const value: AudioPlayerContextType = {

@@ -1,13 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Modal,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
 
 // import Slider from '@react-native-community/slider'; // معطل مؤقتاً
 import quranDataImport from '../assets/Quran.json';
@@ -44,9 +37,7 @@ export default function Player() {
         <View style={styles.emptyState}>
           <Ionicons name="musical-notes-outline" size={64} color="#D1D5DB" />
           <Text style={styles.emptyText}>لم يتم تشغيل أي شيء</Text>
-          <Text style={styles.emptySubtext}>
-            اذهب إلى صفحة القرآن لبدء الاستماع
-          </Text>
+          <Text style={styles.emptySubtext}>اذهب إلى صفحة القرآن لبدء الاستماع</Text>
         </View>
       </View>
     );
@@ -63,10 +54,10 @@ export default function Player() {
     { value: 'all', label: 'تكرار الكل', icon: 'infinite' },
   ];
 
-  const currentRepeatMode = repeatModes.find((m) => m.value === state.repeatMode);
+  const currentRepeatMode = repeatModes.find(m => m.value === state.repeatMode);
 
   const handleRepeatToggle = () => {
-    const currentIndex = repeatModes.findIndex((m) => m.value === state.repeatMode);
+    const currentIndex = repeatModes.findIndex(m => m.value === state.repeatMode);
     const nextIndex = (currentIndex + 1) % repeatModes.length;
     setRepeatMode(repeatModes[nextIndex].value as any);
   };
@@ -95,13 +86,22 @@ export default function Player() {
               .map((w: string, i: number, arr: string[]) => {
                 const durationMs = state.duration || 0;
                 const positionMs = state.position || 0;
-                const ratio = durationMs > 0 ? Math.min(0.9999, Math.max(0, positionMs / durationMs)) : 0;
-                // Don't highlight if we're at the very end (about to transition to next verse) or at the very beginning (transitioning in)
+                const ratio =
+                  durationMs > 0 ? Math.min(0.9999, Math.max(0, positionMs / durationMs)) : 0;
+                // Don't highlight if we're at the very end or at the very beginning
                 const remainingMs = Math.max(0, durationMs - positionMs);
                 const isAtVerseEnd = durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
                 const isAtVerseStart = ratio < 0.02;
-                const activeIndex = state.isPlaying && !isAtVerseEnd && !isAtVerseStart ? Math.min(arr.length - 1, Math.floor(ratio * (arr.length + 0.5))) : -1;
-                const isActive = state.isPlaying && !isAtVerseEnd && !isAtVerseStart && i >= activeIndex - 2 && i <= activeIndex;
+                const activeIndex =
+                  state.isPlaying && !isAtVerseEnd && !isAtVerseStart
+                    ? Math.min(arr.length - 1, Math.floor(ratio * (arr.length + 0.5)))
+                    : -1;
+                const isActive =
+                  state.isPlaying &&
+                  !isAtVerseEnd &&
+                  !isAtVerseStart &&
+                  i >= activeIndex - 2 &&
+                  i <= activeIndex;
                 return (
                   <Text key={i} style={isActive ? styles.wordActive : undefined}>
                     {w}
@@ -114,10 +114,7 @@ export default function Player() {
       </View>
 
       {/* معلومات القارئ */}
-      <TouchableOpacity
-        style={styles.reciterButton}
-        onPress={() => setShowReciterModal(true)}
-      >
+      <TouchableOpacity style={styles.reciterButton} onPress={() => setShowReciterModal(true)}>
         <View style={styles.reciterInfo}>
           <Ionicons name="person" size={20} color="#065F46" />
           <Text style={styles.reciterName}>{state.currentReciter?.name || ''}</Text>
@@ -145,10 +142,7 @@ export default function Player() {
 
       {/* أزرار التحكم الرئيسية */}
       <View style={styles.mainControls}>
-        <TouchableOpacity
-          style={styles.secondaryControlButton}
-          onPress={handleRepeatToggle}
-        >
+        <TouchableOpacity style={styles.secondaryControlButton} onPress={handleRepeatToggle}>
           <Ionicons
             name={currentRepeatMode?.icon as any}
             size={24}
@@ -160,18 +154,11 @@ export default function Player() {
           <Ionicons name="play-skip-forward" size={32} color="#065F46" />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.playButton}
-          onPress={togglePlayPause}
-        >
+        <TouchableOpacity style={styles.playButton} onPress={togglePlayPause}>
           {state.isLoading ? (
             <Ionicons name="hourglass" size={40} color="#fff" />
           ) : (
-            <Ionicons
-              name={state.isPlaying ? 'pause' : 'play'}
-              size={40}
-              color="#fff"
-            />
+            <Ionicons name={state.isPlaying ? 'pause' : 'play'} size={40} color="#fff" />
           )}
         </TouchableOpacity>
 
@@ -201,7 +188,7 @@ export default function Player() {
         >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>سرعة التشغيل</Text>
-            {speedOptions.map((speed) => (
+            {speedOptions.map(speed => (
               <TouchableOpacity
                 key={speed}
                 style={[
@@ -216,8 +203,7 @@ export default function Player() {
                 <Text
                   style={[
                     styles.modalOptionText,
-                    state.playbackSpeed === speed &&
-                      styles.modalOptionTextSelected,
+                    state.playbackSpeed === speed && styles.modalOptionTextSelected,
                   ]}
                 >
                   {speed}x
@@ -246,13 +232,12 @@ export default function Player() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>اختر القارئ</Text>
             <ScrollView>
-              {recitersData.reciters.map((reciter) => (
+              {recitersData.reciters.map(reciter => (
                 <TouchableOpacity
                   key={reciter.id}
                   style={[
                     styles.modalOption,
-                    state.currentReciterId === reciter.id &&
-                      styles.modalOptionSelected,
+                    state.currentReciterId === reciter.id && styles.modalOptionSelected,
                   ]}
                   onPress={() => {
                     setReciter(reciter.id);
@@ -263,8 +248,7 @@ export default function Player() {
                     <Text
                       style={[
                         styles.modalOptionText,
-                        state.currentReciterId === reciter.id &&
-                          styles.modalOptionTextSelected,
+                        state.currentReciterId === reciter.id && styles.modalOptionTextSelected,
                       ]}
                     >
                       {reciter.name}
@@ -499,4 +483,3 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
-

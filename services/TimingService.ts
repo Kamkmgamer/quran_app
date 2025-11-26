@@ -37,7 +37,8 @@ class TimingService {
 
     try {
       // محاولة تحميل ملف التوقيت إذا كان موجوداً
-      const timingFile = await import(`../assets/timings/${surahId.toString().padStart(3, '0')}.json`);
+      const timingFile = await
+      import(`../assets/timings/${surahId.toString().padStart(3, '0')}.json`);
       this.timingsCache.set(surahId, timingFile.default);
       return timingFile.default;
     } catch {

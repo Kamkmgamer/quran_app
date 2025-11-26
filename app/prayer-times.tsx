@@ -1,7 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLocation } from '../contexts/LocationContext';
@@ -43,7 +51,7 @@ export default function PrayerTimesScreen() {
           { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 },
         ];
 
-        const fallbackTimes: PrayerTime[] = fallbackPrayers.map((prayer) => ({
+        const fallbackTimes: PrayerTime[] = fallbackPrayers.map(prayer => ({
           name: prayer.arabic,
           time: '--:--',
           isNext: false,
@@ -56,7 +64,7 @@ export default function PrayerTimesScreen() {
 
       const now = new Date();
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      const timesWithMeta = prayers.map((prayer) => {
+      const timesWithMeta = prayers.map(prayer => {
         let timeString: string;
 
         switch (prayer.english) {
@@ -97,15 +105,13 @@ export default function PrayerTimesScreen() {
       });
 
       const validTimes = timesWithMeta.filter(
-        (prayer) => prayer.minutesSinceMidnight !== null,
-      ) as (typeof timesWithMeta[number] & { minutesSinceMidnight: number })[];
+        prayer => prayer.minutesSinceMidnight !== null,
+      ) as ((typeof timesWithMeta)[number] & { minutesSinceMidnight: number })[];
 
       let nextPrayerMinutes: number | null = null;
 
       if (validTimes.length > 0) {
-        const upcoming = validTimes.filter(
-          (prayer) => prayer.minutesSinceMidnight > currentMinutes,
-        );
+        const upcoming = validTimes.filter(prayer => prayer.minutesSinceMidnight > currentMinutes);
 
         if (upcoming.length > 0) {
           nextPrayerMinutes = upcoming.reduce(
@@ -120,7 +126,7 @@ export default function PrayerTimesScreen() {
         }
       }
 
-      const times: PrayerTime[] = timesWithMeta.map((prayer) => ({
+      const times: PrayerTime[] = timesWithMeta.map(prayer => ({
         name: prayer.name,
         time: prayer.time,
         icon: prayer.icon,
@@ -145,7 +151,7 @@ export default function PrayerTimesScreen() {
         { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 },
       ];
 
-      const fallbackTimes: PrayerTime[] = fallbackPrayers.map((prayer) => ({
+      const fallbackTimes: PrayerTime[] = fallbackPrayers.map(prayer => ({
         name: prayer.arabic,
         time: '--:--',
         isNext: false,
@@ -168,7 +174,12 @@ export default function PrayerTimesScreen() {
     } else if (!locationContext.locationLoading) {
       setLoading(false);
     }
-  }, [locationContext.locationLoading, locationContext.locationError, prayerTimesData, prayerConfig]);
+  }, [
+    locationContext.locationLoading,
+    locationContext.locationError,
+    prayerTimesData,
+    prayerConfig,
+  ]);
 
   // تحديث الوقت كل دقيقة وإعادة حساب الصلاة التالية
   useEffect(() => {
@@ -318,10 +329,7 @@ export default function PrayerTimesScreen() {
         <Text style={styles.headerSubtitle}>تحديث لحظي حسب موقعك الحالي</Text>
       </View>
       <TouchableOpacity
-        style={[
-          styles.refreshButton,
-          refreshing && styles.refreshButtonDisabled,
-        ]}
+        style={[styles.refreshButton, refreshing && styles.refreshButtonDisabled]}
         onPress={handleManualRefresh}
         disabled={refreshing}
         activeOpacity={0.7}
@@ -371,9 +379,7 @@ export default function PrayerTimesScreen() {
       {renderStatusBanner()}
       <ScrollView
         style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Current Time Card */}
         <View style={styles.currentTimeCard}>
@@ -407,48 +413,39 @@ export default function PrayerTimesScreen() {
           {prayerTimes.map((prayer, index) => (
             <TouchableOpacity
               key={index}
-              style={[
-                styles.prayerCard,
-                prayer.isNext && styles.nextPrayerCard,
-              ]}
-              onPress={() => router.push({
-                pathname: './prayer-detail',
-                params: {
-                  prayerName: prayer.name,
-                  prayerTime: prayer.time,
-                  prayerIcon: prayer.icon,
-                  isNext: prayer.isNext.toString(),
-                },
-              } as any)}
+              style={[styles.prayerCard, prayer.isNext && styles.nextPrayerCard]}
+              onPress={() =>
+                router.push({
+                  pathname: './prayer-detail',
+                  params: {
+                    prayerName: prayer.name,
+                    prayerTime: prayer.time,
+                    prayerIcon: prayer.icon,
+                    isNext: prayer.isNext.toString(),
+                  },
+                } as any)
+              }
               activeOpacity={0.8}
             >
               <View style={styles.prayerInfo}>
-                <View style={[
-                  styles.prayerIconContainer,
-                  prayer.isNext && styles.nextPrayerIconContainer,
-                ]}>
+                <View
+                  style={[
+                    styles.prayerIconContainer,
+                    prayer.isNext && styles.nextPrayerIconContainer,
+                  ]}
+                >
                   <Ionicons
                     name={prayer.icon as any}
                     size={24}
                     color={prayer.isNext ? '#D4AF37' : '#10B981'}
                   />
                 </View>
-                <Text
-                  style={[
-                    styles.prayerName,
-                    prayer.isNext && styles.nextPrayerName,
-                  ]}
-                >
+                <Text style={[styles.prayerName, prayer.isNext && styles.nextPrayerName]}>
                   {prayer.name}
                 </Text>
               </View>
               <View style={styles.prayerTimeContainer}>
-                <Text
-                  style={[
-                    styles.prayerTime,
-                    prayer.isNext && styles.nextPrayerTime,
-                  ]}
-                >
+                <Text style={[styles.prayerTime, prayer.isNext && styles.nextPrayerTime]}>
                   {formatTime(prayer.time)}
                 </Text>
                 <Ionicons
@@ -474,7 +471,13 @@ export default function PrayerTimesScreen() {
               <View style={styles.locationMetaRow}>
                 <View style={[styles.locationSourceBadge, getLocationSourceBadgeStyle()]}>
                   <Ionicons
-                    name={locationSource === 'gps' ? 'navigate' : locationSource === 'network' ? 'globe-outline' : 'location-outline'}
+                    name={
+                      locationSource === 'gps'
+                        ? 'navigate'
+                        : locationSource === 'network'
+                          ? 'globe-outline'
+                          : 'location-outline'
+                    }
                     size={14}
                     color="#fff"
                     style={styles.locationSourceIcon}
@@ -493,7 +496,9 @@ export default function PrayerTimesScreen() {
             مصدر البيانات: AlAdhan API • {prayerTimesData?.method?.name || 'المصرية العامة للمساحة'}
           </Text>
           <Text style={styles.dataSourceSubText}>
-            {prayerTimesData?.date || ''} • زاوية الفجر: {prayerTimesData?.method?.params?.Fajr || '19.5'}° • العشاء: {prayerTimesData?.method?.params?.Isha || '17.5'}°
+            {prayerTimesData?.date || ''} • زاوية الفجر:{' '}
+            {prayerTimesData?.method?.params?.Fajr || '19.5'}° • العشاء:{' '}
+            {prayerTimesData?.method?.params?.Isha || '17.5'}°
           </Text>
         </View>
       </ScrollView>

@@ -60,21 +60,17 @@ export default function Settings() {
   };
 
   const clearCache = () => {
-    Alert.alert(
-      'مسح الذاكرة المؤقتة',
-      'هل تريد مسح جميع الملفات المؤقتة؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'مسح',
-          style: 'destructive',
-          onPress: () => {
-            // يمكن إضافة منطق مسح الملفات المؤقتة هنا
-            Alert.alert('تم', 'تم مسح الذاكرة المؤقتة بنجاح');
-          },
+    Alert.alert('مسح الذاكرة المؤقتة', 'هل تريد مسح جميع الملفات المؤقتة؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'مسح',
+        style: 'destructive',
+        onPress: () => {
+          // يمكن إضافة منطق مسح الملفات المؤقتة هنا
+          Alert.alert('تم', 'تم مسح الذاكرة المؤقتة بنجاح');
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const resetSettings = () => {
@@ -122,7 +118,7 @@ export default function Settings() {
       </View>
       <Switch
         value={settings[settingKey]}
-        onValueChange={(value) => saveSetting(settingKey, value)}
+        onValueChange={value => saveSetting(settingKey, value)}
         trackColor={{ false: '#D1D5DB', true: '#BBF7D0' }}
         thumbColor={settings[settingKey] ? '#065F46' : '#F3F4F6'}
       />
@@ -139,16 +135,10 @@ export default function Settings() {
     <TouchableOpacity style={styles.actionItem} onPress={onPress}>
       <View style={styles.settingLeft}>
         <View style={[styles.iconContainer, danger && styles.iconContainerDanger]}>
-          <Ionicons
-            name={icon as any}
-            size={24}
-            color={danger ? '#DC2626' : '#065F46'}
-          />
+          <Ionicons name={icon as any} size={24} color={danger ? '#DC2626' : '#065F46'} />
         </View>
         <View style={styles.settingTextContainer}>
-          <Text style={[styles.settingTitle, danger && styles.dangerText]}>
-            {title}
-          </Text>
+          <Text style={[styles.settingTitle, danger && styles.dangerText]}>{title}</Text>
           <Text style={styles.settingDescription}>{description}</Text>
         </View>
       </View>
@@ -224,12 +214,7 @@ export default function Settings() {
                 'إظهار ترجمة معاني القرآن',
                 'showTranslation',
               )}
-              {renderSettingItem(
-                'moon',
-                'الوضع الليلي',
-                'استخدام الثيم الداكن',
-                'nightMode',
-              )}
+              {renderSettingItem('moon', 'الوضع الليلي', 'استخدام الثيم الداكن', 'nightMode')}
             </View>
           </View>
 
@@ -250,30 +235,15 @@ export default function Settings() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>الوصول السريع</Text>
             <View style={styles.card}>
-              {renderActionItem(
-                'text',
-                'حجم الخط',
-                'تغيير حجم خط القرآن',
-                () => {
-                  router.push('/font-size');
-                },
-              )}
-              {renderActionItem(
-                'person',
-                'القراء',
-                'اختيار القارئ المفضل',
-                () => {
-                  router.push('/reciters');
-                },
-              )}
-              {renderActionItem(
-                'bookmark',
-                'العلامات المرجعية',
-                'إدارة الآيات المحفوظة',
-                () => {
-                  router.push('/bookmarks');
-                },
-              )}
+              {renderActionItem('text', 'حجم الخط', 'تغيير حجم خط القرآن', () => {
+                router.push('/font-size');
+              })}
+              {renderActionItem('person', 'القراء', 'اختيار القارئ المفضل', () => {
+                router.push('/reciters');
+              })}
+              {renderActionItem('bookmark', 'العلامات المرجعية', 'إدارة الآيات المحفوظة', () => {
+                router.push('/bookmarks');
+              })}
             </View>
           </View>
 
@@ -453,4 +423,3 @@ const styles = StyleSheet.create({
     color: '#059669',
   },
 });
-

@@ -138,16 +138,11 @@ export default function PrayerDetailScreen() {
         <View style={styles.header}>
           <Animated.View style={{ opacity: fadeAnim }}>
             <View style={styles.headerContent}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => router.back()}
-              >
+              <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                 <Ionicons name="chevron-back" size={24} color={getPrayerColor()} />
               </TouchableOpacity>
               <View style={styles.headerText}>
-                <Text style={[styles.headerTitle, { color: getPrayerColor() }]}>
-                  تفاصيل الصلاة
-                </Text>
+                <Text style={[styles.headerTitle, { color: getPrayerColor() }]}>تفاصيل الصلاة</Text>
                 <Text style={styles.headerSubtitle}>
                   {isNext === 'true' ? 'الصلاة التالية' : 'معلومات الصلاة'}
                 </Text>
@@ -166,20 +161,17 @@ export default function PrayerDetailScreen() {
                 backgroundColor: getPrayerBgColor(),
                 borderColor: getPrayerColor(),
                 opacity: fadeAnim,
-                transform: [{ scale: scaleAnim }, { scale: isNext === 'true' ? pulseAnim : new Animated.Value(1) }],
+                transform: [
+                  { scale: scaleAnim },
+                  { scale: isNext === 'true' ? pulseAnim : new Animated.Value(1) },
+                ],
               },
             ]}
           >
             <View style={styles.prayerIconContainer}>
-              <Ionicons
-                name={prayerIcon as any}
-                size={48}
-                color={getPrayerColor()}
-              />
+              <Ionicons name={prayerIcon as any} size={48} color={getPrayerColor()} />
             </View>
-            <Text style={[styles.prayerName, { color: getPrayerColor() }]}>
-              {prayerName}
-            </Text>
+            <Text style={[styles.prayerName, { color: getPrayerColor() }]}>{prayerName}</Text>
             <Text style={[styles.prayerTime, { color: getPrayerColor() }]}>
               {formatPrayerTime(prayerTime)}
             </Text>
@@ -221,8 +213,7 @@ export default function PrayerDetailScreen() {
               <Text style={styles.statusText}>
                 {isNext === 'true'
                   ? 'هذه هي الصلاة التالية، استعد لأداء الصلاة في وقتها'
-                  : 'تم تحديد وقت هذه الصلاة بناءً على موقعك الحالي'
-                }
+                  : 'تم تحديد وقت هذه الصلاة بناءً على موقعك الحالي'}
               </Text>
             </View>
           </Animated.View>

@@ -310,15 +310,12 @@ export default function QiblaCompass() {
   }, []);
 
   // اتجاه القبلة يتم حسابه تلقائياً في السياق
-  // لا حاجة لإعادة حسابه هنا
 
   // الحصول على الزاوية النسبية بين اتجاه القبلة واتجاه الجهاز
-  // نتيجة: قيمة بين 0 و 360 تمثل الاتجاه الذي يجب تدوير العنصر إليه بالنسبة للعرض الأفقي (0 = أعلى الشاشة)
-  const getRelativeAngle = () => {
-    // نريد زاوية حيث 0 = للأعلى (الشمال بالنسبة للصورة) و القيمة هي مقدار دوران السهم ليشير للقبلة
+  const getRelativeAngle = React.useCallback(() => {
     const rel = (qiblaDirection - deviceOrientation + 360) % 360;
     return rel;
-  };
+  }, [qiblaDirection, deviceOrientation]);
 
   // نزول إلى نطاق -180..180 لعرض الفرق رقمياً (أقصر دوران يمين/يسار)
   const normalizeToMinus180To180 = (angle: number) => {
@@ -411,6 +408,7 @@ export default function QiblaCompass() {
   }, [
     animateRotation,
     deviceOrientation,
+    getRelativeAngle,
     isQiblaReady,
     kaabaRotation,
     pointerRotation,

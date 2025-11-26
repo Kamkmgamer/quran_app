@@ -4,7 +4,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { I18nManager, View, Platform } from 'react-native';
+import { I18nManager, View } from 'react-native';
 
 import MiniPlayer from '../components/MiniPlayer';
 import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
@@ -28,10 +28,7 @@ export default function RootLayout() {
           <ThemeProvider value={DarkTheme}>
             <View style={{ flex: 1 }}>
               <Stack>
-                <Stack.Screen
-                  name="index"
-                  options={{ headerShown: false, title: 'الرئيسية' }}
-                />
+                <Stack.Screen name="index" options={{ headerShown: false, title: 'الرئيسية' }} />
                 <Stack.Screen
                   name="quran"
                   options={{

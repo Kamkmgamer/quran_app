@@ -100,12 +100,6 @@ export default function Quran() {
     if (delta > 10) {
       scrollViewRef.current.scrollTo({ y: desiredScrollY, animated: true });
       scrollYRef.current = desiredScrollY;
-
-      if (__DEV__) {
-        console.log(
-          `[Autoscroll] Verse ${verseIndex + 1}: scrolling from ${currentScrollY} to ${desiredScrollY}`,
-        );
-      }
     }
   };
 
@@ -154,9 +148,6 @@ export default function Quran() {
         });
 
         await AsyncStorage.setItem('bookmarkedVerses', JSON.stringify(bookmarks));
-        console.log('تم حفظ الآية في العلامات المرجعية ✓');
-      } else {
-        console.log('هذه الآية محفوظة بالفعل');
       }
     } catch (error) {
       console.error('Error saving verse:', error);

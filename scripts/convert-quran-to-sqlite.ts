@@ -1,6 +1,7 @@
-import { Database } from 'bun:sqlite';
-import { join } from 'path';
 import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+import Database from 'better-sqlite3';
 
 // Simple types based on assets/Quran.json structure
 interface AyahJson {
@@ -32,11 +33,13 @@ async function main() {
   const jsonPath = join(projectRoot, 'assets', 'Quran.json');
   const dbPath = join(projectRoot, 'assets', 'quran.sqlite');
 
+  // eslint-disable-next-line no-console
   console.log('Reading JSON from', jsonPath);
   const jsonRaw = await readFile(jsonPath, 'utf-8');
   const jsonClean = jsonRaw.replace(/^\uFEFF/, '');
   const surahs: SurahJson[] = JSON.parse(jsonClean);
 
+  // eslint-disable-next-line no-console
   console.log('Creating SQLite database at', dbPath);
   const db = new Database(dbPath);
 
@@ -117,10 +120,12 @@ async function main() {
   }
 
   db.close();
+  // eslint-disable-next-line no-console
   console.log('Done. SQLite DB created at', dbPath);
 }
 
 main().catch((err) => {
+  // eslint-disable-next-line no-console
   console.error('Error while converting Quran.json to SQLite:', err);
   process.exit(1);
 });

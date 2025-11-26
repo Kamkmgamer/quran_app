@@ -42,14 +42,12 @@ export default function Menu({ visible, onClose }: MenuProps) {
       if (savedSize && sizeLabels[savedSize]) {
         setSelectedFontSize(sizeLabels[savedSize]);
       }
-    } catch (error) {
-      console.error('Error loading font size:', error);
-    }
+    } catch (error) {}
   };
 
   // الحصول على اسم القارئ المختار
   const getCurrentReciterName = () => {
-    const reciter = recitersData.reciters.find((r) => r.id === state.currentReciterId);
+    const reciter = recitersData.reciters.find(r => r.id === state.currentReciterId);
     return reciter ? reciter.name : 'عبد الباسط عبد الصمد';
   };
 
@@ -87,21 +85,12 @@ export default function Menu({ visible, onClose }: MenuProps) {
   ];
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <TouchableOpacity
-        style={styles.overlay}
-        activeOpacity={1}
-        onPress={onClose}
-      >
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
         <TouchableOpacity
           style={styles.menuContainer}
           activeOpacity={1}
-          onPress={(e) => e.stopPropagation()}
+          onPress={e => e.stopPropagation()}
         >
           {/* Header */}
           <View style={styles.header}>
@@ -111,18 +100,10 @@ export default function Menu({ visible, onClose }: MenuProps) {
 
           {/* Menu Items */}
           <ScrollView style={styles.menuContent}>
-            {menuItems.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.menuItem}
-                onPress={item.onPress}
-              >
+            {menuItems.map(item => (
+              <TouchableOpacity key={item.id} style={styles.menuItem} onPress={item.onPress}>
                 <Text style={styles.menuItemText}>{item.title}</Text>
-                <Ionicons
-                  name={item.icon as any}
-                  size={24}
-                  color={item.iconColor}
-                />
+                <Ionicons name={item.icon as any} size={24} color={item.iconColor} />
               </TouchableOpacity>
             ))}
 

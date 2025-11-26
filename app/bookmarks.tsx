@@ -2,14 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ImageBackground,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -86,10 +79,7 @@ export default function Bookmarks() {
 
   const renderVerseItem = ({ item }: { item: BookmarkedVerse }) => (
     <View style={styles.verseItem}>
-      <TouchableOpacity
-        style={styles.bookmarkButton}
-        onPress={() => removeBookmark(item.id)}
-      >
+      <TouchableOpacity style={styles.bookmarkButton} onPress={() => removeBookmark(item.id)}>
         <Ionicons name="bookmark" size={24} color="#065F46" />
       </TouchableOpacity>
 
@@ -111,9 +101,7 @@ export default function Bookmarks() {
     <View style={styles.emptyContainer}>
       <Ionicons name="bookmark-outline" size={80} color="#9CA3AF" />
       <Text style={styles.emptyTitle}>لا توجد علامات مرجعية</Text>
-      <Text style={styles.emptySubtitle}>
-        اضغط مطولاً على أي آية في القرآن لحفظها هنا
-      </Text>
+      <Text style={styles.emptySubtitle}>اضغط مطولاً على أي آية في القرآن لحفظها هنا</Text>
     </View>
   );
 
@@ -122,10 +110,7 @@ export default function Bookmarks() {
       {/* Header */}
       <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
         <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Svg width="9" height="19" viewBox="0 0 9 19" fill="none">
               <Path
                 d="M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75"
@@ -137,9 +122,7 @@ export default function Bookmarks() {
           </TouchableOpacity>
           <View style={styles.headerDetails}>
             <Text style={styles.headerTitle}>العلامات المرجعية</Text>
-            <Text style={styles.headerSubtitle}>
-              {bookmarkedVerses.length} آية محفوظة
-            </Text>
+            <Text style={styles.headerSubtitle}>{bookmarkedVerses.length} آية محفوظة</Text>
           </View>
           <View style={styles.headerSpacer} />
         </View>
@@ -163,7 +146,7 @@ export default function Bookmarks() {
               <FlatList
                 data={bookmarkedVerses}
                 renderItem={renderVerseItem}
-                keyExtractor={(item) => item.id}
+                keyExtractor={item => item.id}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
               />

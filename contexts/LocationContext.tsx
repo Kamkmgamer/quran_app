@@ -1,7 +1,12 @@
 import * as Location from 'expo-location';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 
-import PrayerTimesService, { PrayerTimesData, Coordinates, CalculationMethods, PrayerConfig } from '../services/PrayerTimesService';
+import PrayerTimesService, {
+  PrayerTimesData,
+  Coordinates,
+  CalculationMethods,
+  PrayerConfig,
+} from '../services/PrayerTimesService';
 
 // موقع الكعبة بالدقة
 const KAABA_LAT = 21.4225;
@@ -61,8 +66,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 
     const y = Math.sin(deltaLng) * Math.cos(lat2);
     const x =
-      Math.cos(lat1) * Math.sin(lat2) -
-      Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+      Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
 
     let bearing = Math.atan2(y, x);
     bearing = (bearing * 180) / Math.PI;
@@ -261,10 +265,5 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     refreshPrayerTimes,
   };
 
-  return (
-    <LocationContext.Provider value={value}>
-      {children}
-    </LocationContext.Provider>
-  );
+  return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
 };
-

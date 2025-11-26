@@ -27,7 +27,8 @@ const fontSizeOptions: FontSizeOption[] = [
   { id: 'xlarge', label: 'كبير جداً', size: 32, lineHeight: 64 },
 ];
 
-const SAMPLE_TEXT = 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ ﴿١﴾ الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ ﴿٢﴾';
+const SAMPLE_TEXT =
+  'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ ﴿١﴾ الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ ﴿٢﴾';
 
 export default function FontSize() {
   const [selectedSize, setSelectedSize] = useState<string>('medium');
@@ -63,10 +64,7 @@ export default function FontSize() {
       {/* Header */}
       <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
         <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Svg width="9" height="19" viewBox="0 0 9 19" fill="none">
               <Path
                 d="M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75"
@@ -112,13 +110,10 @@ export default function FontSize() {
           {/* Font Size Options */}
           <View style={styles.optionsCard}>
             <Text style={styles.optionsTitle}>خيارات حجم الخط</Text>
-            {fontSizeOptions.map((option) => (
+            {fontSizeOptions.map(option => (
               <TouchableOpacity
                 key={option.id}
-                style={[
-                  styles.optionItem,
-                  selectedSize === option.id && styles.optionItemSelected,
-                ]}
+                style={[styles.optionItem, selectedSize === option.id && styles.optionItemSelected]}
                 onPress={() => saveFontSize(option.id)}
               >
                 <View style={styles.optionLeft}>
@@ -128,9 +123,7 @@ export default function FontSize() {
                       selectedSize === option.id && styles.radioButtonSelected,
                     ]}
                   >
-                    {selectedSize === option.id && (
-                      <View style={styles.radioButtonInner} />
-                    )}
+                    {selectedSize === option.id && <View style={styles.radioButtonInner} />}
                   </View>
                   <Text
                     style={[
@@ -156,9 +149,7 @@ export default function FontSize() {
           {/* Info Card */}
           <View style={styles.infoCard}>
             <Ionicons name="information-circle" size={24} color="#065F46" />
-            <Text style={styles.infoText}>
-              سيتم تطبيق حجم الخط المختار على جميع آيات القرآن
-            </Text>
+            <Text style={styles.infoText}>سيتم تطبيق حجم الخط المختار على جميع آيات القرآن</Text>
           </View>
         </ScrollView>
       </ImageBackground>

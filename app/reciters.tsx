@@ -104,18 +104,12 @@ export default function Reciters() {
 
         setDownloadProgress({ current: surahId + 1, total: 10 });
 
-        await audioService.downloadSurah(
-          reciter.apiPath,
-          reciter.id,
-          surahId + 1,
-          totalVerses,
-        );
+        await audioService.downloadSurah(reciter.apiPath, reciter.id, surahId + 1, totalVerses);
       }
 
       Alert.alert('تم التحميل', 'تم تحميل السور بنجاح');
       await loadDownloadedAudio();
     } catch (error) {
-      console.error('Error downloading reciter:', error);
       Alert.alert('خطأ', 'حدث خطأ أثناء التحميل');
     } finally {
       setDownloadingReciter(null);
@@ -124,21 +118,17 @@ export default function Reciters() {
   };
 
   const handleDeleteReciter = async (reciter: Reciter) => {
-    Alert.alert(
-      'حذف التلاوة',
-      `هل تريد حذف تلاوة ${reciter.name} المحملة؟`,
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'حذف',
-          style: 'destructive',
-          onPress: async () => {
-            await StorageService.deleteReciterAudio(reciter.id);
-            await loadDownloadedAudio();
-          },
+    Alert.alert('حذف التلاوة', `هل تريد حذف تلاوة ${reciter.name} المحملة؟`, [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'حذف',
+        style: 'destructive',
+        onPress: async () => {
+          await StorageService.deleteReciterAudio(reciter.id);
+          await loadDownloadedAudio();
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const isReciterDownloaded = (reciterId: string): boolean => {
@@ -153,10 +143,7 @@ export default function Reciters() {
     return (
       <View style={[styles.card, isSelected && styles.cardSelected]}>
         {/* معلومات القارئ */}
-        <TouchableOpacity
-          style={styles.cardContent}
-          onPress={() => setReciter(item.id)}
-        >
+        <TouchableOpacity style={styles.cardContent} onPress={() => setReciter(item.id)}>
           <View style={styles.reciterIcon}>
             <Ionicons name="person" size={32} color="#065F46" />
           </View>
@@ -180,12 +167,8 @@ export default function Reciters() {
             )}
           </View>
 
-          {isSelected && (
-            <Ionicons name="radio-button-on" size={24} color="#065F46" />
-          )}
-          {!isSelected && (
-            <Ionicons name="radio-button-off" size={24} color="#D1D5DB" />
-          )}
+          {isSelected && <Ionicons name="radio-button-on" size={24} color="#065F46" />}
+          {!isSelected && <Ionicons name="radio-button-off" size={24} color="#D1D5DB" />}
         </TouchableOpacity>
 
         {/* أزرار التحميل/الحذف */}
@@ -240,7 +223,7 @@ export default function Reciters() {
         <FlatList
           data={recitersData.reciters}
           renderItem={renderReciterCard}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
         />
@@ -392,4 +375,3 @@ const styles = StyleSheet.create({
     color: '#065F46',
   },
 });
-

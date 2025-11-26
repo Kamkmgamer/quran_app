@@ -45,9 +45,7 @@ export default function HomeScreen() {
   const loadSavedVerse = async () => {
     try {
       const existingData = await AsyncStorage.getItem('savedVerses');
-      const savedVerse = existingData
-        ? JSON.parse(existingData)
-        : { surah: 0, verse: 0 };
+      const savedVerse = existingData ? JSON.parse(existingData) : { surah: 0, verse: 0 };
       setSurah(savedVerse.surah);
       setVerse(savedVerse.verse);
     } catch (error) {
@@ -94,10 +92,9 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, []);
 
-
   const tabs = ['سورة', 'جزء', 'الأذكار'];
 
-  const renderSurahCard = ({ item, index }: { item: Surah; index: number }) => {
+  const renderSurahCard = ({ item }: { item: Surah }) => {
     const isLastRead = item.id - 1 === surah;
     const backgroundColor = isLastRead ? '#D4AF37' : '#fff';
     const borderColor = isLastRead ? '#D4AF37' : '#E5E7EB';
@@ -123,12 +120,8 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.cardContent}>
-          <Text style={[styles.surahNumber, { color: numberColor }]}>
-            {item.id}
-          </Text>
-          <Text style={[styles.surahName, { color: textColor }]}>
-            {item.name}
-          </Text>
+          <Text style={[styles.surahNumber, { color: numberColor }]}>{item.id}</Text>
+          <Text style={[styles.surahName, { color: textColor }]}>{item.name}</Text>
         </View>
         <Text style={[styles.verseCount, { color: verseCountColor }]}>
           {item.array.length} آيات
@@ -147,17 +140,11 @@ export default function HomeScreen() {
       >
         <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
           <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.headerIcon}
-              onPress={() => setMenuVisible(true)}
-            >
+            <TouchableOpacity style={styles.headerIcon} onPress={() => setMenuVisible(true)}>
               <Ionicons name="menu" size={24} color="#065F46" />
             </TouchableOpacity>
             <Text style={styles.headerTime}>{currentTime}</Text>
-            <TouchableOpacity
-              style={styles.headerIcon}
-              onPress={() => router.push('/settings')}
-            >
+            <TouchableOpacity style={styles.headerIcon} onPress={() => router.push('/settings')}>
               <Ionicons name="settings-outline" size={24} color="#065F46" />
             </TouchableOpacity>
           </View>
@@ -189,26 +176,15 @@ export default function HomeScreen() {
       </View>
 
       <SafeAreaView edges={['bottom']} style={styles.contentContainer}>
-
         {/* Tabs */}
         <View style={styles.tabsContainer}>
-          {tabs.map((tab) => (
+          {tabs.map(tab => (
             <TouchableOpacity
               key={tab}
-              style={[
-                styles.tab,
-                activeTab === tab && styles.activeTab,
-              ]}
+              style={[styles.tab, activeTab === tab && styles.activeTab]}
               onPress={() => setActiveTab(tab)}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === tab && styles.activeTabText,
-                ]}
-              >
-                {tab}
-              </Text>
+              <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -225,10 +201,7 @@ export default function HomeScreen() {
       </SafeAreaView>
 
       {/* Menu Component */}
-      <Menu
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-      />
+      <Menu visible={menuVisible} onClose={() => setMenuVisible(false)} />
     </View>
   );
 }

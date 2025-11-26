@@ -10,22 +10,32 @@ import * as https from 'https';
   datesList.forEach((dateStr) => {
     const url = `https://api.aladhan.com/v1/timings/${dateStr}?latitude=${latitude}&longitude=${longitude}&method=${methodId}`;
     https.get(url, (res: IncomingMessage) => {
-    let data = '';
+      let data = '';
       res.on('data', (chunk: Buffer) => { data += chunk; });
-    res.on('end', () => {
-      try {
-        const json = JSON.parse(data);
-        console.log(`Date ${date}:`);
-        console.log(`Fajr: ${json.data.timings.Fajr}`);
-        console.log(`Sunrise: ${json.data.timings.Sunrise}`);
-        console.log(`Dhuhr: ${json.data.timings.Dhuhr}`);
-        console.log(`Asr: ${json.data.timings.Asr}`);
-        console.log(`Maghrib: ${json.data.timings.Maghrib}`);
-        console.log(`Isha: ${json.data.timings.Isha}`);
-        console.log('---');
-      } catch (e) {
-        console.error(`Error parsing date ${date}:`, e);
-      }
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          // eslint-disable-next-line no-console
+          console.log(`Date ${dateStr}:`);
+          // eslint-disable-next-line no-console
+          console.log(`Fajr: ${json.data.timings.Fajr}`);
+          // eslint-disable-next-line no-console
+          console.log(`Sunrise: ${json.data.timings.Sunrise}`);
+          // eslint-disable-next-line no-console
+          console.log(`Dhuhr: ${json.data.timings.Dhuhr}`);
+          // eslint-disable-next-line no-console
+          console.log(`Asr: ${json.data.timings.Asr}`);
+          // eslint-disable-next-line no-console
+          console.log(`Maghrib: ${json.data.timings.Maghrib}`);
+          // eslint-disable-next-line no-console
+          console.log(`Isha: ${json.data.timings.Isha}`);
+          // eslint-disable-next-line no-console
+          console.log('---');
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error(`Error parsing date ${dateStr}:`, e);
+        }
+      });
     });
   });
-});
+})();

@@ -77,7 +77,8 @@ class PrayerTimesService {
   private readonly CACHE_KEY = 'prayer_times_cache';
   private readonly CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 
-  private async getLocationName(coordinates: Coordinates): Promise<{ name: string; country: string }> {
+  private async getLocationName(coordinates: Coordinates)
+    : Promise<{ name: string; country: string }> {
     try {
       // Using OpenStreetMap Nominatim API for reverse geocoding (free)
       const response = await fetch(
@@ -96,7 +97,8 @@ class PrayerTimesService {
       const data = await response.json();
 
       if (data && data.address) {
-        const city = data.address.city || data.address.town || data.address.village || data.address.suburb || '';
+        const city = data.address.city || data.address.town
+        || data.address.village || data.address.suburb || '';
         const country = data.address.country || '';
         return {
           name: city || 'موقع غير معروف',
@@ -116,12 +118,12 @@ class PrayerTimesService {
       // Dynamic prayer configuration based on Islamic standards
       // Icons reflect the actual time of day for each prayer
       const prayers: PrayerInfo[] = [
-        { arabic: 'الفجر', english: 'fajr', icon: 'moon-outline', order: 1 },        // Pre-dawn (still dark)
-        { arabic: 'الشروق', english: 'sunrise', icon: 'sunny-outline', order: 2 },   // Sunrise (sun emerging)
-        { arabic: 'الظهر', english: 'dhuhr', icon: 'sunny', order: 3 },              // Noon (sun at peak)
-        { arabic: 'العصر', english: 'asr', icon: 'partly-sunny', order: 4 },         // Afternoon (sun descending)
-        { arabic: 'المغرب', english: 'maghrib', icon: 'partly-sunny-outline', order: 5 }, // Sunset/Dusk
-        { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 },                // Night (darkness)
+        { arabic: 'الفجر', english: 'fajr', icon: 'moon-outline', order: 1 },
+        { arabic: 'الشروق', english: 'sunrise', icon: 'sunny-outline', order: 2 },
+        { arabic: 'الظهر', english: 'dhuhr', icon: 'sunny', order: 3 },
+        { arabic: 'العصر', english: 'asr', icon: 'partly-sunny', order: 4 },
+        { arabic: 'المغرب', english: 'maghrib', icon: 'partly-sunny-outline', order: 5 },
+        { arabic: 'العشاء', english: 'isha', icon: 'moon', order: 6 },
       ];
 
       // Get method info with fallback
@@ -162,7 +164,8 @@ class PrayerTimesService {
     }
   }
 
-  async getPrayerTimes(coordinates: Coordinates, method: number = CalculationMethods.EGYPT): Promise<PrayerTimesData> {
+  async getPrayerTimes(coordinates: Coordinates, method: number = CalculationMethods.EGYPT)
+  : Promise<PrayerTimesData> {
     try {
       // Check cache first
       const cachedData = await this.getCachedData(coordinates, method);
@@ -172,7 +175,10 @@ class PrayerTimesService {
 
       // Fetch from API with specified method for more accurate Fajr and Isha times
       const response = await fetch(
-        `${this.API_BASE_URL}/timings/${this.getTodayDate()}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&method=${method}`,
+        `${this.API_BASE_URL}/timings/${this.getTodayDate()}
+        ?latitude=${coordinates.latitude}
+        &longitude=${coordinates.longitude}
+        &method=${method}`,
       );
 
       if (!response.ok) {
@@ -223,7 +229,8 @@ class PrayerTimesService {
     }
   }
 
-  private async getCachedData(coordinates: Coordinates, method: number = CalculationMethods.EGYPT): Promise<PrayerTimesData | null> {
+  private async getCachedData(coordinates: Coordinates,
+    method: number = CalculationMethods.EGYPT): Promise<PrayerTimesData | null> {
     try {
       const cacheString = await AsyncStorage.getItem(this.CACHE_KEY);
       if (!cacheString) return null;
@@ -263,7 +270,8 @@ class PrayerTimesService {
     }
   }
 
-  private async cacheData(coordinates: Coordinates, data: PrayerTimesData, method: number = CalculationMethods.EGYPT): Promise<void> {
+  private async cacheData(coordinates: Coordinates,
+    data: PrayerTimesData, method: number = CalculationMethods.EGYPT): Promise<void> {
     try {
       const cacheString = await AsyncStorage.getItem(this.CACHE_KEY);
       const cache = cacheString ? JSON.parse(cacheString) : {};
@@ -280,7 +288,8 @@ class PrayerTimesService {
     }
   }
 
-  private getLocationKey(coordinates: Coordinates, method: number = CalculationMethods.EGYPT): string {
+  private getLocationKey(coordinates: Coordinates,
+    method: number = CalculationMethods.EGYPT): string {
     // Round coordinates to 4 decimal places for cache key
     const lat = Math.round(coordinates.latitude * 10000) / 10000;
     const lng = Math.round(coordinates.longitude * 10000) / 10000;
@@ -295,7 +304,8 @@ class PrayerTimesService {
     return `${day}-${month}-${year}`;
   }
 
-  private async getMethodInfo(methodId: number): Promise<{ id: number; name: string; params: any }> {
+  private async getMethodInfo(methodId: number):
+  Promise<{ id: number; name: string; params: any }> {
     try {
       const response = await fetch(`${this.API_BASE_URL}/methods`);
 
@@ -383,7 +393,10 @@ class PrayerTimesService {
     try {
       const dateString = this.formatDate(date);
       const response = await fetch(
-        `${this.API_BASE_URL}/timings/${dateString}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&method=5`,
+        `${this.API_BASE_URL}/timings/${dateString}
+        ?latitude=${coordinates.latitude}
+        &longitude=${coordinates.longitude}
+        &method=5`,
       );
 
       if (!response.ok) {
