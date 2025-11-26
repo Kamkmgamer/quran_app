@@ -17,8 +17,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import quranImport from '../assets/Quran.json';
-import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 import MiniPlayer from '../components/MiniPlayer';
+import VerseMarker from '../components/VerseMarker';
+import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 
 const quran = quranImport as any[];
 const HIGHLIGHT_END_THRESHOLD_MS = 1750;
@@ -40,10 +41,7 @@ export default function Quran() {
   const verseRefs = useRef<{ [key: number]: Text | null }>({});
   const verseLayouts = useRef<{ [key: number]: { y: number; height: number } }>({});
   const [viewportHeight, setViewportHeight] = useState(0);
-  const [contentHeight, setContentHeight] = useState(0);
   const scrollYRef = useRef(0);
-  const lastAudioPositionRef = useRef(0);
-  const lastStepIndexRef = useRef(0);
   const lastScrolledVerseRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -84,7 +82,11 @@ export default function Quran() {
     const layout = verseLayouts.current[verseIndex];
     if (!layout) {
       if (attempt < 3) {
-        measureVerseLayout(verseIndex, () => ensureVerseVisibility(verseIndex, attempt + 1), attempt + 1);
+        measureVerseLayout(
+          verseIndex,
+          () => ensureVerseVisibility(verseIndex, attempt + 1),
+          attempt + 1,
+        );
       }
       return;
     }
@@ -107,61 +109,18 @@ export default function Quran() {
     }
   };
 
-  const currentVerseProgress =
-    state.duration > 0 ? Math.min(0.9999, Math.max(0, state.position / state.duration)) : 0;
-
+  // Auto-scroll when verse changes
   useEffect(() => {
-    const currentSurahId = Number(surah);
-    if (!viewportHeight || !contentHeight) return;
-    if (!state.isPlaying) return;
-    if (state.currentSurahId !== currentSurahId) return;
-
-    if (state.position < lastAudioPositionRef.current) {
-      lastStepIndexRef.current = 0;
+    if (state.isPlaying && state.currentSurahId === Number(surah) && state.currentVerseId) {
+      const verseIndex = state.currentVerseId - 1;
+      ensureVerseVisibility(verseIndex);
     }
-    lastAudioPositionRef.current = state.position;
-
-    const stepSeconds = 15;
-    const stepIndex = Math.floor(state.position / (stepSeconds * 1000));
-
-    if (stepIndex <= lastStepIndexRef.current) return;
-
-    lastStepIndexRef.current = stepIndex;
-
-    const lineHeight = fontSize.lineHeight || 48;
-    const maxScroll = Math.max(0, contentHeight - viewportHeight);
-    const currentY = scrollYRef.current;
-    const stepSize = lineHeight * 3.3;
-    const targetY = Math.min(maxScroll, currentY + stepSize);
-
-    if (!scrollViewRef.current) return;
-
-    if (targetY <= currentY) return;
-
-    scrollViewRef.current.scrollTo({ y: targetY, animated: true });
-    scrollYRef.current = targetY;
-
-    if (__DEV__) {
-      console.log(
-        `[Autoscroll-Step] stepIndex=${stepIndex}, from ${currentY.toFixed(
-          1,
-        )} to ${targetY.toFixed(1)}`,
-      );
-    }
-  }, [
-    state.currentSurahId,
-    state.isPlaying,
-    state.position,
-    viewportHeight,
-    contentHeight,
-    fontSize.lineHeight,
-    surah,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.currentVerseId, state.isPlaying, state.currentSurahId, surah, viewportHeight]);
 
   useEffect(() => {
     lastScrolledVerseRef.current = null;
     scrollYRef.current = 0;
-    lastStepIndexRef.current = 0;
   }, [state.currentSurahId, surah, viewportHeight]);
 
   const loadFontSize = async () => {
@@ -174,7 +133,6 @@ export default function Quran() {
       console.error('Error loading font size:', error);
     }
   };
-
 
   const saveVerseToStorage = async (surah: number, verse: number) => {
     try {
@@ -249,7 +207,7 @@ export default function Quran() {
         options,
         cancelButtonIndex,
       },
-      (buttonIndex) => {
+      buttonIndex => {
         if (buttonIndex === 1) {
           handlePlayVerse(verseIndex);
         } else if (buttonIndex === 2) {
@@ -272,20 +230,14 @@ export default function Quran() {
 
   // تحديد ما إذا كانت الآية هي الآية الحالية قيد التشغيل (بغض النظر عن حالة التشغيل)
   const isCurrentVerse = (verseIndex: number) => {
-    return (
-      state.currentSurahId === Number(surah) &&
-      state.currentVerseId === verseIndex + 1
-    );
+    return state.currentSurahId === Number(surah) && state.currentVerseId === verseIndex + 1;
   };
 
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
         <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.headerBackButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
             <Svg width="9" height="19" viewBox="0 0 9 19" fill="none">
               <Path
                 d="M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75"
@@ -301,19 +253,17 @@ export default function Quran() {
               {quran[Number(surah)].array.length} آيات — {quran[Number(surah)].type}
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.playButton}
-            onPress={handlePlaySurah}
-          >
+          <TouchableOpacity style={styles.playButton} onPress={handlePlaySurah}>
             <Ionicons
-              name={state.isPlayingSurah && state.currentSurahId === Number(surah) ? 'pause' : 'play'}
+              name={
+                state.isPlayingSurah && state.currentSurahId === Number(surah) ? 'pause' : 'play'
+              }
               size={20}
               color="#065F46"
             />
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-
 
       {/* White Section with Decorative Banner */}
       <View style={styles.whiteHeaderSection}>
@@ -346,84 +296,86 @@ export default function Quran() {
           onScroll={handleScroll}
           scrollEventThrottle={16}
           ref={scrollViewRef}
-          onLayout={(e) => {
+          onLayout={e => {
             const h = e.nativeEvent.layout.height;
             setViewportHeight(h);
             if (__DEV__) console.log('[Quran] viewportHeight:', h);
           }}
-          onContentSizeChange={(_w, h) => {
-            setContentHeight(h);
-            if (__DEV__) console.log('[Quran] contentHeight:', h);
-          }}
           contentContainerStyle={styles.scrollContent}
         >
-          <View style={styles.contentCard}>
-            {/* Basmalah */}
-            {Number(surah) !== 0 && Number(surah) !== 8 && (
-              <Text style={[styles.basmalah, { fontSize: fontSize.size, lineHeight: fontSize.lineHeight }]}>
-                بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-              </Text>
-            )}
-
-            {/* Verses */}
-            <Text
-              style={[
-                styles.versesContainer,
-                { fontSize: fontSize.size, lineHeight: fontSize.lineHeight },
-              ]}
-            >
-              {quran[Number(surah)].array.slice(0, renderCount).map((item: any, index: number) => {
-                const words = String(item.ar || '').trim().split(/\s+/);
-                const active = isVerseActive(index);
-                const durationMs = state.duration || 0;
-                const positionMs = state.position || 0;
-                const ratio =
-                  durationMs > 0
-                    ? Math.min(0.9999, Math.max(0, positionMs / durationMs))
-                    : 0;
-                const remainingMs = Math.max(0, durationMs - positionMs);
-                const isAtVerseEnd = durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
-                const isAtVerseStart = ratio < 0.02;
-                const activeWordIndex =
-                  active &&
-                  isCurrentVerse(index) &&
-                  !isAtVerseEnd &&
-                  !isAtVerseStart
-                    ? Math.min(
-                        words.length - 1,
-                        Math.floor(ratio * (words.length + 0.5)),
-                      )
-                    : -1;
-                const isWordActive = (i: number) =>
-                  active &&
-                  isCurrentVerse(index) &&
-                  !isAtVerseEnd &&
-                  !isAtVerseStart &&
-                  i >= Math.max(0, activeWordIndex - 2) &&
-                  i <= activeWordIndex &&
-                  activeWordIndex >= 0;
-
-                return (
+          <View style={styles.pageBorderContainer}>
+            <View style={styles.pageInnerBorder}>
+              <View style={styles.contentCard}>
+                {/* Basmalah */}
+                {Number(surah) !== 0 && Number(surah) !== 8 && (
                   <Text
-                    key={index}
-                    ref={(r) => (verseRefs.current[index] = r)}
-                    onLongPress={() => showActionSheet(index)}
+                    style={[
+                      styles.basmalah,
+                      { fontSize: fontSize.size, lineHeight: fontSize.lineHeight },
+                    ]}
                   >
-                    {words.map((w: string, i: number) => (
-                      <Text
-                        key={`${index}-${i}`}
-                        style={isWordActive(i) ? styles.wordActive : undefined}
-                      >
-                        {w}
-                        <Text> </Text>
-                      </Text>
-                    ))}
-                    <Text style={styles.verseNumberBadgeInline}>{index + 1}</Text>
-                    <Text> </Text>
+                    بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
                   </Text>
-                );
-              })}
-            </Text>
+                )}
+
+                {/* Verses */}
+                <Text
+                  style={[
+                    styles.versesContainer,
+                    { fontSize: fontSize.size, lineHeight: fontSize.lineHeight },
+                  ]}
+                >
+                  {quran[Number(surah)].array
+                    .slice(0, renderCount)
+                    .map((item: any, index: number) => {
+                      const words = String(item.ar || '')
+                        .trim()
+                        .split(/\s+/);
+                      const active = isVerseActive(index);
+                      const durationMs = state.duration || 0;
+                      const positionMs = state.position || 0;
+                      const ratio =
+                        durationMs > 0 ? Math.min(0.9999, Math.max(0, positionMs / durationMs)) : 0;
+                      const remainingMs = Math.max(0, durationMs - positionMs);
+                      const isAtVerseEnd =
+                        durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
+                      const isAtVerseStart = ratio < 0.02;
+                      const activeWordIndex =
+                        active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart
+                          ? Math.min(words.length - 1, Math.floor(ratio * (words.length + 0.5)))
+                          : -1;
+                      const isWordActive = (i: number) =>
+                        active &&
+                        isCurrentVerse(index) &&
+                        !isAtVerseEnd &&
+                        !isAtVerseStart &&
+                        i >= Math.max(0, activeWordIndex - 2) &&
+                        i <= activeWordIndex &&
+                        activeWordIndex >= 0;
+
+                      return (
+                        <Text
+                          key={index}
+                          ref={r => (verseRefs.current[index] = r)}
+                          onLongPress={() => showActionSheet(index)}
+                        >
+                          {words.map((w: string, i: number) => (
+                            <Text
+                              key={`${index}-${i}`}
+                              style={isWordActive(i) ? styles.wordActive : undefined}
+                            >
+                              {w}
+                              <Text> </Text>
+                            </Text>
+                          ))}
+                          <VerseMarker verseNumber={index + 1} size={fontSize.lineHeight * 0.8} />
+                          <Text> </Text>
+                        </Text>
+                      );
+                    })}
+                </Text>
+              </View>
+            </View>
           </View>
           <MiniPlayer embedded />
         </ScrollView>
@@ -551,16 +503,25 @@ const styles = StyleSheet.create({
   },
   contentCard: {
     backgroundColor: '#fff',
-    borderRadius: 0,
     paddingTop: 20,
     paddingBottom: 20,
     paddingHorizontal: 16,
     minHeight: 500,
-    shadowColor: 'transparent',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
+  },
+  pageBorderContainer: {
+    margin: 10,
+    borderWidth: 8,
+    borderColor: '#065F46', // Dark green border
+    borderRadius: 15,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
+  pageInnerBorder: {
+    margin: 4,
+    borderWidth: 2,
+    borderColor: '#D1FAE5', // Light green inner border
+    borderRadius: 8,
+    backgroundColor: '#fff',
   },
   basmalah: {
     fontSize: 24,
