@@ -37,7 +37,8 @@ type HeadingStabilizerState = {
 
 export default function QiblaCompass() {
   const locationContext = useLocation();
-  const [deviceOrientation, setDeviceOrientation] = useState(0); // اتجاه الجهاز بالنسبة للشمال بالدرجات
+  const [deviceOrientation, setDeviceOrientation] = useState(0);
+  // اتجاه الجهاز بالنسبة للشمال بالدرجات
   const [isCalibrated, setIsCalibrated] = useState(false);
   const [magneticInterference] = useState(false);
   const magnetometerData = React.useRef({ x: 0, y: 0, z: 0 });
