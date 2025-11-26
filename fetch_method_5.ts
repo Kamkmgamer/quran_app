@@ -1,16 +1,19 @@
-const https = require('https');
+import { IncomingMessage } from 'http';
+import * as https from 'https';
 
-const method = 5;
-const date = '20-11-2025';
-const lat = '21.543333';
-const lng = '39.172778';
+(function fetchMethod5() {
+  const methodId = 5;
+  const dateStr = '20-11-2025';
+  const latitude = '21.543333';
+  const longitude = '39.172778';
 
-const url = `https://api.aladhan.com/v1/timings/${date}?latitude=${lat}&longitude=${lng}&method=${method}`;
+  const url = `https://api.aladhan.com/v1/timings/${dateStr}?latitude=${latitude}&longitude=${longitude}&method=${methodId}`;
+  // eslint-disable-next-line no-console
 console.log('Fetching URL:', url);
 
-https.get(url, (res) => {
+  https.get(url, (res: IncomingMessage) => {
   let data = '';
-  res.on('data', (chunk) => { data += chunk; });
+    res.on('data', (chunk: Buffer) => { data += chunk; });
   res.on('end', () => {
     try {
       const json = JSON.parse(data);
