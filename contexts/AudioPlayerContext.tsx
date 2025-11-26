@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+  useRef,
+} from 'react';
 
 import quranDataImport from '../assets/Quran.json';
 import recitersData from '../assets/reciters.json';
@@ -46,6 +54,7 @@ interface AudioPlayerContextType {
   seekTo: (position: number) => Promise<void>;
   stop: () => Promise<void>;
   resumeLastPosition: () => Promise<void>;
+  closePlayer: () => Promise<void>;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
@@ -103,9 +112,9 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   // تحميل التفضيلات المحفوظة
   const loadPreferences = useCallback(async () => {
     const preferences = await StorageService.getPreferences();
-    const reciter = recitersData.reciters.find((r) => r.id === preferences.selectedReciter);
+    const reciter = recitersData.reciters.find(r => r.id === preferences.selectedReciter);
 
-    setState((prev) => ({
+    setState(prev => ({
       ...prev,
       currentReciterId: preferences.selectedReciter,
       playbackSpeed: preferences.playbackSpeed,
@@ -123,9 +132,9 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
       try {
         isLoadingRef.current = true;
-        setState((prev) => ({ ...prev, isLoading: true }));
+        setState(prev => ({ ...prev, isLoading: true }));
 
-        const reciter = recitersData.reciters.find((r) => r.id === state.currentReciterId);
+        const reciter = recitersData.reciters.find(r => r.id === state.currentReciterId);
         if (!reciter) {
           throw new Error('Reciter not found');
         }
@@ -146,7 +155,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
           preloadNextVerseAudio(surahId, verseId, reciter);
         }
 
-        setState((prev) => ({
+        setState(prev => ({
           ...prev,
           currentSurahId: surahId,
           currentVerseId: verseId,
@@ -156,7 +165,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
         }));
       } catch (error) {
         console.error('Error playing verse:', error);
-        setState((prev) => ({ ...prev, isLoading: false }));
+        setState(prev => ({ ...prev, isLoading: false }));
       } finally {
         isLoadingRef.current = false;
       }
@@ -165,19 +174,26 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   );
 
   // تشغيل السورة من آية محددة إلى النهاية
-  const playSurahFromVerse = useCallback(async (surahId: number, startVerseId: number) => {
-    try {
-      setState((prev) => ({ ...prev, isPlayingSurah: true }));
-      await playVerse(surahId, startVerseId, true);
-    } catch (error) {
-      console.error('Error playing surah from verse:', error);
-      setState((prev) => ({ ...prev, isPlayingSurah: false }));
-    }
-  }, [playVerse]);
+  const playSurahFromVerse = useCallback(
+    async (surahId: number, startVerseId: number) => {
+      try {
+        setState(prev => ({ ...prev, isPlayingSurah: true }));
+        await playVerse(surahId, startVerseId, true);
+      } catch (error) {
+        console.error('Error playing surah from verse:', error);
+        setState(prev => ({ ...prev, isPlayingSurah: false }));
+      }
+    },
+    [playVerse],
+  );
 
   // تشغيل الآية التالية
   const playNext = useCallback(async () => {
-    if (state.currentSurahId === null || state.currentSurahId === undefined || state.currentVerseId === null) {
+    if (
+      state.currentSurahId === null ||
+      state.currentSurahId === undefined ||
+      state.currentVerseId === null
+    ) {
       return;
     }
 
@@ -193,7 +209,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       if (state.isPlayingSurah) {
         // إيقاف التشغيل عند نهاية السورة في وضع التشغيل المستمر
         await audioService.stop();
-        setState((prev) => ({
+        setState(prev => ({
           ...prev,
           isPlaying: false,
           isPlayingSurah: false,
@@ -212,23 +228,29 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       } else {
         // إيقاف التشغيل
         await audioService.stop();
-        setState((prev) => ({ ...prev, isPlaying: false, isPlayingSurah: false }));
+        setState(prev => ({ ...prev, isPlaying: false, isPlayingSurah: false }));
         return;
       }
     }
 
     await playVerse(nextSurahId, nextVerseId, true);
-  }, [state.currentSurahId, state.currentVerseId, state.repeatMode, state.isPlayingSurah, playVerse]);
+  }, [
+    state.currentSurahId,
+    state.currentVerseId,
+    state.repeatMode,
+    state.isPlayingSurah,
+    playVerse,
+  ]);
 
   // إعداد AudioService مع callback للتحديثات
   const setupAudioService = useCallback(() => {
     try {
-      audioService.setOnPlaybackStatusUpdate((status) => {
+      audioService.setOnPlaybackStatusUpdate(status => {
         if (status.isLoaded) {
           const position = status.positionMillis || 0;
           const duration = status.durationMillis || 0;
 
-          setState((prev) => ({
+          setState(prev => ({
             ...prev,
             isPlaying: status.isPlaying,
             position,
@@ -242,7 +264,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
             if (remaining <= EARLY_NEXT_THRESHOLD_MS && !earlyNextTriggeredRef.current) {
               earlyNextTriggeredRef.current = true;
 
-              setState((currentState) => {
+              setState(currentState => {
                 const handleEarlyNext = async () => {
                   if (
                     currentState.repeatMode === 'surah' ||
@@ -264,7 +286,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
           // التحقق من انتهاء التشغيل - use current state from setState callback
           if (status.didJustFinish && !status.isLooping) {
             // Use setState callback to get current state
-            setState((currentState) => {
+            setState(currentState => {
               // Handle verse finished logic with current state
               const handleVerseEnd = async () => {
                 if (currentState.repeatMode === 'verse') {
@@ -315,7 +337,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   const togglePlayPause = async () => {
     try {
       await audioService.togglePlayPause();
-      setState((prev) => ({ ...prev, isPlaying: !prev.isPlaying }));
+      setState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
     } catch (error) {
       console.error('Error toggling play/pause:', error);
     }
@@ -323,7 +345,12 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
   // تشغيل الآية السابقة
   const playPrevious = async () => {
-    if (state.currentSurahId === null || state.currentSurahId === undefined || state.currentVerseId === null) return;
+    if (
+      state.currentSurahId === null ||
+      state.currentSurahId === undefined ||
+      state.currentVerseId === null
+    )
+      return;
 
     let prevSurahId = state.currentSurahId;
     let prevVerseId = state.currentVerseId - 1;
@@ -351,7 +378,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   const setPlaybackSpeed = async (speed: number) => {
     try {
       await audioService.setPlaybackSpeed(speed);
-      setState((prev) => ({ ...prev, playbackSpeed: speed }));
+      setState(prev => ({ ...prev, playbackSpeed: speed }));
 
       // حفظ في التفضيلات
       const preferences = await StorageService.getPreferences();
@@ -363,7 +390,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
   // تغيير وضع التكرار
   const setRepeatMode = async (mode: 'none' | 'verse' | 'surah' | 'all') => {
-    setState((prev) => ({ ...prev, repeatMode: mode }));
+    setState(prev => ({ ...prev, repeatMode: mode }));
 
     // حفظ في التفضيلات
     const preferences = await StorageService.getPreferences();
@@ -372,10 +399,10 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
   // تغيير القارئ
   const setReciter = async (reciterId: string) => {
-    const reciter = recitersData.reciters.find((r) => r.id === reciterId);
+    const reciter = recitersData.reciters.find(r => r.id === reciterId);
     if (!reciter) return;
 
-    setState((prev) => ({
+    setState(prev => ({
       ...prev,
       currentReciterId: reciterId,
       currentReciter: reciter,
@@ -395,7 +422,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   const seekTo = async (position: number) => {
     try {
       await audioService.seekTo(position);
-      setState((prev) => ({ ...prev, position }));
+      setState(prev => ({ ...prev, position }));
     } catch (error) {
       console.error('Error seeking:', error);
     }
@@ -405,7 +432,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   const stop = async () => {
     try {
       await audioService.stop();
-      setState((prev) => ({
+      setState(prev => ({
         ...prev,
         isPlaying: false,
         isPlayingSurah: false,
@@ -446,12 +473,16 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     seekTo,
     stop,
     resumeLastPosition,
+    closePlayer: async () => {
+      await stop();
+      setState(prev => ({
+        ...prev,
+        currentSurahId: null,
+        currentVerseId: null,
+        currentReciter: null,
+      }));
+    },
   };
 
-  return (
-    <AudioPlayerContext.Provider value={value}>
-      {children}
-    </AudioPlayerContext.Provider>
-  );
+  return <AudioPlayerContext.Provider value={value}>{children}</AudioPlayerContext.Provider>;
 };
-
