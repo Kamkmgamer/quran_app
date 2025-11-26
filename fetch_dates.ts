@@ -1,15 +1,17 @@
-const https = require('https');
+import { IncomingMessage } from 'http';
+import * as https from 'https';
 
-const method = 5;
-const dates = ['20-11-2025', '21-11-2025'];
-const lat = '21.543333';
-const lng = '39.172778';
+(function fetchDates() {
+  const methodId = 5;
+  const datesList = ['20-11-2025', '21-11-2025'];
+  const latitude = '21.543333';
+  const longitude = '39.172778';
 
-dates.forEach(date => {
-  const url = `https://api.aladhan.com/v1/timings/${date}?latitude=${lat}&longitude=${lng}&method=${method}`;
-  https.get(url, (res) => {
+  datesList.forEach((dateStr) => {
+    const url = `https://api.aladhan.com/v1/timings/${dateStr}?latitude=${latitude}&longitude=${longitude}&method=${methodId}`;
+    https.get(url, (res: IncomingMessage) => {
     let data = '';
-    res.on('data', (chunk) => { data += chunk; });
+      res.on('data', (chunk: Buffer) => { data += chunk; });
     res.on('end', () => {
       try {
         const json = JSON.parse(data);
