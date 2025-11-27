@@ -11,7 +11,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ImageBackground,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -224,6 +223,32 @@ export default function Quran() {
     return state.currentSurahId === Number(surah) && state.currentVerseId === verseIndex + 1;
   };
 
+  // Decorative Corner Component
+  const CornerDecoration = ({ style, rotate }: { style?: any; rotate?: string }) => (
+    <View style={[styles.cornerContainer, style, { transform: [{ rotate: rotate || '0deg' }] }]}>
+      <Svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <Path
+          d="M2 38V15C2 7.8203 7.8203 2 15 2H38"
+          stroke="#065F46"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        <Path
+          d="M8 38V15C8 11.134 11.134 8 15 8H38"
+          stroke="#D1FAE5"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <Path
+          d="M15 15L25 25M25 15L15 25" // Small decorative cross/star detail
+          stroke="#065F46"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </Svg>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
@@ -256,47 +281,41 @@ export default function Quran() {
         </View>
       </SafeAreaView>
 
-      {/* White Section with Decorative Banner */}
-      <View style={styles.whiteHeaderSection}>
-        {/* Decorative Surah Name Banner with Pattern Background */}
-        <ImageBackground
-          source={require('../assets/images/Group 3219.png')}
-          style={styles.patternBackground}
-          imageStyle={styles.patternBackgroundImage}
-          resizeMode="cover"
-        >
-          <View style={styles.surahBannerContainer}>
-            <Image
-              source={require('../assets/images/Frame.png')}
-              style={styles.decorativeFrame}
-              resizeMode="contain"
-            />
-            <Text style={styles.surahNameOverlay}>{quran[Number(surah)].name}</Text>
-          </View>
-        </ImageBackground>
-      </View>
+      <View style={styles.mainContentContainer}>
+        {/* Custom Border Frame Container */}
+        <View style={styles.frameContainer}>
+          {/* Decorative Corners */}
+          <CornerDecoration style={styles.topLeftCorner} rotate="0deg" />
+          <CornerDecoration style={styles.topRightCorner} rotate="90deg" />
+          <CornerDecoration style={styles.bottomRightCorner} rotate="180deg" />
+          <CornerDecoration style={styles.bottomLeftCorner} rotate="270deg" />
 
-      {/* Main Content with Pattern Background */}
-      <ImageBackground
-        source={require('../assets/images/Mosque.png')}
-        style={styles.backgroundPattern}
-        imageStyle={styles.backgroundPatternImage}
-      >
-        <ScrollView
-          style={styles.scrollView}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          ref={scrollViewRef}
-          onLayout={e => {
-            const h = e.nativeEvent.layout.height;
-            setViewportHeight(h);
-            if (__DEV__) console.log('[Quran] viewportHeight:', h);
-          }}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <View style={styles.pageBorderContainer}>
-            <View style={styles.pageInnerBorder}>
-              <View style={styles.contentCard}>
+          {/* Main Border Lines */}
+          <View style={styles.innerFrame}>
+            <ScrollView
+              style={styles.scrollView}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              ref={scrollViewRef}
+              onLayout={e => {
+                const h = e.nativeEvent.layout.height;
+                setViewportHeight(h);
+              }}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.textContainer}>
+                {/* Surah Name Header */}
+                <View style={styles.surahHeaderContainer}>
+                  <ImageBackground
+                    source={require('../assets/images/Frame.png')}
+                    style={styles.surahFrame}
+                    resizeMode="contain"
+                  >
+                    <Text style={styles.surahNameInside}>{quran[Number(surah)].name}</Text>
+                  </ImageBackground>
+                </View>
+
                 {/* Basmalah */}
                 {Number(surah) !== 0 && Number(surah) !== 8 && (
                   <Text
@@ -309,11 +328,14 @@ export default function Quran() {
                   </Text>
                 )}
 
-                {/* Verses */}
+                {/* Verses Block */}
                 <Text
                   style={[
-                    styles.versesContainer,
-                    { fontSize: fontSize.size, lineHeight: fontSize.lineHeight },
+                    styles.versesText,
+                    {
+                      fontSize: fontSize.size,
+                      lineHeight: fontSize.lineHeight * 1.6,
+                    },
                   ]}
                 >
                   {quran[Number(surah)].array
@@ -359,18 +381,23 @@ export default function Quran() {
                               <Text> </Text>
                             </Text>
                           ))}
-                          <VerseMarker verseNumber={index + 1} size={fontSize.lineHeight * 0.8} />
+                          <VerseMarker verseNumber={index + 1} size={fontSize.size * 1.2} />
                           <Text> </Text>
                         </Text>
                       );
                     })}
                 </Text>
               </View>
+              <View style={{ height: 40 }} />
+            </ScrollView>
+
+            {/* MiniPlayer */}
+            <View style={styles.miniPlayerContainer}>
+              <MiniPlayer embedded />
             </View>
           </View>
-          <MiniPlayer embedded />
-        </ScrollView>
-      </ImageBackground>
+        </View>
+      </View>
     </View>
   );
 }
@@ -378,13 +405,60 @@ export default function Quran() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F5F5F5', // Light background outside
+  },
+  mainContentContainer: {
+    flex: 1,
+    padding: 12, // Gap between screen edge and border
     backgroundColor: '#F5F5F5',
   },
-  scrollView: {
+  frameContainer: {
     flex: 1,
+    position: 'relative',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    // Shadow for depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  innerFrame: {
+    flex: 1,
+    margin: 16, // Space for corners
+    borderWidth: 2,
+    borderColor: '#065F46', // Main dark green border
+    borderRadius: 8,
+    borderStyle: 'solid',
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
+  cornerContainer: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    zIndex: 10,
+  },
+  topLeftCorner: {
+    top: 0,
+    left: 0,
+  },
+  topRightCorner: {
+    top: 0,
+    right: 0,
+  },
+  bottomLeftCorner: {
+    bottom: 0,
+    left: 0,
+  },
+  bottomRightCorner: {
+    bottom: 0,
+    right: 0,
   },
   headerSafeArea: {
     backgroundColor: '#F5F5F5',
+    zIndex: 10,
   },
   headerRow: {
     flexDirection: 'row-reverse',
@@ -414,9 +488,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 2,
   },
-  headerSpacer: {
-    width: 40,
-  },
   playButton: {
     width: 40,
     height: 40,
@@ -427,124 +498,56 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#065F46',
   },
-  whiteHeaderSection: {
-    backgroundColor: '#fff',
-  },
-  englishNameContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  englishNameTextContainer: {
+  scrollView: {
     flex: 1,
-    alignItems: 'center',
-  },
-  englishName: {
-    fontSize: 16,
-    color: '#1F2937',
-    fontWeight: '600',
-  },
-  surahType: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginTop: 2,
-  },
-  patternBackground: {
-    width: '100%',
-    paddingVertical: 8,
-  },
-  patternBackgroundImage: {
-    resizeMode: 'cover',
-  },
-  surahBannerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 6,
-    position: 'relative',
-  },
-  decorativeFrame: {
-    width: 160,
-    height: 40,
-  },
-  surahNameOverlay: {
-    position: 'absolute',
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#065F46',
-  },
-  backgroundPattern: {
-    flex: 1,
-  },
-  backgroundPatternImage: {
-    opacity: 0,
-    resizeMode: 'repeat',
   },
   scrollContent: {
-    padding: 0,
-    paddingBottom: 20,
-  },
-  contentCard: {
-    backgroundColor: '#fff',
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 60,
     paddingHorizontal: 16,
-    minHeight: 500,
+    flexGrow: 1,
   },
-  pageBorderContainer: {
-    margin: 10,
-    borderWidth: 8,
-    borderColor: '#065F46', // Dark green border
-    borderRadius: 15,
-    backgroundColor: '#fff',
-    overflow: 'hidden',
+  textContainer: {
+    width: '100%',
   },
-  pageInnerBorder: {
-    margin: 4,
-    borderWidth: 2,
-    borderColor: '#D1FAE5', // Light green inner border
-    borderRadius: 8,
-    backgroundColor: '#fff',
+  surahHeaderContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  surahFrame: {
+    width: 180,
+    height: 45,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  surahNameInside: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#065F46',
+    marginBottom: 4,
   },
   basmalah: {
     fontSize: 24,
     color: '#065F46',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
     fontWeight: '600',
-    lineHeight: 40,
   },
-  versesContainer: {
+  versesText: {
     textAlign: 'justify',
-    color: '#1F2937',
+    writingDirection: 'rtl',
+    color: '#000',
     fontFamily: 'System',
   },
   wordActive: {
     backgroundColor: '#FFF9C4',
     color: '#065F46',
-    fontWeight: 'normal',
-    paddingHorizontal: 2,
-    paddingVertical: 1,
-    borderRadius: 3,
   },
-  verseNumberBadgeInline: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    fontWeight: '500',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    marginHorizontal: 4,
-    textAlign: 'center',
-  },
-  footerSafeArea: {
-    backgroundColor: '#10B981',
+  miniPlayerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(255,255,255,0.9)', // Semi-transparent background
   },
 });

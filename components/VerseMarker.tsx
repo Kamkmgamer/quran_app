@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 interface VerseMarkerProps {
   verseNumber: number;
@@ -10,22 +10,38 @@ interface VerseMarkerProps {
 
 export default function VerseMarker({
   verseNumber,
-  size = 35,
+  size = 30,
   color = '#065F46',
 }: VerseMarkerProps) {
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Svg width={size} height={size} viewBox="0 0 35 35" fill="none">
-        <Circle cx="17.5" cy="17.5" r="17" stroke={color} strokeWidth="1" />
+        {/* Outer decorative circle */}
+        <Circle cx="17.5" cy="17.5" r="16" stroke={color} strokeWidth="1.5" />
+
+        {/* Inner decorative petals/scallops */}
         <Path
-          d="M17.5 4.5V2.5M17.5 32.5V30.5M30.5 17.5H32.5M2.5 17.5H4.5M26.6924 8.30761L28.1066 6.8934M6.8934 28.1066L8.30761 26.6924M26.6924 26.6924L28.1066 28.1066M6.8934 6.8934L8.30761 8.30761"
+          d="M17.5 2.5 C20 2.5 22 5 22 8 C22 5 25 5 27.5 5 C25 8 27 10 30 10 C27 12 28 15 30.5 17.5 C28 20 27 23 30 25 C27 25 25 28 22 28 C22 31 20 32.5 17.5 32.5 C15 32.5 13 31 13 28 C10 28 8 25 5 25 C8 23 7 20 4.5 17.5 C7 15 8 12 5 10 C8 10 10 8 13 8 C13 5 15 2.5 17.5 2.5 Z"
           stroke={color}
-          strokeWidth="1"
-          strokeLinecap="round"
+          strokeWidth="0.5"
+          opacity="0.5"
         />
       </Svg>
       <View style={styles.numberContainer}>
-        <Text style={[styles.number, { color, fontSize: size * 0.4 }]}>{verseNumber}</Text>
+        <Text
+          style={[
+            styles.number,
+            {
+              color,
+              fontSize: size * 0.45,
+              lineHeight: size * 0.5, // Adjust line height to center vertically
+            },
+          ]}
+          adjustsFontSizeToFit
+          numberOfLines={1}
+        >
+          {verseNumber}
+        </Text>
       </View>
     </View>
   );
@@ -35,8 +51,9 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 4,
-    display: 'flex',
+    marginHorizontal: 2,
+    // Important for inline flow in Text
+    transform: [{ translateY: 4 }],
   },
   numberContainer: {
     position: 'absolute',
@@ -48,5 +65,6 @@ const styles = StyleSheet.create({
   number: {
     fontWeight: 'bold',
     textAlign: 'center',
+    fontFamily: 'System', // Use system font or a specific Arabic number font if available
   },
 });
