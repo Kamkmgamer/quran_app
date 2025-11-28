@@ -62,5 +62,8 @@ if (getRNMinorVersion() < 75) {
   applyNativeModulesSettingsGradle(settings)
 }
 
+// Include React Native gradle plugin build for dependency resolution
+// (it's already included in pluginManagement, but we also need it for buildscript dependencies)
+includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()).getParentFile().toString())
+
 include ':app'
-includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile())
