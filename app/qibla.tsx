@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { Magnetometer, Accelerometer, DeviceMotion } from 'expo-sensors';
@@ -41,6 +42,7 @@ export default function QiblaCompass() {
   // اتجاه الجهاز بالنسبة للشمال بالدرجات
   const [isCalibrated, setIsCalibrated] = useState(false);
   const [magneticInterference] = useState(false);
+  const [isAligned, setIsAligned] = useState(false);
   const magnetometerData = React.useRef({ x: 0, y: 0, z: 0 });
   const accelerometerData = React.useRef({ x: 0, y: 0, z: 0 });
   const pointerRotation = React.useRef(new Animated.Value(0)).current;
@@ -326,18 +328,23 @@ export default function QiblaCompass() {
 
   const getDirectionText = () => {
     const rel = getRelativeAngle(); // 0..360
-    const directions = [
-      'شمال',
-      'شمال شرق',
-      'شرق',
-      'جنوب شرق',
-      'جنوب',
-      'جنوب غرب',
-      'غرب',
-      'شمال غرب',
-    ];
-    const index = Math.round(rel / 45) % 8;
-    return directions[index];
+    const normalized = normalizeToMinus180To180(rel); // -180..180
+
+    // Aligned within 5 degrees
+    if (Math.abs(normalized) < 5) return 'القبلة أمامك';
+
+    // Right side (positive)
+    if (normalized > 0) {
+      if (normalized < 45) return 'يمين قليلاً';
+      if (normalized < 135) return 'يمين';
+      return 'خلفك';
+    }
+    // Left side (negative)
+    else {
+      if (normalized > -45) return 'يسار قليلاً';
+      if (normalized > -135) return 'يسار';
+      return 'خلفك';
+    }
   };
 
   const getDisplayedAngle = () => {
@@ -347,6 +354,25 @@ export default function QiblaCompass() {
   };
 
   const isQiblaReady = isCalibrated && !locationLoading && !locationError;
+
+  // Haptic Feedback Logic
+  useEffect(() => {
+    if (!isQiblaReady) return;
+
+    const rel = getRelativeAngle();
+    const normalized = normalizeToMinus180To180(rel);
+    const aligned = Math.abs(normalized) < 5;
+
+    if (aligned && !isAligned) {
+      // Just entered alignment
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setIsAligned(true);
+    } else if (!aligned && isAligned) {
+      // Just left alignment
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setIsAligned(false);
+    }
+  }, [getRelativeAngle, isQiblaReady, isAligned]);
 
   const animateRotation = React.useCallback(
     (
@@ -494,8 +520,12 @@ export default function QiblaCompass() {
         <View style={[styles.contentWrapper, isLandscape && styles.contentWrapperLandscape]}>
           <View style={[styles.infoPanel, isLandscape && styles.infoPanelLandscape]}>
             <View style={[styles.directionInfo, isLandscape && styles.directionInfoLandscape]}>
-              <Text style={styles.directionText}>{getDirectionText()}</Text>
-              <Text style={styles.angleText}>{getDisplayedAngle()}°</Text>
+              <Text style={[styles.directionText, isAligned && styles.directionTextAligned]}>
+                {getDirectionText()}
+              </Text>
+              <Text style={[styles.angleText, isAligned && styles.angleTextAligned]}>
+                {getDisplayedAngle()}°
+              </Text>
             </View>
 
             <View
@@ -507,6 +537,7 @@ export default function QiblaCompass() {
                   styles.pointerImage,
                   { width: pointerIconSize, height: pointerIconSize },
                   { transform: [{ rotate: pointerRotate }] },
+                  isAligned && styles.pointerImageAligned,
                 ]}
                 resizeMode="contain"
               />
@@ -531,15 +562,13 @@ export default function QiblaCompass() {
                 />
               </AnimatedView>
 
-              <AnimatedView
-                style={[styles.userIndicatorContainer, { transform: [{ rotate: relativeRotate }] }]}
-              >
+              <View style={styles.userIndicatorContainer}>
                 <Image
                   source={require('../assets/images/Vector.png')}
-                  style={styles.centerVector}
+                  style={[styles.centerVector, isAligned && styles.centerVectorAligned]}
                   resizeMode="contain"
                 />
-              </AnimatedView>
+              </View>
             </View>
           </View>
         </View>
@@ -591,11 +620,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#065F46',
   },
+  directionTextAligned: {
+    color: '#10B981',
+  },
   angleText: {
     fontSize: 28,
     color: '#10B981',
     marginTop: 4,
     fontWeight: '600',
+  },
+  angleTextAligned: {
+    color: '#10B981',
+    textShadowColor: 'rgba(16, 185, 129, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   pointerContainer: {
     alignItems: 'center',
@@ -611,6 +649,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
+  },
+  pointerImageAligned: {
+    shadowColor: '#10B981',
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
   },
   compassContainer: {
     flex: 1,
@@ -636,6 +679,11 @@ const styles = StyleSheet.create({
   centerVector: {
     width: 50,
     height: 50,
+    opacity: 0.8,
+  },
+  centerVectorAligned: {
+    opacity: 1,
+    tintColor: '#10B981',
   },
   userIndicatorContainer: {
     position: 'absolute',
@@ -645,6 +693,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     top: 0,
     left: 0,
+    zIndex: 10,
   },
   kaabaContainer: {
     position: 'absolute',
