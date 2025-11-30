@@ -11,6 +11,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ImageBackground,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -22,6 +23,15 @@ import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 
 const quran = quranImport as any[];
 const HIGHLIGHT_END_THRESHOLD_MS = 1750;
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const isSmallDevice = SCREEN_WIDTH < 380;
+
+// Responsive constants
+const CONTAINER_PADDING = isSmallDevice ? 8 : 12;
+const FRAME_MARGIN = isSmallDevice ? 12 : 16;
+const CORNER_SIZE = isSmallDevice ? 30 : 40;
+const CORNER_OFFSET = FRAME_MARGIN - 2 * (CORNER_SIZE / 40);
 
 const fontSizeOptions: { [key: string]: { size: number; lineHeight: number } } = {
   small: { size: 20, lineHeight: 40 },
@@ -231,7 +241,7 @@ export default function Quran() {
   // Decorative Corner Component
   const CornerDecoration = ({ style, rotate }: { style?: any; rotate?: string }) => (
     <View style={[styles.cornerContainer, style, { transform: [{ rotate: rotate || '0deg' }] }]}>
-      <Svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <Svg width={CORNER_SIZE} height={CORNER_SIZE} viewBox="0 0 40 40" fill="none">
         <Path
           d="M2 38V15C2 7.8203 7.8203 2 15 2H38"
           stroke="#065F46"
@@ -383,11 +393,12 @@ export default function Quran() {
                               style={isWordActive(i) ? styles.wordActive : undefined}
                             >
                               {w}
-                              <Text> </Text>
+                              <Text>{'\u00A0'}</Text>
                             </Text>
                           ))}
+                          <Text>{'\u00A0'}</Text>
                           <VerseMarker verseNumber={index + 1} size={fontSize.size * 1.2} />
-                          <Text> </Text>
+                          <Text>{'\u00A0'}</Text>
                         </Text>
                       );
                     })}
@@ -414,7 +425,7 @@ const styles = StyleSheet.create({
   },
   mainContentContainer: {
     flex: 1,
-    padding: 12, // Gap between screen edge and border
+    padding: CONTAINER_PADDING, // Gap between screen edge and border
     backgroundColor: '#F5F5F5',
   },
   frameContainer: {
@@ -431,7 +442,7 @@ const styles = StyleSheet.create({
   },
   innerFrame: {
     flex: 1,
-    margin: 16, // Space for corners
+    margin: FRAME_MARGIN, // Space for corners
     borderWidth: 2,
     borderColor: '#065F46', // Main dark green border
     borderRadius: 8,
@@ -441,25 +452,25 @@ const styles = StyleSheet.create({
   },
   cornerContainer: {
     position: 'absolute',
-    width: 40,
-    height: 40,
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
     zIndex: 10,
   },
   topLeftCorner: {
-    top: 0,
-    left: 0,
+    top: CORNER_OFFSET,
+    left: CORNER_OFFSET,
   },
   topRightCorner: {
-    top: 0,
-    right: 0,
+    top: CORNER_OFFSET,
+    right: CORNER_OFFSET,
   },
   bottomLeftCorner: {
-    bottom: 0,
-    left: 0,
+    bottom: CORNER_OFFSET,
+    left: CORNER_OFFSET,
   },
   bottomRightCorner: {
-    bottom: 0,
-    right: 0,
+    bottom: CORNER_OFFSET,
+    right: CORNER_OFFSET,
   },
   headerSafeArea: {
     backgroundColor: '#F5F5F5',

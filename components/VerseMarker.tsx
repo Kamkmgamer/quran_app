@@ -39,18 +39,22 @@ export default function VerseMarker({
           adjustsFontSizeToFit
           numberOfLines={1}
         >
-          {verseNumber}
+          {toArabicNumerals(verseNumber)}
         </Text>
       </View>
     </View>
   );
 }
 
+function toArabicNumerals(n: number): string {
+  return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
+}
+
 const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 4,
+    marginHorizontal: 8,
     // Adjust vertical alignment relative to text baseline
     // Using a small positive translateY helps center it visually with Arabic text
     transform: [{ translateY: 3 }],
