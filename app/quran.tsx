@@ -106,7 +106,12 @@ export default function Quran() {
   useEffect(() => {
     if (state.isPlaying && state.currentSurahId === Number(surah) && state.currentVerseId) {
       const verseIndex = state.currentVerseId - 1;
-      ensureVerseVisibility(verseIndex);
+
+      if (state.currentVerseId > 10) {
+        ensureVerseVisibility(verseIndex);
+      } else {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.currentVerseId, state.isPlaying, state.currentSurahId, surah, viewportHeight]);
