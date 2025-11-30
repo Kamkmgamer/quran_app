@@ -33,8 +33,7 @@ export default function VerseMarker({
             styles.number,
             {
               color,
-              fontSize: size * 0.45,
-              lineHeight: size * 0.5, // Adjust line height to center vertically
+              fontSize: size * 0.42, // Slightly smaller for better fit
             },
           ]}
           adjustsFontSizeToFit
@@ -51,9 +50,10 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 2,
-    // Important for inline flow in Text
-    transform: [{ translateY: 4 }],
+    marginHorizontal: 4,
+    // Adjust vertical alignment relative to text baseline
+    // Using a small positive translateY helps center it visually with Arabic text
+    transform: [{ translateY: 3 }],
   },
   numberContainer: {
     position: 'absolute',
@@ -65,6 +65,8 @@ const styles = StyleSheet.create({
   number: {
     fontWeight: 'bold',
     textAlign: 'center',
-    fontFamily: 'System', // Use system font or a specific Arabic number font if available
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+    fontFamily: 'System',
   },
 });

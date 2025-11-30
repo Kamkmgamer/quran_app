@@ -538,6 +538,7 @@ const styles = StyleSheet.create({
     writingDirection: 'rtl',
     color: '#000',
     fontFamily: 'System',
+    includeFontPadding: false,
   },
   wordActive: {
     backgroundColor: '#FFF9C4',
