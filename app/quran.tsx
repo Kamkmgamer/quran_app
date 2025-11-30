@@ -349,7 +349,7 @@ export default function Quran() {
                     styles.versesText,
                     {
                       fontSize: fontSize.size,
-                      lineHeight: fontSize.lineHeight * 1.6,
+                      lineHeight: fontSize.lineHeight * 1,
                     },
                   ]}
                 >
