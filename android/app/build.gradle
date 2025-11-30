@@ -144,11 +144,39 @@ android {
             useLegacyPackaging (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
         }
     }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 
     configurations.all {
         resolutionStrategy {
             force 'org.xerial:sqlite-jdbc:3.43.0.0'
         }
+    }
+}
+
+// Configure Kapt
+if (project.hasProperty("kapt")) {
+    kapt {
+        javacOptions {
+            option("-Xmaxerrs", 500)
+        }
+        arguments {
+            arg("room.schemaLocation", "$projectDir/schemas")
+            arg("room.incremental", "true")
+        }
+    }
+}
+
+// Configure Kotlin compilation to match Java JVM target
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "17"
+        freeCompilerArgs += [
+            "-Xopt-in=kotlin.RequiresOptIn"
+        ]
     }
 }
 

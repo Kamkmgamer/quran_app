@@ -1,5 +1,16 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
+// Set temp directory for SQLite JDBC on Windows to avoid permission issues
+if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+    def userHome = System.getProperty("user.home")
+    def tempDir = new File(userHome, "AppData/Local/Temp")
+    if (tempDir.exists() || tempDir.mkdirs()) {
+        def tempDirPath = tempDir.absolutePath
+        System.setProperty("java.io.tmpdir", tempDirPath)
+        System.setProperty("org.gradle.workers.tmp", tempDirPath)
+    }
+}
+
 buildscript {
     ext {
         buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
