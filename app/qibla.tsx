@@ -643,8 +643,6 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   pointerImage: {
-    width: 110,
-    height: 110,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
@@ -677,8 +675,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   centerVector: {
-    width: 50,
-    height: 50,
+    width: '15%',
+    height: '15%',
     opacity: 0.8,
   },
   centerVectorAligned: {
@@ -705,8 +703,8 @@ const styles = StyleSheet.create({
     left: 0,
   },
   kaabaImage: {
-    width: 50,
-    height: 50,
+    width: '15%',
+    height: '15%',
     marginTop: '15%',
   },
   contentWrapper: {
@@ -740,8 +738,8 @@ const styles = StyleSheet.create({
     padding: 40,
   },
   loadingKaaba: {
-    width: 120,
-    height: 120,
+    width: 150,
+    height: 150,
     marginBottom: 30,
   },
   loadingSpinner: {
