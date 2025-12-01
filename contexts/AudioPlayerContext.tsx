@@ -15,7 +15,13 @@ import StorageService from '../services/StorageService';
 
 const quranData = quranDataImport as any[];
 const audioService = new AudioService();
-const EARLY_NEXT_THRESHOLD_MS = 1750;
+
+// Early-next behavior tuning:
+// - We only jump early when most of the file has played (to avoid
+//   cutting the recitation itself).
+// - We still keep a small fixed window to trim trailing silence.
+const EARLY_NEXT_BASE_THRESHOLD_MS = 1500; // max remaining time to allow early-next
+const EARLY_NEXT_MIN_PROGRESS_RATIO = 0.85; // must have played at least 85% of the file
 
 interface Reciter {
   id: string;
@@ -254,11 +260,19 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
             duration,
           }));
 
-          // Early trigger: start the next verse slightly before the current one ends
+          // Early trigger: start the next verse slightly before the current one ends.
+          // To avoid cutting recitation, we require both:
+          // - high playback progress (e.g. > 85% of file duration);
+          // - and a small remaining time window.
           if (!status.didJustFinish && !status.isLooping && duration > 0) {
             const remaining = duration - position;
+            const progressRatio = duration > 0 ? position / duration : 0;
 
-            if (remaining <= EARLY_NEXT_THRESHOLD_MS && !earlyNextTriggeredRef.current) {
+            if (
+              progressRatio >= EARLY_NEXT_MIN_PROGRESS_RATIO &&
+              remaining <= EARLY_NEXT_BASE_THRESHOLD_MS &&
+              !earlyNextTriggeredRef.current
+            ) {
               earlyNextTriggeredRef.current = true;
 
               setState(currentState => {
