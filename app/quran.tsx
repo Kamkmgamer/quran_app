@@ -18,7 +18,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import quranImport from '../assets/Quran.json';
 import MiniPlayer from '../components/MiniPlayer';
-import VerseMarker from '../components/VerseMarker';
+import InlineAyahNumber from '../components/InlineAyahNumber';
 import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 
 const quran = quranImport as any[];
@@ -393,11 +393,14 @@ export default function Quran() {
                               style={isWordActive(i) ? styles.wordActive : undefined}
                             >
                               {w}
-                              <Text>{'\u00A0'}</Text>
+                              {i !== words.length - 1 && ' '}
                             </Text>
                           ))}
                           <Text>{'\u00A0'}</Text>
-                          <VerseMarker verseNumber={index + 1} size={fontSize.size * 1.2} />
+                          <InlineAyahNumber
+                            verseNumber={index + 1}
+                            size={fontSize.size * 0.9}
+                          />
                           <Text>{'\u00A0'}</Text>
                         </Text>
                       );
@@ -555,6 +558,7 @@ const styles = StyleSheet.create({
     color: '#000',
     fontFamily: 'System',
     includeFontPadding: false,
+    paddingHorizontal: 10,
   },
   wordActive: {
     backgroundColor: '#FFF9C4',
