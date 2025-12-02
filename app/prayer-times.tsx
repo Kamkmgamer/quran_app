@@ -201,7 +201,7 @@ export default function PrayerTimesScreen() {
     return currentTime.toLocaleTimeString('ar-SA', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false,
+      hour12: true,
     });
   };
 
@@ -232,10 +232,10 @@ export default function PrayerTimesScreen() {
 
     if (hour >= 12) {
       const displayHour = hour === 12 ? 12 : hour - 12;
-      return `${displayHour}:${minute.toString().padStart(2, '0')} ${hour >= 12 ? 'م' : 'ص'}`;
+      return `${displayHour}:${minute.toString().padStart(2, '0')} م`;
     } else {
       const displayHour = hour === 0 ? 12 : hour;
-      return `${displayHour}:${minute.toString().padStart(2, '0')} ${hour >= 12 ? 'م' : 'ص'}`;
+      return `${displayHour}:${minute.toString().padStart(2, '0')} ص`;
     }
   };
 
