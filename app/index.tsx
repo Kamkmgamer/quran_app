@@ -111,6 +111,8 @@ export default function HomeScreen() {
   }, []);
 
   const tabs = ['سورة', 'جزء', 'الأذكار'];
+  // Temporarily hide جزء and الأذكار tabs
+  const visibleTabs = tabs.filter(tab => tab === 'سورة');
 
   const renderSurahCard = ({ item }: { item: Surah }) => {
     const isLastRead = item.id - 1 === surah;
@@ -196,7 +198,7 @@ export default function HomeScreen() {
       <SafeAreaView edges={['bottom']} style={styles.contentContainer}>
         {/* Tabs */}
         <View style={styles.tabsContainer}>
-          {tabs.map(tab => (
+          {visibleTabs.map(tab => (
             <TouchableOpacity
               key={tab}
               style={[styles.tab, activeTab === tab && styles.activeTab]}
