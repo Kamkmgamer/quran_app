@@ -64,7 +64,7 @@ export default function QiblaCompass() {
   const isLandscape = screenWidth > screenHeight;
   const shortestSide = Math.min(screenWidth, screenHeight);
   const compassSize = shortestSide * (isLandscape ? 0.65 : 0.75);
-  const pointerIconSize = Math.max(Math.min(shortestSide * 0.22, 140), 90);
+  const pointerIconSize = Math.max(Math.min(shortestSide * 0.16, 110), 70);
 
   // استخدام البيانات من السياق المحمل مسبقاً
   const qiblaDirection = locationContext.qiblaDirection;
