@@ -17,8 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import quranImport from '../assets/Quran.json';
-import MiniPlayer from '../components/MiniPlayer';
 import InlineAyahNumber from '../components/InlineAyahNumber';
+import MiniPlayer from '../components/MiniPlayer';
 import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 
 const quran = quranImport as any[];
@@ -48,144 +48,30 @@ export default function Quran() {
   const [fontSize, setFontSize] = useState(fontSizeOptions.medium);
   const scrollViewRef = useRef<ScrollView>(null);
   const verseRefs = useRef<{ [key: number]: Text | null }>({});
-  const verseLayouts = useRef<{ [key: number]: { y: number; height: number } }>({});
   const [viewportHeight, setViewportHeight] = useState(0);
   const scrollYRef = useRef(0);
-  const lastScrolledVerseRef = useRef<number | null>(null);
 
   useEffect(() => {
     loadFontSize();
   }, []);
 
-  const measureVerseLayout = (verseIndex: number, onMeasured?: () => void, attempt = 0) => {
-    const verseText = verseRefs.current[verseIndex];
-    const scrollView = scrollViewRef.current;
-    if (!verseText || !scrollView) return;
+  // Auto-scroll every 10 seconds while playing
+  useEffect(() => {
+    if (!state.isPlaying || state.currentSurahId !== Number(surah)) {
+      return;
+    }
 
-    const scrollViewAny: any = scrollView;
-    const relativeNode =
-      typeof scrollViewAny.getScrollableNode === 'function'
-        ? scrollViewAny.getScrollableNode()
-        : scrollViewAny;
-
-    (verseText as any).measureLayout(
-      relativeNode,
-      (_x: number, y: number, _width: number, height: number) => {
-        const layout = { y, height: height || fontSize.lineHeight };
-        verseLayouts.current[verseIndex] = layout;
-        onMeasured?.();
-      },
-      () => {
-        if (attempt < 3) {
-          setTimeout(() => {
-            measureVerseLayout(verseIndex, onMeasured, attempt + 1);
-          }, 100);
-        }
-      },
-    );
-  };
-
-  const ensureVerseVisibility = (verseIndex: number, attempt = 0) => {
-    if (!scrollViewRef.current || viewportHeight === 0) return;
-
-    const layout = verseLayouts.current[verseIndex];
-    if (!layout) {
-      if (attempt < 3) {
-        measureVerseLayout(
-          verseIndex,
-          () => ensureVerseVisibility(verseIndex, attempt + 1),
-          attempt + 1,
-        );
+    const intervalId = setInterval(() => {
+      if (scrollViewRef.current && viewportHeight > 0) {
+        const scrollAmount = viewportHeight * 0.4; // Scroll 40% of viewport height
+        const newScrollY = scrollYRef.current + scrollAmount;
+        scrollViewRef.current.scrollTo({ y: newScrollY, animated: true });
+        scrollYRef.current = newScrollY;
       }
-      return;
-    }
+    }, 50000); // Every 10 seconds
 
-    // layout.y is the verse top relative to the ScrollView content
-    const currentScrollY = scrollYRef.current;
-    const desiredTopInViewport = viewportHeight / 4;
-    const desiredScrollY = Math.max(0, layout.y - desiredTopInViewport);
-
-    // Never pull the user upward; only adjust when the verse is below the viewport focus line
-    if (desiredScrollY + 5 < currentScrollY) {
-      return;
-    }
-
-    const delta = Math.abs(desiredScrollY - currentScrollY);
-    if (delta > 2) {
-      scrollViewRef.current.scrollTo({ y: desiredScrollY, animated: true });
-      scrollYRef.current = desiredScrollY;
-    }
-  };
-
-  const ensureTimedVerseVisibility = (verseIndex: number, progressRatio: number, attempt = 0) => {
-    if (!scrollViewRef.current || viewportHeight === 0) return;
-
-    const layout = verseLayouts.current[verseIndex];
-    if (!layout) {
-      if (attempt < 3) {
-        measureVerseLayout(
-          verseIndex,
-          () => ensureTimedVerseVisibility(verseIndex, progressRatio, attempt + 1),
-          attempt + 1,
-        );
-      }
-      return;
-    }
-
-    const currentScrollY = scrollYRef.current;
-    const baselineScrollY = Math.max(0, layout.y - viewportHeight / 3);
-    const clampedProgress = Math.min(0.98, Math.max(0.02, progressRatio));
-    const maxNudge = Math.max(layout.height, viewportHeight * 1.2);
-    const desiredScrollY = Math.max(currentScrollY, baselineScrollY + maxNudge * clampedProgress);
-
-    const delta = desiredScrollY - currentScrollY;
-    if (delta > 1) {
-      scrollViewRef.current.scrollTo({ y: desiredScrollY, animated: false });
-      scrollYRef.current = desiredScrollY;
-    }
-  };
-
-  // Auto-scroll when verse changes
-  useEffect(() => {
-    if (state.isPlaying && state.currentSurahId === Number(surah) && state.currentVerseId) {
-      const verseIndex = state.currentVerseId - 1;
-      ensureVerseVisibility(verseIndex);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.currentVerseId, state.isPlaying, state.currentSurahId, surah, viewportHeight]);
-
-  useEffect(() => {
-    if (
-      !state.isPlaying ||
-      state.currentSurahId !== Number(surah) ||
-      !state.currentVerseId ||
-      !state.duration
-    ) {
-      return;
-    }
-
-    const verseIndex = state.currentVerseId - 1;
-    const durationMs = state.duration || 0;
-    const positionMs = state.position || 0;
-    if (durationMs <= 0) return;
-
-    const ratio = Math.min(0.9999, Math.max(0, positionMs / durationMs));
-    const remainingMs = Math.max(0, durationMs - positionMs);
-    const isAtVerseEnd = durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
-    const isAtVerseStart = ratio < 0.02;
-
-    if (isAtVerseEnd || isAtVerseStart) {
-      return;
-    }
-
-    ensureTimedVerseVisibility(verseIndex, ratio);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.position, state.duration, state.isPlaying, state.currentSurahId, state.currentVerseId, surah, viewportHeight]);
-
-  useEffect(() => {
-    lastScrolledVerseRef.current = null;
-    scrollYRef.current = 0;
-  }, [state.currentSurahId, surah, viewportHeight]);
+    return () => clearInterval(intervalId);
+  }, [state.isPlaying, state.currentSurahId, surah, viewportHeight]);
 
   const loadFontSize = async () => {
     try {
@@ -453,10 +339,7 @@ export default function Quran() {
                             </Text>
                           ))}
                           <Text>{'\u00A0'}</Text>
-                          <InlineAyahNumber
-                            verseNumber={index + 1}
-                            size={fontSize.size * 0.9}
-                          />
+                          <InlineAyahNumber verseNumber={index + 1} size={fontSize.size * 0.9} />
                           <Text>{'\u00A0'}</Text>
                         </Text>
                       );
