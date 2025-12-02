@@ -52,7 +52,8 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
   }
 
   const currentSurah = state.currentSurahId !== null ? quranData[state.currentSurahId] : null;
-  const surahName = currentSurah?.name || (isOnQuranPage ? quranData[localParams.surah]?.name || '' : '');
+  const surahIndex = isOnQuranPage ? (Array.isArray(localParams.surah) ? Number(localParams.surah[0]) : Number(localParams.surah)) : null;
+  const surahName = currentSurah?.name || (surahIndex !== null ? quranData[surahIndex]?.name || '' : '');
   const verseLabel = state.currentVerseId ? `آية ${state.currentVerseId}` : (isOnQuranPage ? 'لا يوجد تشغيل حالي' : '');
 
   const handlePress = () => {
