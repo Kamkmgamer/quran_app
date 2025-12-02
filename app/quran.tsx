@@ -496,9 +496,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
     fontWeight: '600',
+    writingDirection: 'rtl',
   },
   versesText: {
-    textAlign: 'justify',
+    textAlign: 'center',
     writingDirection: 'rtl',
     color: '#000',
     fontFamily: 'System',
