@@ -137,6 +137,21 @@ export default function Quran() {
     }
   };
 
+  const handlePlaySurah = async () => {
+    try {
+      if (state.isPlaying && state.currentSurahId === Number(surah)) {
+        // Stop if currently playing this surah
+        await stop();
+      } else {
+        // Start playing from current verse or first verse
+        const startVerse = Number(verse) || 1;
+        await playSurahFromVerse(Number(surah), startVerse);
+      }
+    } catch (error) {
+      console.error('Error playing surah:', error);
+    }
+  };
+
   const handlePlayVerse = async (verseIndex: number) => {
     try {
       await playVerse(Number(surah), verseIndex + 1, true);
@@ -227,6 +242,15 @@ export default function Quran() {
               {quran[Number(surah)].array.length} آيات — {quran[Number(surah)].type}
             </Text>
           </View>
+          <TouchableOpacity style={styles.playButton} onPress={handlePlaySurah}>
+            <Ionicons
+              name={
+                state.isPlaying && state.currentSurahId === Number(surah) ? 'pause' : 'play'
+              }
+              size={20}
+              color="#065F46"
+            />
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
 
@@ -432,6 +456,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     marginTop: 2,
+  },
+  playButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#065F46',
   },
   scrollView: {
     flex: 1,

@@ -37,11 +37,9 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
   const localParams = useLocalSearchParams();
   const [isVisible, setIsVisible] = useState(false);
 
-  // Determine if player should be shown - shows globally except on the full player page
-  // Always show on Quran page, otherwise only show when audio is playing
+  // Determine if player should be shown - only shows when audio is playing, except on player page
   const isOnPlayerPage = pathname === '/player' || pathname === '/player/';
-  const isOnQuranPage = pathname === '/quran' || pathname === '/quran/';
-  const shouldShow = isOnQuranPage || (state.currentSurahId !== null && state.currentVerseId !== null && !isOnPlayerPage);
+  const shouldShow = state.currentSurahId !== null && state.currentVerseId !== null && !isOnPlayerPage;
 
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -53,38 +51,20 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
   }
 
   const currentSurah = state.currentSurahId !== null ? quranData[state.currentSurahId] : null;
-  const surahIndex = isOnQuranPage
-    ? Array.isArray(localParams.surah)
-      ? Number(localParams.surah[0])
-      : Number(localParams.surah)
-    : null;
-  const displayedSurah = surahIndex !== null ? quranData[surahIndex] : null;
-  const surahName = currentSurah?.name || displayedSurah?.name || '';
+  const surahName = currentSurah?.name || '';
   const verseLabel = state.currentVerseId
     ? `آية ${state.currentVerseId}`
-    : displayedSurah
-    ? 'الآية 1'
     : '';
 
   // Debug logging
   console.log('MiniPlayer Debug:', {
     pathname,
-    isOnQuranPage,
-    localParams,
-    surahIndex,
-    displayedSurah: displayedSurah?.name,
     surahName,
     verseLabel,
     hasActiveTrack: state.currentSurahId !== null && state.currentVerseId !== null,
   });
 
   const hasActiveTrack = state.currentSurahId !== null && state.currentVerseId !== null;
-  const effectiveSurahId =
-    state.currentSurahId !== null
-      ? state.currentSurahId
-      : surahIndex !== null
-      ? surahIndex
-      : null;
 
   const handlePress = () => {
     router.push('/player');
@@ -93,11 +73,6 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
   const handlePlayPress = async () => {
     if (hasActiveTrack) {
       await togglePlayPause();
-      return;
-    }
-
-    if (effectiveSurahId !== null) {
-      await playSurahFromVerse(effectiveSurahId, 1);
     }
   };
 
