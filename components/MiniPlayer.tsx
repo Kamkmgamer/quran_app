@@ -30,7 +30,8 @@ const quranData = quranDataImport as any[];
 const { width } = Dimensions.get('window');
 
 const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
-  const { state, togglePlayPause, playNext, playPrevious, closePlayer } = useAudioPlayer();
+  const { state, togglePlayPause, playNext, playPrevious, closePlayer, playSurahFromVerse } =
+    useAudioPlayer();
   const router = useRouter();
   const pathname = usePathname();
   const localParams = useLocalSearchParams();
@@ -52,13 +53,52 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
   }
 
   const currentSurah = state.currentSurahId !== null ? quranData[state.currentSurahId] : null;
-  const surahIndex = isOnQuranPage ? (Array.isArray(localParams.surah) ? Number(localParams.surah[0]) : Number(localParams.surah)) : null;
+  const surahIndex = isOnQuranPage
+    ? Array.isArray(localParams.surah)
+      ? Number(localParams.surah[0])
+      : Number(localParams.surah)
+    : null;
   const displayedSurah = surahIndex !== null ? quranData[surahIndex] : null;
   const surahName = currentSurah?.name || displayedSurah?.name || '';
-  const verseLabel = state.currentVerseId ? `آية ${state.currentVerseId}` : (displayedSurah ? 'لا يوجد تشغيل حالي' : '');
+  const verseLabel = state.currentVerseId
+    ? `آية ${state.currentVerseId}`
+    : displayedSurah
+    ? 'الآية 1'
+    : '';
+
+  // Debug logging
+  console.log('MiniPlayer Debug:', {
+    pathname,
+    isOnQuranPage,
+    localParams,
+    surahIndex,
+    displayedSurah: displayedSurah?.name,
+    surahName,
+    verseLabel,
+    hasActiveTrack: state.currentSurahId !== null && state.currentVerseId !== null,
+  });
+
+  const hasActiveTrack = state.currentSurahId !== null && state.currentVerseId !== null;
+  const effectiveSurahId =
+    state.currentSurahId !== null
+      ? state.currentSurahId
+      : surahIndex !== null
+      ? surahIndex
+      : null;
 
   const handlePress = () => {
     router.push('/player');
+  };
+
+  const handlePlayPress = async () => {
+    if (hasActiveTrack) {
+      await togglePlayPause();
+      return;
+    }
+
+    if (effectiveSurahId !== null) {
+      await playSurahFromVerse(effectiveSurahId, 1);
+    }
   };
 
   const handleClose = async () => {
@@ -114,7 +154,7 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
               <Ionicons name="play-skip-forward" size={22} color="#065F46" />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={togglePlayPause} style={styles.playButton}>
+            <TouchableOpacity onPress={handlePlayPress} style={styles.playButton}>
               <Ionicons name={state.isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
             </TouchableOpacity>
 
