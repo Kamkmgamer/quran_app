@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter, usePathname, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -33,12 +33,14 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
   const { state, togglePlayPause, playNext, playPrevious, closePlayer } = useAudioPlayer();
   const router = useRouter();
   const pathname = usePathname();
+  const localParams = useLocalSearchParams();
   const [isVisible, setIsVisible] = useState(false);
 
   // Determine if player should be shown - shows globally except on the full player page
+  // Always show on Quran page, otherwise only show when audio is playing
   const isOnPlayerPage = pathname === '/player' || pathname === '/player/';
-  const shouldShow =
-    state.currentSurahId !== null && state.currentVerseId !== null && !isOnPlayerPage;
+  const isOnQuranPage = pathname === '/quran' || pathname === '/quran/';
+  const shouldShow = isOnQuranPage || (state.currentSurahId !== null && state.currentVerseId !== null && !isOnPlayerPage);
 
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -50,7 +52,8 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
   }
 
   const currentSurah = state.currentSurahId !== null ? quranData[state.currentSurahId] : null;
-  const surahName = currentSurah?.name || '';
+  const surahName = currentSurah?.name || (isOnQuranPage ? quranData[localParams.surah]?.name || '' : '');
+  const verseLabel = state.currentVerseId ? `آية ${state.currentVerseId}` : (isOnQuranPage ? 'لا يوجد تشغيل حالي' : '');
 
   const handlePress = () => {
     router.push('/player');
@@ -98,7 +101,7 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
                 {surahName}
               </Text>
               <Text style={styles.verseInfo} numberOfLines={1}>
-                آية {state.currentVerseId} • {state.currentReciter?.name || ''}
+                {verseLabel} • {state.currentReciter?.name || ''}
               </Text>
             </View>
           </View>
