@@ -180,20 +180,6 @@ export default function Quran() {
     return state.currentSurahId === Number(surah) && state.currentVerseId === verseIndex + 1;
   };
 
-  const isCurrentSurahPlaying =
-    state.isPlayingSurah && state.isPlaying && state.currentSurahId === Number(surah);
-
-  const handleToggleSurahPlay = async () => {
-    try {
-      if (isCurrentSurahPlaying) {
-        await stop();
-      } else {
-        await playSurahFromVerse(Number(surah), 1);
-      }
-    } catch (error) {
-      console.error('Error toggling surah playback:', error);
-    }
-  };
 
   // Decorative Corner Component
   const CornerDecoration = ({ style, rotate }: { style?: any; rotate?: string }) => (
@@ -354,21 +340,6 @@ export default function Quran() {
               </View>
               <View style={{ height: 40 }} />
             </ScrollView>
-            <View style={styles.surahPlayerBar}>
-              <View style={styles.surahPlayerInfo}>
-                <View style={styles.surahPlayerTextContainer}>
-                  <Text style={styles.surahPlayerTitle} numberOfLines={1}>
-                    {quran[Number(surah)].name}
-                  </Text>
-                  <Text style={styles.surahPlayerSubtitle} numberOfLines={1}>
-                    {quran[Number(surah)].array.length} آيات
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={handleToggleSurahPlay} style={styles.surahPlayerButton}>
-                <Ionicons name={isCurrentSurahPlaying ? 'pause' : 'play'} size={22} color="#fff" />
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </View>
@@ -509,47 +480,5 @@ const styles = StyleSheet.create({
   wordActive: {
     backgroundColor: '#FFF9C4',
     color: '#065F46',
-  },
-  surahPlayerBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#F0FDF4',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  surahPlayerInfo: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    flex: 1,
-  },
-  surahPlayerTextContainer: {
-    flex: 1,
-  },
-  surahPlayerTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#064E3B',
-    textAlign: 'right',
-  },
-  surahPlayerSubtitle: {
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'right',
-    marginTop: 2,
-  },
-  surahPlayerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#059669',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
