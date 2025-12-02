@@ -4,21 +4,21 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { I18nManager, View } from 'react-native';
+import { View } from 'react-native';
 
 import MiniPlayer from '../components/MiniPlayer';
 import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
 import { LocationProvider } from '../contexts/LocationContext';
 
-// Force RTL before app loads
-I18nManager.allowRTL(true);
-I18nManager.forceRTL(true);
-
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   useEffect(() => {
-    SplashScreen.hideAsync();
+    const init = async () => {
+      await SplashScreen.hideAsync();
+    };
+
+    init();
   }, []);
 
   return (
@@ -26,7 +26,7 @@ export default function RootLayout() {
       <AudioPlayerProvider>
         <LocationProvider>
           <ThemeProvider value={DarkTheme}>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, direction: 'rtl' }}>
               <Stack>
                 <Stack.Screen name="index" options={{ headerShown: false, title: 'الرئيسية' }} />
                 <Stack.Screen
