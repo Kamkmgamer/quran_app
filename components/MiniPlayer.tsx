@@ -35,9 +35,10 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
 
-  // Determine if player should be shown
-  const isOnQuranScreen = pathname === '/quran' || pathname === '/quran/';
-  const shouldShow = isOnQuranScreen;
+  // Determine if player should be shown - shows globally except on the full player page
+  const isOnPlayerPage = pathname === '/player' || pathname === '/player/';
+  const shouldShow =
+    state.currentSurahId !== null && state.currentVerseId !== null && !isOnPlayerPage;
 
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -48,18 +49,8 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
     return null;
   }
 
-  const hasCurrentTrack =
-    state.currentSurahId !== null &&
-    state.currentSurahId >= 0 &&
-    state.currentSurahId < quranData.length &&
-    state.currentVerseId !== null;
-
-  const currentSurah =
-    hasCurrentTrack && state.currentSurahId !== null
-      ? quranData[state.currentSurahId]
-      : null;
+  const currentSurah = state.currentSurahId !== null ? quranData[state.currentSurahId] : null;
   const surahName = currentSurah?.name || '';
-  const verseLabel = hasCurrentTrack ? `آية ${state.currentVerseId}` : 'لا يوجد تشغيل حالي';
 
   const handlePress = () => {
     router.push('/player');
@@ -100,14 +91,14 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
           {/* Info Section */}
           <View style={styles.infoContainer}>
             <View style={styles.iconContainer}>
-              <Ionicons name="musical-note" size={20} color="#065F46" />
+              <Ionicons name="chevron-up" size={20} color="#065F46" />
             </View>
             <View style={styles.textContainer}>
               <Text style={styles.surahName} numberOfLines={1}>
                 {surahName}
               </Text>
               <Text style={styles.verseInfo} numberOfLines={1}>
-                {verseLabel} • {state.currentReciter?.name || ''}
+                آية {state.currentVerseId} • {state.currentReciter?.name || ''}
               </Text>
             </View>
           </View>
