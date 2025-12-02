@@ -541,7 +541,7 @@ export default function QiblaCompass() {
               style={[styles.pointerContainer, isLandscape && styles.pointerContainerLandscape]}
             >
               <AnimatedImage
-                source={require('../assets/images/pointer to mekka.png')}
+                source={require('../assets/images/pointer to mekka.svg')}
                 style={[
                   styles.pointerImage,
                   { width: pointerIconSize, height: pointerIconSize },
