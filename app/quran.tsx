@@ -105,9 +105,42 @@ export default function Quran() {
     const desiredTopInViewport = viewportHeight / 3;
     const desiredScrollY = Math.max(0, layout.y - desiredTopInViewport);
 
+    // Never pull the user upward; only adjust when the verse is below the viewport focus line
+    if (desiredScrollY + 5 < currentScrollY) {
+      return;
+    }
+
     const delta = Math.abs(desiredScrollY - currentScrollY);
     if (delta > 10) {
       scrollViewRef.current.scrollTo({ y: desiredScrollY, animated: true });
+      scrollYRef.current = desiredScrollY;
+    }
+  };
+
+  const ensureTimedVerseVisibility = (verseIndex: number, progressRatio: number, attempt = 0) => {
+    if (!scrollViewRef.current || viewportHeight === 0) return;
+
+    const layout = verseLayouts.current[verseIndex];
+    if (!layout) {
+      if (attempt < 3) {
+        measureVerseLayout(
+          verseIndex,
+          () => ensureTimedVerseVisibility(verseIndex, progressRatio, attempt + 1),
+          attempt + 1,
+        );
+      }
+      return;
+    }
+
+    const currentScrollY = scrollYRef.current;
+    const baselineScrollY = Math.max(0, layout.y - viewportHeight / 3);
+    const clampedProgress = Math.min(0.98, Math.max(0.02, progressRatio));
+    const maxNudge = Math.max(layout.height, viewportHeight * 0.15);
+    const desiredScrollY = Math.max(currentScrollY, baselineScrollY + maxNudge * clampedProgress);
+
+    const delta = desiredScrollY - currentScrollY;
+    if (delta > 4) {
+      scrollViewRef.current.scrollTo({ y: desiredScrollY, animated: false });
       scrollYRef.current = desiredScrollY;
     }
   };
@@ -116,15 +149,38 @@ export default function Quran() {
   useEffect(() => {
     if (state.isPlaying && state.currentSurahId === Number(surah) && state.currentVerseId) {
       const verseIndex = state.currentVerseId - 1;
-
-      if (state.currentVerseId > 10) {
-        ensureVerseVisibility(verseIndex);
-      } else {
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-      }
+      ensureVerseVisibility(verseIndex);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.currentVerseId, state.isPlaying, state.currentSurahId, surah, viewportHeight]);
+
+  useEffect(() => {
+    if (
+      !state.isPlaying ||
+      state.currentSurahId !== Number(surah) ||
+      !state.currentVerseId ||
+      !state.duration
+    ) {
+      return;
+    }
+
+    const verseIndex = state.currentVerseId - 1;
+    const durationMs = state.duration || 0;
+    const positionMs = state.position || 0;
+    if (durationMs <= 0) return;
+
+    const ratio = Math.min(0.9999, Math.max(0, positionMs / durationMs));
+    const remainingMs = Math.max(0, durationMs - positionMs);
+    const isAtVerseEnd = durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
+    const isAtVerseStart = ratio < 0.02;
+
+    if (isAtVerseEnd || isAtVerseStart) {
+      return;
+    }
+
+    ensureTimedVerseVisibility(verseIndex, ratio);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.position, state.duration, state.isPlaying, state.currentSurahId, state.currentVerseId, surah, viewportHeight]);
 
   useEffect(() => {
     lastScrolledVerseRef.current = null;
