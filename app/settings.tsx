@@ -183,18 +183,22 @@ export default function Settings() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>إعدادات الصوت</Text>
             <View style={styles.card}>
+              {/* TODO: Implement notification system
               {renderSettingItem(
                 'notifications',
                 'الإشعارات',
                 'تفعيل إشعارات التطبيق',
                 'notifications',
               )}
+              */}
+              {/* TODO: Implement auto-play next functionality
               {renderSettingItem(
                 'play-skip-forward',
                 'التشغيل التلقائي',
                 'تشغيل الآية التالية تلقائياً',
                 'autoPlayNext',
               )}
+              */}
             </View>
           </View>
 
@@ -202,19 +206,25 @@ export default function Settings() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>إعدادات العرض</Text>
             <View style={styles.card}>
+              {/* TODO: Implement screen wake lock functionality
               {renderSettingItem(
                 'sunny',
                 'إبقاء الشاشة مضاءة',
                 'منع الشاشة من الإطفاء أثناء القراءة',
                 'keepScreenOn',
               )}
+              */}
+              {/* TODO: Implement translation display functionality
               {renderSettingItem(
                 'language',
                 'عرض الترجمة',
                 'إظهار ترجمة معاني القرآن',
                 'showTranslation',
               )}
+              */}
+              {/* TODO: Implement dark theme functionality
               {renderSettingItem('moon', 'الوضع الليلي', 'استخدام الثيم الداكن', 'nightMode')}
+              */}
             </View>
           </View>
 
@@ -222,12 +232,14 @@ export default function Settings() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>إعدادات التحميل</Text>
             <View style={styles.card}>
+              {/* TODO: Implement download functionality
               {renderSettingItem(
                 'wifi',
                 'التحميل عبر WiFi فقط',
                 'تحميل التلاوات عند الاتصال بشبكة WiFi فقط',
                 'downloadOnWiFiOnly',
               )}
+              */}
             </View>
           </View>
 
@@ -251,12 +263,14 @@ export default function Settings() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>إدارة التطبيق</Text>
             <View style={styles.card}>
+              {/* TODO: Implement actual cache clearing functionality
               {renderActionItem(
                 'trash-bin',
                 'مسح الذاكرة المؤقتة',
                 'حذف الملفات المؤقتة لتوفير المساحة',
                 clearCache,
               )}
+              */}
               {renderActionItem(
                 'refresh',
                 'إعادة تعيين الإعدادات',
