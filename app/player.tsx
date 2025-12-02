@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // import Slider from '@react-native-community/slider'; // معطل مؤقتاً
 import quranDataImport from '../assets/Quran.json';
@@ -33,13 +35,13 @@ export default function Player() {
 
   if (state.currentSurahId === null || state.currentVerseId === null) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
         <View style={styles.emptyState}>
           <Ionicons name="musical-notes-outline" size={64} color="#D1D5DB" />
           <Text style={styles.emptyText}>لم يتم تشغيل أي شيء</Text>
           <Text style={styles.emptySubtext}>اذهب إلى صفحة القرآن لبدء الاستماع</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -63,7 +65,19 @@ export default function Player() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.safeArea}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color="#065F46" />
+        </TouchableOpacity>
+        <View style={styles.headerTitle}>
+          <Text style={styles.headerTitleText}>مشغل الصوت</Text>
+        </View>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* بانر السورة */}
       <View style={styles.surahBanner}>
         <View style={styles.surahIconContainer}>
@@ -264,11 +278,43 @@ export default function Player() {
           </View>
         </TouchableOpacity>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F0F9F8',
+  },
+  header: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+    backgroundColor: '#F0F9F8',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitleText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  headerSpacer: {
+    width: 40,
+  },
   container: {
     flex: 1,
     backgroundColor: '#F0F9F8',
