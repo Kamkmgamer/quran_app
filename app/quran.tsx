@@ -102,7 +102,7 @@ export default function Quran() {
 
     // layout.y is the verse top relative to the ScrollView content
     const currentScrollY = scrollYRef.current;
-    const desiredTopInViewport = viewportHeight / 3;
+    const desiredTopInViewport = viewportHeight / 4;
     const desiredScrollY = Math.max(0, layout.y - desiredTopInViewport);
 
     // Never pull the user upward; only adjust when the verse is below the viewport focus line
@@ -111,7 +111,7 @@ export default function Quran() {
     }
 
     const delta = Math.abs(desiredScrollY - currentScrollY);
-    if (delta > 10) {
+    if (delta > 2) {
       scrollViewRef.current.scrollTo({ y: desiredScrollY, animated: true });
       scrollYRef.current = desiredScrollY;
     }
@@ -135,11 +135,11 @@ export default function Quran() {
     const currentScrollY = scrollYRef.current;
     const baselineScrollY = Math.max(0, layout.y - viewportHeight / 3);
     const clampedProgress = Math.min(0.98, Math.max(0.02, progressRatio));
-    const maxNudge = Math.max(layout.height, viewportHeight * 0.15);
+    const maxNudge = Math.max(layout.height, viewportHeight * 1.2);
     const desiredScrollY = Math.max(currentScrollY, baselineScrollY + maxNudge * clampedProgress);
 
     const delta = desiredScrollY - currentScrollY;
-    if (delta > 4) {
+    if (delta > 1) {
       scrollViewRef.current.scrollTo({ y: desiredScrollY, animated: false });
       scrollYRef.current = desiredScrollY;
     }
