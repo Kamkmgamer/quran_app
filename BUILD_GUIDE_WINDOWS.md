@@ -76,3 +76,52 @@ Once the build is successful, you will find the release APK file in the followin
     *   Ensure your Android SDK is up to date.
     *   Verify that your environment variables are set correctly.
     *   Clean the Gradle build cache by running `.\gradlew clean` in the `android` directory and then try building again.
+
+### SQLite JDBC permission error (`kaptReleaseKotlin`)
+
+Windows may block Gradle's SQLite JDBC loader from writing native libraries into `C:\WINDOWS`, causing builds to fail with messages such as:
+
+```
+Failed to delete old native lib: C:\WINDOWS\sqlite-3.41.2.2-*.dll
+java.nio.file.AccessDeniedException: C:\WINDOWS\sqlite-3.41.2.2-*.dll.lck
+...
+Caused by: java.lang.Exception: No native library found for os.name=Windows
+```
+
+Redirect SQLite to a writable temp directory before running Gradle.
+
+#### One-time fix per PowerShell session (copy/paste all commands)
+
+```powershell
+cd D:\QuranApp\android
+./clean-sqlite.ps1                                         # remove stale DLLs
+$env:SAFE_SQLITE_TMP = "C:\Users\$env:USERNAME\AppData\Local\Temp\quran-sqlite"
+New-Item -ItemType Directory -Force -Path $env:SAFE_SQLITE_TMP | Out-Null
+$env:ORG_SQLITE_TMPDIR = $env:SAFE_SQLITE_TMP              # make sqlite-jdbc use the safe folder
+./gradlew --stop                                           # ensure the next daemon reads the env var
+./gradlew assembleRelease --stacktrace
+```
+
+> Tip: substitute `D:\QuranApp` if your repo lives elsewhere, and adjust the temp folder if you prefer a different drive.
+
+#### If you use `cmd.exe`
+
+```bat
+cd /d D:\QuranApp\android
+clean-sqlite.ps1
+set SAFE_SQLITE_TMP=C:\Users\%USERNAME%\AppData\Local\Temp\quran-sqlite
+if not exist "%SAFE_SQLITE_TMP%" mkdir "%SAFE_SQLITE_TMP%"
+set ORG_SQLITE_TMPDIR=%SAFE_SQLITE_TMP%
+gradlew --stop
+gradlew assembleRelease --stacktrace
+```
+
+#### Make the fix permanent (recommended)
+
+Append the `-Dorg.sqlite.tmpdir` flag to `android/gradle.properties` so every Gradle daemon uses the safe directory automatically:
+
+```
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dorg.sqlite.tmpdir=C:/Users/<YourWindowsUser>/AppData/Local/Temp/quran-sqlite
+```
+
+After editing the file, re-run `./gradlew --stop` followed by your build command. This prevents future builds from touching `C:\WINDOWS` and avoids the permission error entirely.
