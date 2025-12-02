@@ -65,6 +65,8 @@ export default function QiblaCompass() {
   const shortestSide = Math.min(screenWidth, screenHeight);
   const compassSize = shortestSide * (isLandscape ? 0.65 : 0.75);
   const pointerIconSize = Math.max(Math.min(shortestSide * 0.16, 110), 70);
+  // Kaaba offset is ~15% of compass size; use ~4x that (0.6 * compassSize) so pointer orbits well outside the circle
+  const pointerOrbitRadius = compassSize * 0.6;
 
   // استخدام البيانات من السياق المحمل مسبقاً
   const qiblaDirection = locationContext.qiblaDirection;
@@ -536,21 +538,6 @@ export default function QiblaCompass() {
                 {getDisplayedAngle()}°
               </Text>
             </View>
-
-            <View
-              style={[styles.pointerContainer, isLandscape && styles.pointerContainerLandscape]}
-            >
-              <AnimatedImage
-                source={require('../assets/images/pointer to mekka.svg')}
-                style={[
-                  styles.pointerImage,
-                  { width: pointerIconSize, height: pointerIconSize },
-                  { transform: [{ rotate: pointerRotate }] },
-                  isAligned && styles.pointerImageAligned,
-                ]}
-                resizeMode="contain"
-              />
-            </View>
           </View>
 
           <View style={[styles.compassContainer, isLandscape && styles.compassContainerLandscape]}>
@@ -562,7 +549,10 @@ export default function QiblaCompass() {
               />
 
               <AnimatedView
-                style={[styles.kaabaContainer, { transform: [{ rotate: relativeRotate }] }]}
+                style={[
+                  styles.kaabaContainer,
+                  { transform: [{ rotate: relativeRotate }] },
+                ]}
               >
                 <Image
                   source={require('../assets/images/kaba.png')}
@@ -571,13 +561,39 @@ export default function QiblaCompass() {
                 />
               </AnimatedView>
 
-              <View style={styles.userIndicatorContainer}>
+              <AnimatedView
+                style={[
+                  styles.pointerOrbitContainer,
+                  { transform: [{ rotate: pointerRotate }] },
+                ]}
+              >
+                <Image
+                  source={require('../assets/images/pointer to mekka.svg')}
+                  style={[
+                    styles.pointerImage,
+                    {
+                      width: pointerIconSize,
+                      height: pointerIconSize,
+                      transform: [{ translateY: -pointerOrbitRadius }],
+                    },
+                    isAligned && styles.pointerImageAligned,
+                  ]}
+                  resizeMode="contain"
+                />
+              </AnimatedView>
+
+              <AnimatedView
+                style={[
+                  styles.userIndicatorContainer,
+                  { transform: [{ rotate: pointerRotate }] },
+                ]}
+              >
                 <Image
                   source={require('../assets/images/Vector.png')}
                   style={[styles.centerVector, isAligned && styles.centerVectorAligned]}
                   resizeMode="contain"
                 />
-              </View>
+              </AnimatedView>
             </View>
           </View>
         </View>
@@ -701,6 +717,15 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     zIndex: 10,
+  },
+  pointerOrbitContainer: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    top: 0,
+    left: 0,
   },
   kaabaContainer: {
     position: 'absolute',
