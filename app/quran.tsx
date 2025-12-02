@@ -18,7 +18,6 @@ import Svg, { Path } from 'react-native-svg';
 
 import quranImport from '../assets/Quran.json';
 import InlineAyahNumber from '../components/InlineAyahNumber';
-import MiniPlayer from '../components/MiniPlayer';
 import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 
 const quran = quranImport as any[];
@@ -164,6 +163,21 @@ export default function Quran() {
   // تحديد ما إذا كانت الآية هي الآية الحالية قيد التشغيل (بغض النظر عن حالة التشغيل)
   const isCurrentVerse = (verseIndex: number) => {
     return state.currentSurahId === Number(surah) && state.currentVerseId === verseIndex + 1;
+  };
+
+  const isCurrentSurahPlaying =
+    state.isPlayingSurah && state.isPlaying && state.currentSurahId === Number(surah);
+
+  const handleToggleSurahPlay = async () => {
+    try {
+      if (isCurrentSurahPlaying) {
+        await stop();
+      } else {
+        await playSurahFromVerse(Number(surah), 1);
+      }
+    } catch (error) {
+      console.error('Error toggling surah playback:', error);
+    }
   };
 
   // Decorative Corner Component
@@ -325,10 +339,27 @@ export default function Quran() {
               </View>
               <View style={{ height: 40 }} />
             </ScrollView>
-
-            {/* MiniPlayer */}
-            <View style={styles.miniPlayerContainer}>
-              <MiniPlayer embedded />
+            <View style={styles.surahPlayerBar}>
+              <View style={styles.surahPlayerInfo}>
+                <View style={styles.surahPlayerTextContainer}>
+                  <Text style={styles.surahPlayerTitle} numberOfLines={1}>
+                    {quran[Number(surah)].name}
+                  </Text>
+                  <Text style={styles.surahPlayerSubtitle} numberOfLines={1}>
+                    {quran[Number(surah)].array.length} آيات
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={handleToggleSurahPlay}
+                style={styles.surahPlayerButton}
+              >
+                <Ionicons
+                  name={isCurrentSurahPlaying ? 'pause' : 'play'}
+                  size={22}
+                  color="#fff"
+                />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -470,11 +501,46 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF9C4',
     color: '#065F46',
   },
-  miniPlayerContainer: {
+  surahPlayerBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(255,255,255,0.9)', // Semi-transparent background
+    backgroundColor: '#F0FDF4',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  surahPlayerInfo: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    flex: 1,
+  },
+  surahPlayerTextContainer: {
+    flex: 1,
+  },
+  surahPlayerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#064E3B',
+    textAlign: 'right',
+  },
+  surahPlayerSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'right',
+    marginTop: 2,
+  },
+  surahPlayerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#059669',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

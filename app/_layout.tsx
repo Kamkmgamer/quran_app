@@ -6,7 +6,6 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { View } from 'react-native';
 
-import MiniPlayer from '../components/MiniPlayer';
 import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
 import { LocationProvider } from '../contexts/LocationContext';
 
@@ -87,7 +86,6 @@ export default function RootLayout() {
                 />
                 <Stack.Screen name="+not-found" />
               </Stack>
-              <MiniPlayer />
             </View>
           </ThemeProvider>
         </LocationProvider>

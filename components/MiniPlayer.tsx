@@ -36,10 +36,8 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   // Determine if player should be shown
-  const shouldShow =
-    state.currentSurahId !== null &&
-    state.currentVerseId !== null &&
-    (pathname === '/quran' || pathname === '/quran/');
+  const isOnQuranScreen = pathname === '/quran' || pathname === '/quran/';
+  const shouldShow = isOnQuranScreen;
 
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -50,8 +48,18 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
     return null;
   }
 
-  const currentSurah = state.currentSurahId !== null ? quranData[state.currentSurahId] : null;
+  const hasCurrentTrack =
+    state.currentSurahId !== null &&
+    state.currentSurahId >= 0 &&
+    state.currentSurahId < quranData.length &&
+    state.currentVerseId !== null;
+
+  const currentSurah =
+    hasCurrentTrack && state.currentSurahId !== null
+      ? quranData[state.currentSurahId]
+      : null;
   const surahName = currentSurah?.name || '';
+  const verseLabel = hasCurrentTrack ? `آية ${state.currentVerseId}` : 'لا يوجد تشغيل حالي';
 
   const handlePress = () => {
     router.push('/player');
@@ -99,7 +107,7 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
                 {surahName}
               </Text>
               <Text style={styles.verseInfo} numberOfLines={1}>
-                آية {state.currentVerseId} • {state.currentReciter?.name || ''}
+                {verseLabel} • {state.currentReciter?.name || ''}
               </Text>
             </View>
           </View>
