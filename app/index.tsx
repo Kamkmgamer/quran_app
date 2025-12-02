@@ -213,6 +213,7 @@ export default function HomeScreen() {
           renderItem={renderSurahCard}
           keyExtractor={(item: any) => item.id.toString()}
           numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.gridContainer}
           showsVerticalScrollIndicator={false}
         />
@@ -346,6 +347,9 @@ const styles = StyleSheet.create({
   },
   gridContainer: {
     paddingBottom: 100,
+  },
+  columnWrapper: {
+    flexDirection: 'row-reverse',
   },
   card: {
     flex: 1,
