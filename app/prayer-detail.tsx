@@ -101,26 +101,54 @@ export default function PrayerDetailScreen() {
   }, [prayerTime]);
 
   const formatCurrentTime = () => {
-    return currentTime.toLocaleTimeString('ar-SA', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+    const seconds = currentTime.getSeconds();
+    const isPm = hours >= 12;
+    const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const period = isPm ? 'م' : 'ص';
+
+    const latinFormatted = `${displayHour
+      .toString()
+      .padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}:${seconds
+      .toString()
+      .padStart(2, '0')} ${period}`;
+
+    return toArabicDigits(latinFormatted);
+  };
+
+  const toArabicDigits = (value: string | number) => {
+    const str = typeof value === 'number' ? value.toString() : value;
+    const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return str.replace(/\d/g, digit => arabicDigits[Number(digit)]);
   };
 
   const formatPrayerTime = (time: string) => {
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const minute = parseInt(minutes);
-
-    if (hour >= 12) {
-      const displayHour = hour === 12 ? 12 : hour - 12;
-      return `${displayHour}:${minute.toString().padStart(2, '0')} ${hour >= 12 ? 'م' : 'ص'}`;
-    } else {
-      const displayHour = hour === 0 ? 12 : hour;
-      return `${displayHour}:${minute.toString().padStart(2, '0')} ${hour >= 12 ? 'م' : 'ص'}`;
+    if (!time || time === '--:--') {
+      return '--:--';
     }
+
+    const cleaned = time.trim();
+    const numericOnly = cleaned.replace(/[^\d:]/g, '');
+    const [hoursPart, minutesPart] = numericOnly.split(':');
+    const hour = parseInt(hoursPart, 10);
+    const minute = parseInt(minutesPart, 10);
+
+    if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+      return '--:--';
+    }
+
+    const isPm = hour >= 12;
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const period = isPm ? 'م' : 'ص';
+
+    const latinFormatted = `${displayHour.toString().padStart(2, '0')}:${minute
+      .toString()
+      .padStart(2, '0')} ${period}`;
+
+    return toArabicDigits(latinFormatted);
   };
 
   const getPrayerColor = () => {

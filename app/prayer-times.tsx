@@ -198,11 +198,16 @@ export default function PrayerTimesScreen() {
   }, [prayerTimesData, prayerConfig, processPrayerTimes]);
 
   const getCurrentTimeString = () => {
-    return currentTime.toLocaleTimeString('ar-SA', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+    const baseTime = `${hours}:${minutes.toString().padStart(2, '0')}`;
+    return formatTime(baseTime);
+  };
+
+  const toArabicDigits = (value: string | number) => {
+    const str = typeof value === 'number' ? value.toString() : value;
+    const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return str.replace(/\d/g, digit => arabicDigits[Number(digit)]);
   };
 
   const formatTime = (timeString: string) => {
@@ -211,32 +216,24 @@ export default function PrayerTimesScreen() {
     }
 
     const cleaned = timeString.trim();
-
-    // If the time is already in HH:MM format, just return it
-    if (
-      cleaned.includes(':') &&
-      !cleaned.includes('ص') &&
-      !cleaned.includes('م') &&
-      /^\d{1,2}:\d{2}$/.test(cleaned)
-    ) {
-      return cleaned;
-    }
-
-    const [hours, minutes] = cleaned.split(':');
-    const hour = parseInt(hours, 10);
-    const minute = parseInt(minutes, 10);
+    const numericOnly = cleaned.replace(/[^\d:]/g, '');
+    const [hoursPart, minutesPart] = numericOnly.split(':');
+    const hour = parseInt(hoursPart, 10);
+    const minute = parseInt(minutesPart, 10);
 
     if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
       return '--:--';
     }
 
-    if (hour >= 12) {
-      const displayHour = hour === 12 ? 12 : hour - 12;
-      return `${displayHour}:${minute.toString().padStart(2, '0')} م`;
-    } else {
-      const displayHour = hour === 0 ? 12 : hour;
-      return `${displayHour}:${minute.toString().padStart(2, '0')} ص`;
-    }
+    const isPm = hour >= 12;
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const period = isPm ? 'م' : 'ص';
+
+    const latinFormatted = `${displayHour.toString().padStart(2, '0')}:${minute
+      .toString()
+      .padStart(2, '0')} ${period}`;
+
+    return toArabicDigits(latinFormatted);
   };
 
   const getLastUpdatedLabel = () => {
@@ -245,10 +242,10 @@ export default function PrayerTimesScreen() {
     }
 
     const date = new Date(lastUpdated);
-    return date.toLocaleTimeString('ar-SA', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const baseTime = `${hours}:${minutes.toString().padStart(2, '0')}`;
+    return formatTime(baseTime);
   };
 
   const getLocationSourceLabel = () => {
@@ -402,7 +399,7 @@ export default function PrayerTimesScreen() {
             </View>
             <View style={styles.nextPrayerRightSection}>
               <Ionicons name={nextPrayer.icon as any} size={40} color="#FCD34D" />
-              <Text style={styles.nextPrayerTimeMain}>{nextPrayer.time}</Text>
+              <Text style={styles.nextPrayerTimeMain}>{formatTime(nextPrayer.time)}</Text>
             </View>
           </View>
         )}

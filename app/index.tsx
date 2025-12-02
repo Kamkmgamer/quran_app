@@ -61,17 +61,29 @@ export default function HomeScreen() {
     }
   };
 
+  const toArabicDigits = (value: string | number) => {
+    const str = typeof value === 'number' ? value.toString() : value;
+    const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return str.replace(/\d/g, digit => arabicDigits[Number(digit)]);
+  };
+
   const formatTime = () => {
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
 
     // Convert to 12-hour format
-    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    const period = hours >= 12 ? 'مساء' : 'صباح';
-    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    const isPm = hours >= 12;
+    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const period = isPm ? 'م' : 'ص';
 
-    return `${displayHours}:${formattedMinutes} ${period}`;
+    const latinFormatted = `${displayHours
+      .toString()
+      .padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')} ${period}`;
+
+    return toArabicDigits(latinFormatted);
   };
 
   const updateTime = () => {
