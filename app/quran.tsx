@@ -52,7 +52,23 @@ export default function Quran() {
 
   useEffect(() => {
     loadFontSize();
+    saveLastVisited();
   }, []);
+
+  const saveLastVisited = async () => {
+    try {
+      await AsyncStorage.setItem(
+        '@quran_last_visited',
+        JSON.stringify({
+          surah: Number(surah),
+          verse: Number(verse),
+          timestamp: Date.now(),
+        }),
+      );
+    } catch (error) {
+      console.error('Error saving last visited:', error);
+    }
+  };
 
   // Auto-scroll every 10 seconds while playing
   useEffect(() => {
@@ -128,7 +144,6 @@ export default function Quran() {
       console.error('Error playing verse:', error);
     }
   };
-
 
   const showActionSheet = (verseIndex: number) => {
     const options = ['إلغاء', 'تشغيل الآية 🎵', 'حفظ الآية 🔖', 'نسخ الآية 📋'];
@@ -350,15 +365,8 @@ export default function Quran() {
                   </Text>
                 </View>
               </View>
-              <TouchableOpacity
-                onPress={handleToggleSurahPlay}
-                style={styles.surahPlayerButton}
-              >
-                <Ionicons
-                  name={isCurrentSurahPlaying ? 'pause' : 'play'}
-                  size={22}
-                  color="#fff"
-                />
+              <TouchableOpacity onPress={handleToggleSurahPlay} style={styles.surahPlayerButton}>
+                <Ionicons name={isCurrentSurahPlaying ? 'pause' : 'play'} size={22} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>

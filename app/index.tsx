@@ -44,10 +44,18 @@ export default function HomeScreen() {
 
   const loadSavedVerse = async () => {
     try {
-      const existingData = await AsyncStorage.getItem('savedVerses');
-      const savedVerse = existingData ? JSON.parse(existingData) : { surah: 0, verse: 0 };
-      setSurah(savedVerse.surah);
-      setVerse(savedVerse.verse);
+      const lastVisitedData = await AsyncStorage.getItem('@quran_last_visited');
+      if (lastVisitedData) {
+        const { surah, verse } = JSON.parse(lastVisitedData);
+        setSurah(surah);
+        setVerse(verse);
+      } else {
+        // Fallback to old key if new one doesn't exist
+        const existingData = await AsyncStorage.getItem('savedVerses');
+        const savedVerse = existingData ? JSON.parse(existingData) : { surah: 0, verse: 0 };
+        setSurah(savedVerse.surah);
+        setVerse(savedVerse.verse);
+      }
     } catch (error) {
       console.error('Error loading saved verse:', error);
     }
@@ -77,9 +85,7 @@ export default function HomeScreen() {
     const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
     const period = isPm ? 'م' : 'ص';
 
-    const latinFormatted = `${displayHours
-      .toString()
-      .padStart(2, '0')}:${minutes
+    const latinFormatted = `${displayHours.toString().padStart(2, '0')}:${minutes
       .toString()
       .padStart(2, '0')} ${period}`;
 
@@ -108,11 +114,11 @@ export default function HomeScreen() {
 
   const renderSurahCard = ({ item }: { item: Surah }) => {
     const isLastRead = item.id - 1 === surah;
-    const backgroundColor = isLastRead ? '#D4AF37' : '#fff';
+    const backgroundColor = isLastRead ? '#FEF3C7' : '#fff'; // Lighter background for last visited
     const borderColor = isLastRead ? '#D4AF37' : '#E5E7EB';
-    const textColor = isLastRead ? '#fff' : '#065F46';
-    const numberColor = isLastRead ? '#fff' : '#065F46';
-    const verseCountColor = isLastRead ? '#fff' : '#065F46';
+    const textColor = isLastRead ? '#065F46' : '#065F46'; // Keep text dark green
+    const numberColor = isLastRead ? '#D4AF37' : '#065F46'; // Highlight number
+    const verseCountColor = isLastRead ? '#065F46' : '#065F46';
 
     return (
       <TouchableOpacity
@@ -127,7 +133,7 @@ export default function HomeScreen() {
           {
             backgroundColor,
             borderColor,
-            borderWidth: 2,
+            borderWidth: isLastRead ? 2 : 1, // Thicker border for last visited
           },
         ]}
       >
