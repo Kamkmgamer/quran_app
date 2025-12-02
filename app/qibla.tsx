@@ -74,9 +74,9 @@ export default function QiblaCompass() {
   const smoothAngle = React.useCallback((newAngle: number, jitterScore: number) => {
     const cappedJitter = Math.min(Math.max(jitterScore, 0), 8);
 
-    const smoothingFactor = cappedJitter >= 5 ? 0.15 : cappedJitter >= 3 ? 0.25 : 0.35;
+    const smoothingFactor = cappedJitter >= 5 ? 0.3 : cappedJitter >= 3 ? 0.4 : 0.5;
 
-    const maxStep = cappedJitter >= 5 ? 8 : cappedJitter >= 3 ? 12 : 18;
+    const maxStep = cappedJitter >= 5 ? 30 : cappedJitter >= 3 ? 40 : 50;
 
     if (filteredAngleRef.current === undefined) {
       filteredAngleRef.current = newAngle;
@@ -149,9 +149,9 @@ export default function QiblaCompass() {
 
     headingStabilizerRef.current.lastRawAngle = heading;
 
-    if (timeSinceLastUpdate > 16 || jitterScore > 0.5) {
-      const smoothedAngle = smoothAngle(heading, jitterScore);
-      setDeviceOrientation(smoothedAngle);
+    if (timeSinceLastUpdate > 16) {
+      // اعتمد مباشرة على قيمة المستشعر ودع Animation يتكفل بالتنعيم البصري
+      setDeviceOrientation(heading);
       headingStabilizerRef.current.lastAcceptedTime = now;
       headingStabilizerRef.current.jitterScore = jitterScore;
     }
@@ -178,8 +178,17 @@ export default function QiblaCompass() {
             headingSubscription = await Location.watchHeadingAsync(headingData => {
               if (!isActive) return;
 
-              // استخدام الاتجاه الحقيقي (true north)
-              const heading = headingData.trueHeading;
+              // استخدام الاتجاه الحقيقي (true north) إن كان متوفراً، وإلا استخدام المغناطيسي
+              let heading = headingData.trueHeading;
+
+              if (!Number.isFinite(heading) || heading < 0) {
+                heading = headingData.magHeading;
+              }
+
+              if (!Number.isFinite(heading) || heading < 0) {
+                return;
+              }
+
               handleHeadingUpdate(heading);
               setIsCalibrated(true);
             });
