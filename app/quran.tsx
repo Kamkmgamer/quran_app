@@ -11,7 +11,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ImageBackground,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -23,14 +22,8 @@ import { useAudioPlayer } from '../contexts/AudioPlayerContext';
 const quran = quranImport as any[];
 const HIGHLIGHT_END_THRESHOLD_MS = 1750;
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isSmallDevice = SCREEN_WIDTH < 380;
-
 // Responsive constants
-const CONTAINER_PADDING = isSmallDevice ? 8 : 12;
-const FRAME_MARGIN = isSmallDevice ? 12 : 16;
-const CORNER_SIZE = isSmallDevice ? 30 : 40;
-const CORNER_OFFSET = FRAME_MARGIN - 2 * (CORNER_SIZE / 40);
+const CONTAINER_PADDING = 0;
 
 const fontSizeOptions: { [key: string]: { size: number; lineHeight: number } } = {
   small: { size: 20, lineHeight: 40 },
@@ -195,33 +188,6 @@ export default function Quran() {
     return state.currentSurahId === Number(surah) && state.currentVerseId === verseIndex + 1;
   };
 
-
-  // Decorative Corner Component
-  const CornerDecoration = ({ style, rotate }: { style?: any; rotate?: string }) => (
-    <View style={[styles.cornerContainer, style, { transform: [{ rotate: rotate || '0deg' }] }]}>
-      <Svg width={CORNER_SIZE} height={CORNER_SIZE} viewBox="0 0 40 40" fill="none">
-        <Path
-          d="M2 38V15C2 7.8203 7.8203 2 15 2H38"
-          stroke="#065F46"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        <Path
-          d="M8 38V15C8 11.134 11.134 8 15 8H38"
-          stroke="#D1FAE5"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <Path
-          d="M15 15L25 25M25 15L15 25" // Small decorative cross/star detail
-          stroke="#065F46"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </Svg>
-    </View>
-  );
-
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
@@ -244,9 +210,7 @@ export default function Quran() {
           </View>
           <TouchableOpacity style={styles.playButton} onPress={handlePlaySurah}>
             <Ionicons
-              name={
-                state.isPlaying && state.currentSurahId === Number(surah) ? 'pause' : 'play'
-              }
+              name={state.isPlaying && state.currentSurahId === Number(surah) ? 'pause' : 'play'}
               size={20}
               color="#065F46"
             />
@@ -256,116 +220,112 @@ export default function Quran() {
 
       <View style={styles.mainContentContainer}>
         {/* Custom Border Frame Container */}
-        <View style={styles.frameContainer}>
-          {/* Decorative Corners */}
-          <CornerDecoration style={styles.topLeftCorner} rotate="0deg" />
-          <CornerDecoration style={styles.topRightCorner} rotate="90deg" />
-          <CornerDecoration style={styles.bottomRightCorner} rotate="180deg" />
-          <CornerDecoration style={styles.bottomLeftCorner} rotate="270deg" />
+        <ImageBackground
+          source={require('../assets/images/Quran fram.png')}
+          style={styles.frameContainer}
+          resizeMode="stretch"
+        >
+          {/* Main Content */}
+          <ScrollView
+            style={styles.scrollView}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            ref={scrollViewRef}
+            onLayout={e => {
+              const h = e.nativeEvent.layout.height;
+              setViewportHeight(h);
+            }}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.textContainer}>
+              {/* Surah Name Header */}
+              <View style={styles.surahHeaderContainer}>
+                <ImageBackground
+                  source={require('../assets/images/Frame.png')}
+                  style={styles.surahFrame}
+                  resizeMode="contain"
+                >
+                  <Text style={styles.surahNameInside}>{quran[Number(surah)].name}</Text>
+                </ImageBackground>
+              </View>
 
-          {/* Main Border Lines */}
-          <View style={styles.innerFrame}>
-            <ScrollView
-              style={styles.scrollView}
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-              ref={scrollViewRef}
-              onLayout={e => {
-                const h = e.nativeEvent.layout.height;
-                setViewportHeight(h);
-              }}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.textContainer}>
-                {/* Surah Name Header */}
-                <View style={styles.surahHeaderContainer}>
-                  <ImageBackground
-                    source={require('../assets/images/Frame.png')}
-                    style={styles.surahFrame}
-                    resizeMode="contain"
-                  >
-                    <Text style={styles.surahNameInside}>{quran[Number(surah)].name}</Text>
-                  </ImageBackground>
-                </View>
-
-                {/* Basmalah */}
-                {Number(surah) !== 0 && Number(surah) !== 8 && (
-                  <Text
-                    style={[
-                      styles.basmalah,
-                      { fontSize: fontSize.size, lineHeight: fontSize.lineHeight },
-                    ]}
-                  >
-                    بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-                  </Text>
-                )}
-
-                {/* Verses Block */}
+              {/* Basmalah */}
+              {Number(surah) !== 0 && Number(surah) !== 8 && (
                 <Text
                   style={[
-                    styles.versesText,
-                    {
-                      fontSize: fontSize.size,
-                      lineHeight: fontSize.lineHeight * 1,
-                    },
+                    styles.basmalah,
+                    { fontSize: fontSize.size, lineHeight: fontSize.lineHeight },
                   ]}
                 >
-                  {quran[Number(surah)].array
-                    .slice(0, renderCount)
-                    .map((item: any, index: number) => {
-                      const words = String(item.ar || '')
-                        .trim()
-                        .split(/\s+/);
-                      const active = isVerseActive(index);
-                      const durationMs = state.duration || 0;
-                      const positionMs = state.position || 0;
-                      const ratio =
-                        durationMs > 0 ? Math.min(0.9999, Math.max(0, positionMs / durationMs)) : 0;
-                      const remainingMs = Math.max(0, durationMs - positionMs);
-                      const isAtVerseEnd =
-                        durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
-                      const isAtVerseStart = ratio < 0.02;
-                      const activeWordIndex =
-                        active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart
-                          ? Math.min(words.length - 1, Math.floor(ratio * (words.length + 0.5)))
-                          : -1;
-                      const isWordActive = (i: number) =>
-                        active &&
-                        isCurrentVerse(index) &&
-                        !isAtVerseEnd &&
-                        !isAtVerseStart &&
-                        i >= Math.max(0, activeWordIndex - 2) &&
-                        i <= activeWordIndex &&
-                        activeWordIndex >= 0;
-
-                      return (
-                        <Text
-                          key={index}
-                          ref={r => (verseRefs.current[index] = r)}
-                          onLongPress={() => showActionSheet(index)}
-                        >
-                          {words.map((w: string, i: number) => (
-                            <Text
-                              key={`${index}-${i}`}
-                              style={isWordActive(i) ? styles.wordActive : undefined}
-                            >
-                              {w}
-                              {i !== words.length - 1 && ' '}
-                            </Text>
-                          ))}
-                          <Text>{'\u00A0'}</Text>
-                          <InlineAyahNumber verseNumber={index + 1} size={fontSize.size * 0.9} />
-                          <Text>{'\u00A0'}</Text>
-                        </Text>
-                      );
-                    })}
+                  بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
                 </Text>
-              </View>
-              <View style={{ height: 40 }} />
-            </ScrollView>
-          </View>
-        </View>
+              )}
+
+              {/* Verses Block */}
+              <Text
+                style={[
+                  styles.versesText,
+                  {
+                    fontSize: fontSize.size,
+                    lineHeight: fontSize.lineHeight * 1,
+                  },
+                ]}
+              >
+                {quran[Number(surah)].array
+                  .slice(0, renderCount)
+                  .map((item: any, index: number) => {
+                    const words = String(item.ar || '')
+                      .trim()
+                      .split(/\s+/);
+                    const active = isVerseActive(index);
+                    const durationMs = state.duration || 0;
+                    const positionMs = state.position || 0;
+                    const ratio =
+                      durationMs > 0 ? Math.min(0.9999, Math.max(0, positionMs / durationMs)) : 0;
+                    const remainingMs = Math.max(0, durationMs - positionMs);
+                    const isAtVerseEnd =
+                      durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
+                    const isAtVerseStart = ratio < 0.02;
+                    const activeWordIndex =
+                      active && isCurrentVerse(index) && !isAtVerseEnd && !isAtVerseStart
+                        ? Math.min(words.length - 1, Math.floor(ratio * (words.length + 0.5)))
+                        : -1;
+                    const isWordActive = (i: number) =>
+                      active &&
+                      isCurrentVerse(index) &&
+                      !isAtVerseEnd &&
+                      !isAtVerseStart &&
+                      i >= Math.max(0, activeWordIndex - 2) &&
+                      i <= activeWordIndex &&
+                      activeWordIndex >= 0;
+
+                    return (
+                      <Text
+                        key={index}
+                        ref={r => (verseRefs.current[index] = r)}
+                        onLongPress={() => showActionSheet(index)}
+                      >
+                        {words.map((w: string, i: number) => (
+                          <Text
+                            key={`${index}-${i}`}
+                            style={isWordActive(i) ? styles.wordActive : undefined}
+                          >
+                            {w}
+                            {i !== words.length - 1 && ' '}
+                          </Text>
+                        ))}
+                        <Text>{'\u00A0'}</Text>
+                        <InlineAyahNumber verseNumber={index + 1} size={fontSize.size * 0.9} />
+                        <Text>{'\u00A0'}</Text>
+                      </Text>
+                    );
+                  })}
+              </Text>
+            </View>
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </ImageBackground>
       </View>
     </View>
   );
@@ -383,47 +343,9 @@ const styles = StyleSheet.create({
   },
   frameContainer: {
     flex: 1,
-    position: 'relative',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    // Shadow for depth
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  innerFrame: {
-    flex: 1,
-    margin: FRAME_MARGIN, // Space for corners
-    borderWidth: 2,
-    borderColor: '#065F46', // Main dark green border
-    borderRadius: 8,
-    borderStyle: 'solid',
-    backgroundColor: '#fff',
-    overflow: 'hidden',
-  },
-  cornerContainer: {
-    position: 'absolute',
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    zIndex: 10,
-  },
-  topLeftCorner: {
-    top: CORNER_OFFSET,
-    left: CORNER_OFFSET,
-  },
-  topRightCorner: {
-    top: CORNER_OFFSET,
-    right: CORNER_OFFSET,
-  },
-  bottomLeftCorner: {
-    bottom: CORNER_OFFSET,
-    left: CORNER_OFFSET,
-  },
-  bottomRightCorner: {
-    bottom: CORNER_OFFSET,
-    right: CORNER_OFFSET,
+    paddingTop: 100,
+    paddingBottom: 100,
+    paddingHorizontal: 60,
   },
   headerSafeArea: {
     backgroundColor: '#F5F5F5',
@@ -472,8 +394,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 20,
-    paddingBottom: 60,
-    paddingHorizontal: 16,
+    paddingBottom: 40,
+    paddingHorizontal: 10,
     flexGrow: 1,
   },
   textContainer: {
