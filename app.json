@@ -2,7 +2,7 @@
   "expo": {
     "name": "قرآن",
     "slug": "Quran",
-    "version": "0.3.3",
+    "version": "0.3.4",
     "orientation": "portrait",
     "icon": "./assets/images/adaptive-icon.png",
     "scheme": "myapp",
