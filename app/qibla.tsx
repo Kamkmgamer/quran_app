@@ -16,10 +16,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import PointerToMekka from '../assets/images/pointer to mekka.svg';
 import { useLocation } from '../contexts/LocationContext';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 const AnimatedView = Animated.createAnimatedComponent(View);
+const AnimatedSvg = Animated.createAnimatedComponent(PointerToMekka);
 
 const normalizeAngle = (angle: number) => ((angle % 360) + 360) % 360;
 
@@ -549,10 +551,7 @@ export default function QiblaCompass() {
               />
 
               <AnimatedView
-                style={[
-                  styles.kaabaContainer,
-                  { transform: [{ rotate: relativeRotate }] },
-                ]}
+                style={[styles.kaabaContainer, { transform: [{ rotate: relativeRotate }] }]}
               >
                 <Image
                   source={require('../assets/images/kaba.png')}
@@ -562,31 +561,23 @@ export default function QiblaCompass() {
               </AnimatedView>
 
               <AnimatedView
-                style={[
-                  styles.pointerOrbitContainer,
-                  { transform: [{ rotate: pointerRotate }] },
-                ]}
+                style={[styles.pointerOrbitContainer, { transform: [{ rotate: pointerRotate }] }]}
               >
-                <Image
-                  source={require('../assets/images/pointer to mekka.svg')}
+                <AnimatedSvg
+                  width={pointerIconSize}
+                  height={pointerIconSize}
                   style={[
                     styles.pointerImage,
                     {
-                      width: pointerIconSize,
-                      height: pointerIconSize,
                       transform: [{ translateY: -pointerOrbitRadius }],
                     },
                     isAligned && styles.pointerImageAligned,
                   ]}
-                  resizeMode="contain"
                 />
               </AnimatedView>
 
               <AnimatedView
-                style={[
-                  styles.userIndicatorContainer,
-                  { transform: [{ rotate: pointerRotate }] },
-                ]}
+                style={[styles.userIndicatorContainer, { transform: [{ rotate: pointerRotate }] }]}
               >
                 <Image
                   source={require('../assets/images/Vector.png')}
