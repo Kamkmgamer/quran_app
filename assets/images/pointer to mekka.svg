@@ -1,9 +1,1 @@
-<svg width="38" height="39" viewBox="0 0 38 39" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M38 39L19 0L0 39H2.71778L19 24.6316L35.2822 39H38Z" fill="url(#paint0_linear_2106_2318)"/>
-<defs>
-<linearGradient id="paint0_linear_2106_2318" x1="19" y1="16.5254" x2="19" y2="39" gradientUnits="userSpaceOnUse">
-<stop stop-color="#076040"/>
-<stop offset="1" stop-color="#C0A808"/>
-</linearGradient>
-</defs>
-</svg>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 38 39"><defs><style>.cls-1{fill-rule:evenodd;fill:url(#linear-gradient);}</style><linearGradient id="linear-gradient" x1="19" y1="23.47" x2="19" y2="1" gradientTransform="matrix(1, 0, 0, -1, 0, 40)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#076040"/><stop offset="1" stop-color="#c0a808"/></linearGradient></defs><path class="cls-1" d="M38,39,19,0,0,39H2.72L19,24.63,35.28,39Z"/></svg>
