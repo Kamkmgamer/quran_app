@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ScrollView,
   Switch,
   Alert,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -33,6 +34,9 @@ export default function Settings() {
     showTranslation: false,
     nightMode: false,
   });
+
+  const [toastVisible, setToastVisible] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadSettings();
@@ -59,7 +63,27 @@ export default function Settings() {
     }
   };
 
+  const showSoonToast = () => {
+    if (toastVisible) return;
+    setToastVisible(true);
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.delay(2000),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setToastVisible(false));
+  };
+
   const clearCache = () => {
+    showSoonToast();
+    /* 
     Alert.alert('مسح الذاكرة المؤقتة', 'هل تريد مسح جميع الملفات المؤقتة؟', [
       { text: 'إلغاء', style: 'cancel' },
       {
@@ -71,6 +95,7 @@ export default function Settings() {
         },
       },
     ]);
+    */
   };
 
   const resetSettings = () => {
@@ -105,6 +130,7 @@ export default function Settings() {
     title: string,
     description: string,
     settingKey: keyof SettingsState,
+    isUnimplemented: boolean = false,
   ) => (
     <View style={styles.settingItem}>
       <View style={styles.settingLeft}>
@@ -118,7 +144,13 @@ export default function Settings() {
       </View>
       <Switch
         value={settings[settingKey]}
-        onValueChange={value => saveSetting(settingKey, value)}
+        onValueChange={value => {
+          if (isUnimplemented) {
+            showSoonToast();
+          } else {
+            saveSetting(settingKey, value);
+          }
+        }}
         trackColor={{ false: '#D1D5DB', true: '#BBF7D0' }}
         thumbColor={settings[settingKey] ? '#065F46' : '#F3F4F6'}
       />
@@ -183,22 +215,20 @@ export default function Settings() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>إعدادات الصوت</Text>
             <View style={styles.card}>
-              {/* TODO: Implement notification system
               {renderSettingItem(
                 'notifications',
                 'الإشعارات',
                 'تفعيل إشعارات التطبيق',
                 'notifications',
+                true,
               )}
-              */}
-              {/* TODO: Implement auto-play next functionality
               {renderSettingItem(
                 'play-skip-forward',
                 'التشغيل التلقائي',
                 'تشغيل الآية التالية تلقائياً',
                 'autoPlayNext',
+                true,
               )}
-              */}
             </View>
           </View>
 
@@ -206,25 +236,21 @@ export default function Settings() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>إعدادات العرض</Text>
             <View style={styles.card}>
-              {/* TODO: Implement screen wake lock functionality
               {renderSettingItem(
                 'sunny',
                 'إبقاء الشاشة مضاءة',
                 'منع الشاشة من الإطفاء أثناء القراءة',
                 'keepScreenOn',
+                true,
               )}
-              */}
-              {/* TODO: Implement translation display functionality
               {renderSettingItem(
                 'language',
                 'عرض الترجمة',
                 'إظهار ترجمة معاني القرآن',
                 'showTranslation',
+                true,
               )}
-              */}
-              {/* TODO: Implement dark theme functionality
-              {renderSettingItem('moon', 'الوضع الليلي', 'استخدام الثيم الداكن', 'nightMode')}
-              */}
+              {renderSettingItem('moon', 'الوضع الليلي', 'استخدام الثيم الداكن', 'nightMode', true)}
             </View>
           </View>
 
@@ -232,14 +258,13 @@ export default function Settings() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>إعدادات التحميل</Text>
             <View style={styles.card}>
-              {/* TODO: Implement download functionality
               {renderSettingItem(
                 'wifi',
                 'التحميل عبر WiFi فقط',
                 'تحميل التلاوات عند الاتصال بشبكة WiFi فقط',
                 'downloadOnWiFiOnly',
+                true,
               )}
-              */}
             </View>
           </View>
 
@@ -263,14 +288,12 @@ export default function Settings() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>إدارة التطبيق</Text>
             <View style={styles.card}>
-              {/* TODO: Implement actual cache clearing functionality
               {renderActionItem(
                 'trash-bin',
                 'مسح الذاكرة المؤقتة',
                 'حذف الملفات المؤقتة لتوفير المساحة',
                 clearCache,
               )}
-              */}
               {renderActionItem(
                 'refresh',
                 'إعادة تعيين الإعدادات',
@@ -291,6 +314,15 @@ export default function Settings() {
           </View>
         </ScrollView>
       </ImageBackground>
+
+      {/* Toast */}
+      {toastVisible && (
+        <Animated.View style={[styles.toastContainer, { opacity: fadeAnim }]} pointerEvents="none">
+          <View style={styles.toastContent}>
+            <Text style={styles.toastText}>قريباً</Text>
+          </View>
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -435,5 +467,25 @@ const styles = StyleSheet.create({
   infoVersion: {
     fontSize: 14,
     color: '#059669',
+  },
+  toastContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  toastContent: {
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  toastText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
