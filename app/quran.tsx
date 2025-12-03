@@ -76,7 +76,7 @@ export default function Quran() {
         scrollViewRef.current.scrollTo({ y: newScrollY, animated: true });
         scrollYRef.current = newScrollY;
       }
-    }, 50000); // Every 10 seconds
+    }, 25000);
 
     return () => clearInterval(intervalId);
   }, [state.isPlaying, state.currentSurahId, surah, viewportHeight]);
