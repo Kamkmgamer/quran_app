@@ -309,7 +309,7 @@ export default function Settings() {
             <Ionicons name="information-circle" size={24} color="#065F46" />
             <View style={styles.infoTextContainer}>
               <Text style={styles.infoTitle}>تطبيق القرآن الكريم</Text>
-              <Text style={styles.infoVersion}>الإصدار 0.3.4</Text>
+              <Text style={styles.infoVersion}>الإصدار 0.3.5</Text>
             </View>
           </View>
         </ScrollView>
