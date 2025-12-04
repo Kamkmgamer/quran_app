@@ -76,7 +76,7 @@ export default function Quran() {
         scrollViewRef.current.scrollTo({ y: newScrollY, animated: true });
         scrollYRef.current = newScrollY;
       }
-    }, 25000);
+    }, 35000);
 
     return () => clearInterval(intervalId);
   }, [state.isPlaying, state.currentSurahId, surah, viewportHeight]);
@@ -343,9 +343,9 @@ const styles = StyleSheet.create({
   },
   frameContainer: {
     flex: 1,
-    paddingTop: 100,
-    paddingBottom: 100,
-    paddingHorizontal: 60,
+    paddingTop: 97,
+    paddingBottom: 95,
+    paddingHorizontal: 40,
   },
   headerSafeArea: {
     backgroundColor: '#F5F5F5',
