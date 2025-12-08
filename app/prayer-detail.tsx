@@ -108,13 +108,9 @@ export default function PrayerDetailScreen() {
     const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
     const period = isPm ? 'م' : 'ص';
 
-    const latinFormatted = `${displayHour
+    const latinFormatted = `${displayHour.toString().padStart(2, '0')}:${minutes
       .toString()
-      .padStart(2, '0')}:${minutes
-      .toString()
-      .padStart(2, '0')}:${seconds
-      .toString()
-      .padStart(2, '0')} ${period}`;
+      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${period}`;
 
     return toArabicDigits(latinFormatted);
   };
@@ -267,7 +263,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
   },
   headerContent: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
   },
   backButton: {
@@ -277,7 +273,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginLeft: 16,
   },
   headerText: {
     flex: 1,
@@ -356,7 +352,7 @@ const styles = StyleSheet.create({
     borderColor: '#F59E0B',
   },
   timeLeftHeader: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -364,7 +360,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#92400E',
-    marginLeft: 8,
+    marginRight: 8,
   },
   timeLeftText: {
     fontSize: 18,
@@ -381,7 +377,7 @@ const styles = StyleSheet.create({
     borderColor: '#D1D5DB',
   },
   currentTimeHeader: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -389,7 +385,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#374151',
-    marginLeft: 8,
+    marginRight: 8,
   },
   currentTimeText: {
     fontSize: 18,
@@ -410,14 +406,15 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   statusContent: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
   },
   statusText: {
     fontSize: 14,
     color: '#6B7280',
-    marginLeft: 12,
+    marginRight: 12,
     flex: 1,
     lineHeight: 20,
+    textAlign: 'right',
   },
 });
