@@ -39,7 +39,8 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
 
   // Determine if player should be shown - only shows when audio is playing, except on player page
   const isOnPlayerPage = pathname === '/player' || pathname === '/player/';
-  const shouldShow = state.currentSurahId !== null && state.currentVerseId !== null && !isOnPlayerPage;
+  const shouldShow =
+    state.currentSurahId !== null && state.currentVerseId !== null && !isOnPlayerPage;
 
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -52,9 +53,7 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
 
   const currentSurah = state.currentSurahId !== null ? quranData[state.currentSurahId] : null;
   const surahName = currentSurah?.name || '';
-  const verseLabel = state.currentVerseId
-    ? `آية ${state.currentVerseId}`
-    : '';
+  const verseLabel = state.currentVerseId ? `آية ${state.currentVerseId}` : '';
 
   // Debug logging
   console.log('MiniPlayer Debug:', {
@@ -231,7 +230,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   controlsContainer: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 8,
     paddingLeft: 4,
