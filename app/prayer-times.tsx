@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
   },
   nextPrayerLeftSection: {
     flex: 1,
-    alignItems: 'flex-start',
+    alignItems: 'flex-end',
   },
   nextPrayerRightSection: {
     alignItems: 'center',
@@ -689,11 +689,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: '600',
     letterSpacing: 0.5,
+    textAlign: 'right',
   },
   nextPrayerNameMain: {
     color: '#FFFFFF',
     fontSize: 26,
     fontWeight: '800',
+    textAlign: 'right',
   },
   nextPrayerTimeMain: {
     color: '#FFFFFF',
