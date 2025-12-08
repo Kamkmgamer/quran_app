@@ -113,6 +113,43 @@ class PrayerTimesService {
     }
   }
 
+  async searchLocation(query: string): Promise<{ name: string;
+     country: string; lat: number; lng: number }[]> {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&accept-language=ar&limit=5`,
+        {
+          headers: {
+            'User-Agent': 'QuranApp/1.0 (contact@quranapp.local)',
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      return data.map((item: any) => {
+        // Extract city/town/village name
+        const displayNameParts = item.display_name.split(', ');
+        const name = displayNameParts[0];
+        const country = displayNameParts[displayNameParts.length - 1];
+
+        return {
+          name,
+          country,
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+        };
+      });
+    } catch (error) {
+      console.error('Error searching location:', error);
+      return [];
+    }
+  }
+
   async getPrayerConfig(method: number = CalculationMethods.EGYPT): Promise<PrayerConfig> {
     try {
       // Dynamic prayer configuration based on Islamic standards
@@ -364,7 +401,7 @@ class PrayerTimesService {
       const methods = Object.entries(data.data).map(([_key, value]: [string, any]) => ({
         id: value.id,
         name: value.name,
-        params: value.params,
+        params: value.params || { Fajr: 0, Isha: 0 },
       }));
 
       return methods;
@@ -439,6 +476,35 @@ class PrayerTimesService {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
+  }
+
+  getRecommendedMethodId(country: string): number {
+    if (!country) return CalculationMethods.EGYPT;
+
+    const lowerCountry = country.toLowerCase();
+
+    // Mapping based on common standards
+    if (lowerCountry.includes('saudi') || lowerCountry.includes('ksa')) {
+      return CalculationMethods.MAKKAH; // Umm Al-Qura
+    }
+    if (lowerCountry.includes('egypt')) {
+      return CalculationMethods.EGYPT; // Egyptian Authority
+    }
+    if (lowerCountry.includes('pakistan') || lowerCountry.includes('bangladesh') || lowerCountry.includes('india')) {
+      return CalculationMethods.KARACHI; // Karachi
+    }
+    if (lowerCountry.includes('united states') || lowerCountry.includes('usa') || lowerCountry.includes('canada')) {
+      return CalculationMethods.ISNA; // ISNA
+    }
+    if (lowerCountry.includes('kuwait')) {
+      return CalculationMethods.KUWAIT; // Kuwait
+    }
+    if (lowerCountry.includes('qatar') || lowerCountry.includes('bahrain') || lowerCountry.includes('uae') || lowerCountry.includes('emirates') || lowerCountry.includes('dubai')) {
+      return CalculationMethods.GULF; // Gulf / Dubai (using Gulf as general cache-all if Dubai specific isn't preferred or available)
+    }
+
+    // Default for Muslim World League (usually good for Europe/others)
+    return CalculationMethods.MUSLIM_WORLD_LEAGUE;
   }
 }
 
