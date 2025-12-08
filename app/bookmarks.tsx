@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#D1F3E5',
   },
   headerRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   verseItem: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'flex-start',
     paddingVertical: 16,
     paddingHorizontal: 16,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
   },
   bookmarkButton: {
-    marginRight: 12,
+    marginLeft: 12,
     marginTop: 4,
   },
   verseContent: {
