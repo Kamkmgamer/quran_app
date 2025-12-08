@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // import Slider from '@react-native-community/slider'; // معطل مؤقتاً
@@ -78,206 +78,206 @@ export default function Player() {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* بانر السورة */}
-      <View style={styles.surahBanner}>
-        <View style={styles.surahIconContainer}>
-          <Ionicons name="book" size={48} color="#D4AF37" />
-        </View>
-        <Text style={styles.surahName}>{currentSurah.name}</Text>
-        <Text style={styles.surahInfo}>
-          {currentSurah.array.length} آية • {currentSurah.type}
-        </Text>
-      </View>
-
-      {/* نص الآية */}
-      <View style={styles.verseContainer}>
-        <Text style={styles.verseNumber}>الآية {state.currentVerseId}</Text>
-        <ScrollView style={styles.verseScrollView}>
-          <Text style={styles.verseText}>
-            {String(currentVerse.ar || '')
-              .trim()
-              .split(/\s+/)
-              .map((w: string, i: number, arr: string[]) => {
-                const durationMs = state.duration || 0;
-                const positionMs = state.position || 0;
-                const ratio =
-                  durationMs > 0 ? Math.min(0.9999, Math.max(0, positionMs / durationMs)) : 0;
-                // Don't highlight if we're at the very end or at the very beginning
-                const remainingMs = Math.max(0, durationMs - positionMs);
-                const isAtVerseEnd = durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
-                const isAtVerseStart = ratio < 0.02;
-                const activeIndex =
-                  state.isPlaying && !isAtVerseEnd && !isAtVerseStart
-                    ? Math.min(arr.length - 1, Math.floor(ratio * (arr.length + 0.5)))
-                    : -1;
-                const isActive =
-                  state.isPlaying &&
-                  !isAtVerseEnd &&
-                  !isAtVerseStart &&
-                  i >= activeIndex - 2 &&
-                  i <= activeIndex;
-                return (
-                  <Text key={i} style={isActive ? styles.wordActive : undefined}>
-                    {w}
-                    <Text> </Text>
-                  </Text>
-                );
-              })}
+        {/* بانر السورة */}
+        <View style={styles.surahBanner}>
+          <View style={styles.surahIconContainer}>
+            <Ionicons name="book" size={48} color="#D4AF37" />
+          </View>
+          <Text style={styles.surahName}>{currentSurah.name}</Text>
+          <Text style={styles.surahInfo}>
+            {currentSurah.array.length} آية • {currentSurah.type}
           </Text>
-        </ScrollView>
-      </View>
-
-      {/* معلومات القارئ */}
-      <TouchableOpacity style={styles.reciterButton} onPress={() => setShowReciterModal(true)}>
-        <View style={styles.reciterInfo}>
-          <Ionicons name="person" size={20} color="#065F46" />
-          <Text style={styles.reciterName}>{state.currentReciter?.name || ''}</Text>
         </View>
-        <Ionicons name="chevron-down" size={20} color="#065F46" />
-      </TouchableOpacity>
 
-      {/* شريط التقدم */}
-      <View style={styles.progressContainer}>
-        <Text style={styles.timeText}>{formatTime(state.position)}</Text>
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBarBg}>
-            <View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: `${state.duration > 0 ? (state.position / state.duration) * 100 : 0}%`,
-                },
-              ]}
-            />
+        {/* نص الآية */}
+        <View style={styles.verseContainer}>
+          <Text style={styles.verseNumber}>الآية {state.currentVerseId}</Text>
+          <ScrollView style={styles.verseScrollView}>
+            <Text style={styles.verseText}>
+              {String(currentVerse.ar || '')
+                .trim()
+                .split(/\s+/)
+                .map((w: string, i: number, arr: string[]) => {
+                  const durationMs = state.duration || 0;
+                  const positionMs = state.position || 0;
+                  const ratio =
+                    durationMs > 0 ? Math.min(0.9999, Math.max(0, positionMs / durationMs)) : 0;
+                  // Don't highlight if we're at the very end or at the very beginning
+                  const remainingMs = Math.max(0, durationMs - positionMs);
+                  const isAtVerseEnd = durationMs > 0 && remainingMs <= HIGHLIGHT_END_THRESHOLD_MS;
+                  const isAtVerseStart = ratio < 0.02;
+                  const activeIndex =
+                    state.isPlaying && !isAtVerseEnd && !isAtVerseStart
+                      ? Math.min(arr.length - 1, Math.floor(ratio * (arr.length + 0.5)))
+                      : -1;
+                  const isActive =
+                    state.isPlaying &&
+                    !isAtVerseEnd &&
+                    !isAtVerseStart &&
+                    i >= activeIndex - 2 &&
+                    i <= activeIndex;
+                  return (
+                    <Text key={i} style={isActive ? styles.wordActive : undefined}>
+                      {w}
+                      <Text> </Text>
+                    </Text>
+                  );
+                })}
+            </Text>
+          </ScrollView>
+        </View>
+
+        {/* معلومات القارئ */}
+        <TouchableOpacity style={styles.reciterButton} onPress={() => setShowReciterModal(true)}>
+          <View style={styles.reciterInfo}>
+            <Ionicons name="person" size={20} color="#065F46" />
+            <Text style={styles.reciterName}>{state.currentReciter?.name || ''}</Text>
           </View>
-        </View>
-        <Text style={styles.timeText}>{formatTime(state.duration)}</Text>
-      </View>
-
-      {/* أزرار التحكم الرئيسية */}
-      <View style={styles.mainControls}>
-        <TouchableOpacity style={styles.secondaryControlButton} onPress={handleRepeatToggle}>
-          <Ionicons
-            name={currentRepeatMode?.icon as any}
-            size={24}
-            color={state.repeatMode !== 'none' ? '#065F46' : '#9CA3AF'}
-          />
+          <Ionicons name="chevron-down" size={20} color="#065F46" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.skipButton} onPress={playPrevious}>
-          <Ionicons name="play-skip-forward" size={32} color="#065F46" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.playButton} onPress={togglePlayPause}>
-          {state.isLoading ? (
-            <Ionicons name="hourglass" size={40} color="#fff" />
-          ) : (
-            <Ionicons name={state.isPlaying ? 'pause' : 'play'} size={40} color="#fff" />
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.skipButton} onPress={playNext}>
-          <Ionicons name="play-skip-back" size={32} color="#065F46" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryControlButton}
-          onPress={() => setShowSpeedModal(true)}
-        >
-          <Text style={styles.speedText}>{state.playbackSpeed}x</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Modal اختيار السرعة */}
-      <Modal
-        visible={showSpeedModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowSpeedModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowSpeedModal(false)}
-        >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>سرعة التشغيل</Text>
-            {speedOptions.map(speed => (
-              <TouchableOpacity
-                key={speed}
+        {/* شريط التقدم */}
+        <View style={styles.progressContainer}>
+          <Text style={styles.timeText}>{formatTime(state.position)}</Text>
+          <View style={styles.progressBarContainer}>
+            <View style={styles.progressBarBg}>
+              <View
                 style={[
-                  styles.modalOption,
-                  state.playbackSpeed === speed && styles.modalOptionSelected,
+                  styles.progressBarFill,
+                  {
+                    width: `${state.duration > 0 ? (state.position / state.duration) * 100 : 0}%`,
+                  },
                 ]}
-                onPress={() => {
-                  setPlaybackSpeed(speed);
-                  setShowSpeedModal(false);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.modalOptionText,
-                    state.playbackSpeed === speed && styles.modalOptionTextSelected,
-                  ]}
-                >
-                  {speed}x
-                </Text>
-                {state.playbackSpeed === speed && (
-                  <Ionicons name="checkmark" size={20} color="#065F46" />
-                )}
-              </TouchableOpacity>
-            ))}
+              />
+            </View>
           </View>
-        </TouchableOpacity>
-      </Modal>
+          <Text style={styles.timeText}>{formatTime(state.duration)}</Text>
+        </View>
 
-      {/* Modal اختيار القارئ */}
-      <Modal
-        visible={showReciterModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowReciterModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowReciterModal(false)}
+        {/* أزرار التحكم الرئيسية */}
+        <View style={styles.mainControls}>
+          <TouchableOpacity style={styles.secondaryControlButton} onPress={handleRepeatToggle}>
+            <Ionicons
+              name={currentRepeatMode?.icon as any}
+              size={24}
+              color={state.repeatMode !== 'none' ? '#065F46' : '#9CA3AF'}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.skipButton} onPress={playPrevious}>
+            <Ionicons name="play-skip-forward" size={32} color="#065F46" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.playButton} onPress={togglePlayPause}>
+            {state.isLoading ? (
+              <Ionicons name="hourglass" size={40} color="#fff" />
+            ) : (
+              <Ionicons name={state.isPlaying ? 'pause' : 'play'} size={40} color="#fff" />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.skipButton} onPress={playNext}>
+            <Ionicons name="play-skip-back" size={32} color="#065F46" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryControlButton}
+            onPress={() => setShowSpeedModal(true)}
+          >
+            <Text style={styles.speedText}>{state.playbackSpeed}x</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Modal اختيار السرعة */}
+        <Modal
+          visible={showSpeedModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowSpeedModal(false)}
         >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>اختر القارئ</Text>
-            <ScrollView>
-              {recitersData.reciters.map(reciter => (
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowSpeedModal(false)}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>سرعة التشغيل</Text>
+              {speedOptions.map(speed => (
                 <TouchableOpacity
-                  key={reciter.id}
+                  key={speed}
                   style={[
                     styles.modalOption,
-                    state.currentReciterId === reciter.id && styles.modalOptionSelected,
+                    state.playbackSpeed === speed && styles.modalOptionSelected,
                   ]}
                   onPress={() => {
-                    setReciter(reciter.id);
-                    setShowReciterModal(false);
+                    setPlaybackSpeed(speed);
+                    setShowSpeedModal(false);
                   }}
                 >
-                  <View style={styles.reciterModalInfo}>
-                    <Text
-                      style={[
-                        styles.modalOptionText,
-                        state.currentReciterId === reciter.id && styles.modalOptionTextSelected,
-                      ]}
-                    >
-                      {reciter.name}
-                    </Text>
-                    <Text style={styles.reciterQuality}>{reciter.quality}</Text>
-                  </View>
-                  {state.currentReciterId === reciter.id && (
+                  <Text
+                    style={[
+                      styles.modalOptionText,
+                      state.playbackSpeed === speed && styles.modalOptionTextSelected,
+                    ]}
+                  >
+                    {speed}x
+                  </Text>
+                  {state.playbackSpeed === speed && (
                     <Ionicons name="checkmark" size={20} color="#065F46" />
                   )}
                 </TouchableOpacity>
               ))}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Modal اختيار القارئ */}
+        <Modal
+          visible={showReciterModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowReciterModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowReciterModal(false)}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>اختر القارئ</Text>
+              <ScrollView>
+                {recitersData.reciters.map(reciter => (
+                  <TouchableOpacity
+                    key={reciter.id}
+                    style={[
+                      styles.modalOption,
+                      state.currentReciterId === reciter.id && styles.modalOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setReciter(reciter.id);
+                      setShowReciterModal(false);
+                    }}
+                  >
+                    <View style={styles.reciterModalInfo}>
+                      <Text
+                        style={[
+                          styles.modalOptionText,
+                          state.currentReciterId === reciter.id && styles.modalOptionTextSelected,
+                        ]}
+                      >
+                        {reciter.name}
+                      </Text>
+                      <Text style={styles.reciterQuality}>{reciter.quality}</Text>
+                    </View>
+                    {state.currentReciterId === reciter.id && (
+                      <Ionicons name="checkmark" size={20} color="#065F46" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </TouchableOpacity>
+        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
@@ -398,13 +398,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
   },
   reciterInfo: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 8,
   },
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   progressContainer: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     marginBottom: 32,
     gap: 12,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     minWidth: 40,
   },
   mainControls: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 20,
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalOption: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
