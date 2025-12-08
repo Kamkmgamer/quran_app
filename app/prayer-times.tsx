@@ -748,7 +748,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   prayerInfo: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     flex: 1,
   },
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#D1FAE5',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginLeft: 16,
   },
   nextPrayerIconContainer: {
     backgroundColor: '#10B981',
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#059669',
-    marginRight: 8,
+    marginLeft: 8,
     letterSpacing: 0.5,
   },
   chevronIcon: {
