@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   header: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   loadingHint: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     backgroundColor: '#E8F5E8',
     padding: 12,
@@ -794,6 +794,6 @@ const styles = StyleSheet.create({
   loadingHintText: {
     fontSize: 14,
     color: '#065F46',
-    marginLeft: 8,
+    marginRight: 8,
   },
 });
