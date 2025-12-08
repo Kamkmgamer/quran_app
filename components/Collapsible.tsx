@@ -14,10 +14,11 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
     <ThemedView>
       <TouchableOpacity
         style={styles.heading}
-        onPress={() => setIsOpen((value) => !value)}
-        activeOpacity={0.8}>
+        onPress={() => setIsOpen(value => !value)}
+        activeOpacity={0.8}
+      >
         <Ionicons
-          name={isOpen ? 'chevron-down' : 'chevron-forward-outline'}
+          name={isOpen ? 'chevron-down' : 'chevron-back-outline'}
           size={18}
           color={theme === 'light' ? Colors.light.icon : Colors.dark.icon}
         />
@@ -30,12 +31,12 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
 
 const styles = StyleSheet.create({
   heading: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 6,
   },
   content: {
     marginTop: 6,
-    marginLeft: 24,
+    marginRight: 24,
   },
 });
