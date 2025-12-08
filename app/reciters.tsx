@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F8',
   },
   headerRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     borderColor: '#065F46',
   },
   cardContent: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     padding: 16,
   },
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F9F8',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginLeft: 12,
   },
   reciterInfo: {
     flex: 1,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   downloadedBadge: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     marginTop: 6,
     gap: 4,
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   actionButton: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     color: '#DC2626',
   },
   downloadingContainer: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
