@@ -92,6 +92,20 @@ export default function RootLayout() {
                     title: 'الإعدادات',
                   }}
                 />
+                <Stack.Screen
+                  name="calculation-method"
+                  options={{
+                    headerShown: false,
+                    title: 'طريقة الحساب',
+                  }}
+                />
+                <Stack.Screen
+                  name="location-picker"
+                  options={{
+                    headerShown: false,
+                    title: 'تحديد الموقع',
+                  }}
+                />
                 <Stack.Screen name="+not-found" />
               </Stack>
               <MiniPlayer />
