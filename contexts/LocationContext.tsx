@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 
@@ -16,7 +17,7 @@ const KAABA_LNG = 39.82611111111111;
 const DEFAULT_LAT = 24.7136;
 const DEFAULT_LNG = 46.6753;
 
-type LocationSource = 'gps' | 'network' | 'default';
+type LocationSource = 'gps' | 'network' | 'default' | 'manual';
 
 interface LocationContextType {
   location: { latitude: number; longitude: number } | null;
@@ -30,6 +31,14 @@ interface LocationContextType {
   lastUpdated: number | null;
   refreshLocation: () => Promise<void>;
   refreshPrayerTimes: () => Promise<void>;
+  calculationMethod: number | null;
+  setCalculationMethod: (method: number | null) => Promise<void>;
+  setManualLocation: (data: {
+    latitude: number;
+    longitude: number;
+    name: string;
+    country: string;
+  }) => Promise<void>;
 }
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
@@ -56,7 +65,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [locationSource, setLocationSource] = useState<LocationSource>('gps');
   const [locationNotice, setLocationNotice] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
-  const [calculationMethod] = useState<number>(CalculationMethods.EGYPT);
+  const [calculationMethod, setCalculationMethodState] = useState<number | null>(null); // null means Auto
 
   // حساب اتجاه القبلة بناءً على موقع المستخدم
   const calculateQiblaDirection = (userLat: number, userLng: number): number => {
@@ -75,14 +84,42 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     return bearing;
   };
 
-  const loadPrayerData = async (coords: Coordinates) => {
-    const config = await PrayerTimesService.getPrayerConfig(calculationMethod);
+  const loadPrayerData = async (coords: Coordinates, methodId?: number) => {
+    // Determine which method to use
+    let methodToUse = methodId;
+
+    // If no method specified (or passed as null/undefined), check state
+    if (methodToUse === undefined || methodToUse === null) {
+      if (calculationMethod !== null) {
+        methodToUse = calculationMethod;
+      } else {
+        // Auto mode - try to detect based on country if we have location info
+        // We'll rely on the service to get location name first if needed,
+        // effectively doing a double hop if we don't have country yet.
+        // For simplicity, we use EGYPT as safe default until we know better
+        methodToUse = CalculationMethods.EGYPT;
+      }
+    }
+
+    const config = await PrayerTimesService.getPrayerConfig(methodToUse);
     setPrayerConfig(config);
 
-    const prayerData = await PrayerTimesService.getPrayerTimes(coords, calculationMethod);
+    const prayerData = await PrayerTimesService.getPrayerTimes(coords, methodToUse);
     setPrayerTimes(prayerData);
     setLastUpdated(Date.now());
     setLocationError(null);
+
+    // Update auto-detected method if we are in auto mode
+    if (calculationMethod === null && prayerData.location?.country) {
+      const recommended = PrayerTimesService.getRecommendedMethodId(prayerData.location.country);
+      if (recommended !== methodToUse) {
+        // silently reload with better method if we just found out where we are
+        const betterConfig = await PrayerTimesService.getPrayerConfig(recommended);
+        const betterData = await PrayerTimesService.getPrayerTimes(coords, recommended);
+        setPrayerConfig(betterConfig);
+        setPrayerTimes(betterData);
+      }
+    }
   };
 
   const NETWORK_LOCATION_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -229,6 +266,78 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   };
 
+  // Change Calculation Method
+  const setCalculationMethod = async (method: number | null) => {
+    try {
+      setCalculationMethodState(method);
+      if (method === null) {
+        await AsyncStorage.removeItem('prayer_calculation_method');
+      } else {
+        await AsyncStorage.setItem('prayer_calculation_method', method.toString());
+      }
+
+      // Refresh if we have location
+      if (location) {
+        await loadPrayerData(location, method === null ? undefined : method);
+      }
+    } catch (error) {
+      console.error('Error changing calculation method:', error);
+    }
+  };
+
+  const setManualLocation = async (data: {
+    latitude: number;
+    longitude: number;
+    name: string;
+    country: string;
+  }) => {
+    const coords = { latitude: data.latitude, longitude: data.longitude };
+
+    // Update State
+    setLocation(coords);
+    setLocationSource('manual'); // We need to update LocationSource type too, handle that next
+    setLocationNotice(null);
+    setLocationError(null);
+
+    // Calculate Qibla
+    const qibla = calculateQiblaDirection(data.latitude, data.longitude);
+    setQiblaDirection(qibla);
+
+    // Update Prayer Data
+    // We can inject the location name into the prayer data to avoid reverse geocoding 'manual' coords again if possible,
+    // or just rely on the service. For now, let's load normally.
+    try {
+      // Create a temporary "manual" location cache or override?
+      // Actually, loadPrayerData fetches again. Ideally we'd pass the name in.
+      // For now, let's just load.
+      await loadPrayerData(coords);
+
+      // Persist this manual choice? The requirement implies "if location isn't found Manually configer it".
+      // Persistence is good practice.
+      await AsyncStorage.setItem('manual_location', JSON.stringify(data));
+      await AsyncStorage.setItem('location_source', 'manual');
+    } catch (error) {
+      console.error('Error setting manual location:', error);
+    }
+  };
+
+  // Load saved settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const savedMethod = await AsyncStorage.getItem('prayer_calculation_method');
+        if (savedMethod) {
+          setCalculationMethodState(parseInt(savedMethod, 10));
+        } else {
+          setCalculationMethodState(null); // Default to Auto
+        }
+      } catch (error) {
+        console.error('Error loading location context settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
+
   // جلب البيانات عند تحميل التطبيق
   useEffect(() => {
     fetchLocationAndPrayerTimes();
@@ -244,7 +353,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     if (location) {
       try {
         await PrayerTimesService.clearCache();
-        await loadPrayerData(location);
+        await loadPrayerData(location, calculationMethod === null ? undefined : calculationMethod);
       } catch (err) {
         console.error('Failed to refresh prayer times:', err);
       }
@@ -263,6 +372,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     lastUpdated,
     refreshLocation,
     refreshPrayerTimes,
+    calculationMethod,
+    setCalculationMethod,
+    setManualLocation,
   };
 
   return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
