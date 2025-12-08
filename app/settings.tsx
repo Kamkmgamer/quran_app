@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
   },
   settingLeft: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     flex: 1,
   },
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDF4',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginLeft: 12,
   },
   iconContainerDanger: {
     backgroundColor: '#FEF2F2',
