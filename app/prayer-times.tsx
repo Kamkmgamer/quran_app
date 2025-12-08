@@ -248,31 +248,6 @@ export default function PrayerTimesScreen() {
     return formatTime(baseTime);
   };
 
-  const getLocationSourceLabel = () => {
-    switch (locationSource) {
-      case 'gps':
-        return 'الموقع من نظام GPS';
-      case 'network':
-        return 'الموقع عبر الشبكة';
-      case 'default':
-        return 'موقع افتراضي (الرياض)';
-      default:
-        return 'مصدر موقع غير معروف';
-    }
-  };
-
-  const getLocationSourceBadgeStyle = () => {
-    switch (locationSource) {
-      case 'gps':
-        return styles.locationSourceBadgeSuccess;
-      case 'network':
-        return styles.locationSourceBadgeInfo;
-      case 'default':
-      default:
-        return styles.locationSourceBadgeNeutral;
-    }
-  };
-
   const getNextPrayer = () => {
     return prayerTimes.find(prayer => prayer.isNext);
   };
@@ -363,6 +338,14 @@ export default function PrayerTimesScreen() {
           <TouchableOpacity style={styles.retryButton} onPress={locationContext.refreshLocation}>
             <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: '#4B5563', marginTop: 12 }]}
+            onPress={() => router.push('/location-picker' as any)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.retryButtonText}>تحديد الموقع يدوياً</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -447,8 +430,8 @@ export default function PrayerTimesScreen() {
                 </Text>
                 <Ionicons
                   name="chevron-forward"
-                  size={16}
-                  color={prayer.isNext ? '#D4AF37' : '#9CA3AF'}
+                  size={20}
+                  color="#10B981"
                   style={styles.chevronIcon}
                 />
               </View>
@@ -456,38 +439,6 @@ export default function PrayerTimesScreen() {
           ))}
         </View>
 
-        {/* Location Info */}
-        {prayerTimesData?.location && (
-          <View style={styles.locationCard}>
-            <Ionicons name="location" size={20} color="#10B981" />
-            <View style={styles.locationDetails}>
-              <Text style={styles.locationText}>
-                الموقع: {prayerTimesData.location.name}
-                {prayerTimesData.location.country && ` - ${prayerTimesData.location.country}`}
-              </Text>
-              <View style={styles.locationMetaRow}>
-                <View style={[styles.locationSourceBadge, getLocationSourceBadgeStyle()]}>
-                  <Ionicons
-                    name={
-                      locationSource === 'gps'
-                        ? 'navigate'
-                        : locationSource === 'network'
-                          ? 'globe-outline'
-                          : 'location-outline'
-                    }
-                    size={14}
-                    color="#fff"
-                    style={styles.locationSourceIcon}
-                  />
-                  <Text style={styles.locationSourceText}>{getLocationSourceLabel()}</Text>
-                </View>
-                <Text style={styles.locationUpdatedText}>آخر تحديث: {getLastUpdatedLabel()}</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Data Source Info */}
         <View style={styles.dataSourceCard}>
           <Text style={styles.dataSourceText}>
             مصدر البيانات: AlAdhan API • {prayerTimesData?.method?.name || 'المصرية العامة للمساحة'}
