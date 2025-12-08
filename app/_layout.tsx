@@ -85,6 +85,13 @@ export default function RootLayout() {
                     title: 'حجم الخط',
                   }}
                 />
+                <Stack.Screen
+                  name="settings"
+                  options={{
+                    headerShown: false,
+                    title: 'الإعدادات',
+                  }}
+                />
                 <Stack.Screen name="+not-found" />
               </Stack>
               <MiniPlayer />
