@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { useRouter, usePathname, useLocalSearchParams } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -30,11 +30,9 @@ const quranData = quranDataImport as any[];
 const { width } = Dimensions.get('window');
 
 const MiniPlayer: React.FC<MiniPlayerProps> = ({ embedded = false }) => {
-  const { state, togglePlayPause, playNext, playPrevious, closePlayer, playSurahFromVerse } =
-    useAudioPlayer();
+  const { state, togglePlayPause, playNext, playPrevious, closePlayer } = useAudioPlayer();
   const router = useRouter();
   const pathname = usePathname();
-  const localParams = useLocalSearchParams();
   const [isVisible, setIsVisible] = useState(false);
 
   // Determine if player should be shown - only shows when audio is playing, except on player page
