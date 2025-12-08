@@ -16,6 +16,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { useLocation } from '../contexts/LocationContext';
+
 interface SettingsState {
   notifications: boolean;
   autoPlayNext: boolean;
@@ -26,6 +28,26 @@ interface SettingsState {
 }
 
 export default function Settings() {
+  const { prayerTimes, calculationMethod } = useLocation();
+  const [methodName, setMethodName] = useState('');
+
+  useEffect(() => {
+    if (calculationMethod === null) {
+      setMethodName('تلقائي (مستحسن)');
+    } else if (prayerTimes?.method?.name) {
+      // Shorten long names if needed
+      let name = prayerTimes.method.name;
+      if (name.includes('Makkah')) name = 'Umm Al-Qura, Makkah';
+      else if (name.includes('Egypt')) name = 'Egyptian General Authority';
+      else if (name.includes('Karachi')) name = 'Univ. of Islamic Sciences, Karachi';
+      else if (name.includes('America')) name = 'Islamic Society of North America';
+      else if (name.includes('Dubai')) name = 'Dubai';
+      else if (name.includes('Kuwait')) name = 'Kuwait';
+
+      setMethodName(name);
+    }
+  }, [calculationMethod, prayerTimes]);
+
   const [settings, setSettings] = useState<SettingsState>({
     notifications: true,
     autoPlayNext: true,
@@ -83,7 +105,7 @@ export default function Settings() {
 
   const clearCache = () => {
     showSoonToast();
-    /* 
+    /*
     Alert.alert('مسح الذاكرة المؤقتة', 'هل تريد مسح جميع الملفات المؤقتة؟', [
       { text: 'إلغاء', style: 'cancel' },
       {
@@ -211,6 +233,16 @@ export default function Settings() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Prayer Times Settings */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>مواقيت الصلاة</Text>
+            <View style={styles.card}>
+              {renderActionItem('time', 'طريقة الحساب', methodName || 'تحميل...', () => {
+                router.push('/calculation-method' as any);
+              })}
+            </View>
+          </View>
+
           {/* Audio Settings */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>إعدادات الصوت</Text>
