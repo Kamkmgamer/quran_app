@@ -140,8 +140,8 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.cardContent}>
-          <Text style={[styles.surahNumber, { color: numberColor }]}>{item.id}</Text>
           <Text style={[styles.surahName, { color: textColor }]}>{item.name}</Text>
+          <Text style={[styles.surahNumber, { color: numberColor }]}>{item.id}</Text>
         </View>
         <Text style={[styles.verseCount, { color: verseCountColor }]}>
           {item.array.length} آيات
