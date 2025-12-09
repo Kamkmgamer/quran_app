@@ -1,5 +1,6 @@
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -13,13 +14,19 @@ import { LocationProvider } from '../contexts/LocationContext';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  useEffect(() => {
-    const init = async () => {
-      await SplashScreen.hideAsync();
-    };
+  const [loaded, error] = useFonts({
+    AlMadina: require('../assets/fonts/MADDINA.ttf'),
+  });
 
-    init();
-  }, []);
+  useEffect(() => {
+    if (loaded || error) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded, error]);
+
+  if (!loaded && !error) {
+    return null;
+  }
 
   return (
     <ActionSheetProvider>

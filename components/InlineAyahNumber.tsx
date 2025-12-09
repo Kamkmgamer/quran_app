@@ -28,7 +28,8 @@ export default function InlineAyahNumber({
         },
       ]}
     >
-      {' '}﴿{numberText}﴾{' '}
+      {' '}
+      ﴿{numberText}﴾{' '}
     </Text>
   );
 }

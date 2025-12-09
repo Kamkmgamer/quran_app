@@ -315,9 +315,9 @@ export default function Quran() {
                             {i !== words.length - 1 && ' '}
                           </Text>
                         ))}
-                        <Text>{'\u00A0'}</Text>
+                        <Text style={{ fontFamily: 'System' }}>{'\u00A0'}</Text>
                         <InlineAyahNumber verseNumber={index + 1} size={fontSize.size * 0.9} />
-                        <Text>{'\u00A0'}</Text>
+                        <Text style={{ fontFamily: 'System' }}>{'\u00A0'}</Text>
                       </Text>
                     );
                   })}
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     writingDirection: 'rtl',
     color: '#000',
-    fontFamily: 'System',
+    fontFamily: 'AlMadina',
     includeFontPadding: false,
     paddingHorizontal: 10,
   },
