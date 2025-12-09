@@ -15,7 +15,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    AlMadina: require('../assets/fonts/MADDINA.ttf'),
+    AlMadina: require('../assets/fonts/Othmani.ttf'),
   });
 
   useEffect(() => {
