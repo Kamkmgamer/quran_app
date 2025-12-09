@@ -1,7 +1,7 @@
 {
   "name": "quran-app",
   "main": "expo-router/entry",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "scripts": {
     "check": "eslint . && tsc --noEmit",
     "start": "expo start",
