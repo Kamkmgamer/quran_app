@@ -3,7 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Text,
   ScrollView,
@@ -11,6 +12,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ImageBackground,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -34,6 +36,7 @@ const fontSizeOptions: { [key: string]: { size: number; lineHeight: number } } =
 
 export default function Quran() {
   const { surah, verse } = useLocalSearchParams();
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const { state, playVerse, playSurahFromVerse, stop } = useAudioPlayer();
   const { showActionSheetWithOptions } = useActionSheet();
   const [renderCount, setRenderCount] = useState(50 + Number(verse));
@@ -42,13 +45,9 @@ export default function Quran() {
   const verseRefs = useRef<{ [key: number]: Text | null }>({});
   const [viewportHeight, setViewportHeight] = useState(0);
   const scrollYRef = useRef(0);
+  const [isMiniPlayerVisible, setIsMiniPlayerVisible] = useState(false);
 
-  useEffect(() => {
-    loadFontSize();
-    saveLastVisited();
-  }, []);
-
-  const saveLastVisited = async () => {
+  const saveLastVisited = useCallback(async () => {
     try {
       await AsyncStorage.setItem(
         '@quran_last_visited',
@@ -61,7 +60,37 @@ export default function Quran() {
     } catch (error) {
       console.error('Error saving last visited:', error);
     }
-  };
+  }, [surah, verse]);
+
+  const loadFontSize = useCallback(async () => {
+    try {
+      const savedSize = await AsyncStorage.getItem('quranFontSize');
+      if (savedSize && fontSizeOptions[savedSize]) {
+        setFontSize(fontSizeOptions[savedSize]);
+      }
+    } catch (error) {
+      console.error('Error loading font size:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFontSize();
+    saveLastVisited();
+  }, [loadFontSize, saveLastVisited]);
+
+  useEffect(() => {
+    // Miniplayer shows if there's an active track
+    setIsMiniPlayerVisible(state.currentSurahId !== null);
+  }, [state.currentSurahId]);
+
+  useEffect(() => {
+    if (state.isPlaying && state.currentSurahId === Number(surah)) {
+      setIsFullScreen(true);
+    } else if (!state.isPlaying) {
+      // Re-appear navbar immediately when playing stops (pause/stop)
+      setIsFullScreen(false);
+    }
+  }, [state.isPlaying, state.currentSurahId, surah]);
 
   // Auto-scroll every 10 seconds while playing
   useEffect(() => {
@@ -80,17 +109,6 @@ export default function Quran() {
 
     return () => clearInterval(intervalId);
   }, [state.isPlaying, state.currentSurahId, surah, viewportHeight]);
-
-  const loadFontSize = async () => {
-    try {
-      const savedSize = await AsyncStorage.getItem('quranFontSize');
-      if (savedSize && fontSizeOptions[savedSize]) {
-        setFontSize(fontSizeOptions[savedSize]);
-      }
-    } catch (error) {
-      console.error('Error loading font size:', error);
-    }
-  };
 
   const saveVerseToStorage = async (surah: number, verse: number) => {
     try {
@@ -189,40 +207,48 @@ export default function Quran() {
   };
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
-            <Svg width="9" height="19" viewBox="0 0 9 19" fill="none">
-              <Path
-                d="M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75"
-                stroke="#065F46"
-                strokeWidth="1.5"
-                strokeLinecap="round"
+    <Pressable style={styles.container} onPress={() => setIsFullScreen(!isFullScreen)}>
+      <StatusBar hidden={isFullScreen} />
+      {!isFullScreen && (
+        <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity style={styles.headerBackButton} onPress={() => router.back()}>
+              <Svg width="9" height="19" viewBox="0 0 9 19" fill="none">
+                <Path
+                  d="M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75"
+                  stroke="#065F46"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+            <View style={styles.headerDetails}>
+              <Text style={styles.headerTitle}>{quran[Number(surah)].name}</Text>
+              <Text style={styles.headerSubtitle}>
+                {quran[Number(surah)].array.length} آيات — {quran[Number(surah)].type}
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.playButton} onPress={handlePlaySurah}>
+              <Ionicons
+                name={state.isPlaying && state.currentSurahId === Number(surah) ? 'pause' : 'play'}
+                size={20}
+                color="#065F46"
               />
-            </Svg>
-          </TouchableOpacity>
-          <View style={styles.headerDetails}>
-            <Text style={styles.headerTitle}>{quran[Number(surah)].name}</Text>
-            <Text style={styles.headerSubtitle}>
-              {quran[Number(surah)].array.length} آيات — {quran[Number(surah)].type}
-            </Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.playButton} onPress={handlePlaySurah}>
-            <Ionicons
-              name={state.isPlaying && state.currentSurahId === Number(surah) ? 'pause' : 'play'}
-              size={20}
-              color="#065F46"
-            />
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      )}
 
-      <View style={styles.mainContentContainer}>
+      <View
+        style={[
+          styles.mainContentContainer,
+          isFullScreen && isMiniPlayerVisible && { marginBottom: 100 },
+        ]}
+      >
         {/* Custom Border Frame Container */}
         <ImageBackground
           source={require('../assets/images/Quran fram.png')}
-          style={styles.frameContainer}
+          style={[styles.frameContainer, isFullScreen && { paddingTop: 115, paddingBottom: 115 }]}
           resizeMode="stretch"
         >
           {/* Main Content */}
@@ -327,7 +353,7 @@ export default function Quran() {
           </ScrollView>
         </ImageBackground>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -346,6 +372,7 @@ const styles = StyleSheet.create({
     paddingTop: 97,
     paddingBottom: 95,
     paddingHorizontal: 40,
+    zIndex: 1, // Ensure it's above basic background
   },
   headerSafeArea: {
     backgroundColor: '#F5F5F5',
