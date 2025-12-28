@@ -1,4 +1,4 @@
-package com.alquran
+package com.alquran.quran
 
 import android.os.Build
 import android.os.Bundle
