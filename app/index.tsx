@@ -3,7 +3,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  /* FlatList, */ TouchableOpacity,
+  ImageBackground,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import quran from '../assets/Quran.json';
@@ -37,8 +43,8 @@ export default function HomeScreen() {
   const surahList = quran as Surah[];
   const [surah, setSurah] = React.useState(0);
   const [verse, setVerse] = React.useState(0);
-  const [surahSearchList] = React.useState<Surah[]>(surahList);
-  const [activeTab, setActiveTab] = React.useState('سورة');
+  // const [surahSearchList] = React.useState<Surah[]>(surahList);
+  // const [activeTab, setActiveTab] = React.useState('سورة');
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState<string>('');
 
@@ -110,11 +116,11 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  const tabs = ['سورة', 'جزء', 'الأذكار'];
+  // const tabs = ['سورة', 'جزء', 'الأذكار'];
   // Temporarily hide جزء and الأذكار tabs
-  const visibleTabs = tabs.filter(tab => tab === 'سورة');
+  // const visibleTabs = tabs.filter(tab => tab === 'سورة');
 
-  const renderSurahCard = ({ item }: { item: Surah }) => {
+  /* const renderSurahCard = ({ item }: { item: Surah }) => {
     const isLastRead = item.id - 1 === surah;
     const backgroundColor = isLastRead ? '#FEF3C7' : '#fff'; // Lighter background for last visited
     const borderColor = isLastRead ? '#D4AF37' : '#E5E7EB';
@@ -148,7 +154,7 @@ export default function HomeScreen() {
         </Text>
       </TouchableOpacity>
     );
-  };
+  }; */
 
   return (
     <View style={styles.container}>
@@ -197,7 +203,7 @@ export default function HomeScreen() {
 
       <SafeAreaView edges={['bottom']} style={styles.contentContainer}>
         {/* Tabs */}
-        <View style={styles.tabsContainer}>
+        {/* <View style={styles.tabsContainer}>
           {visibleTabs.map(tab => (
             <TouchableOpacity
               key={tab}
@@ -207,10 +213,10 @@ export default function HomeScreen() {
               <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </View> */}
 
         {/* Surah Grid */}
-        <FlatList
+        {/* <FlatList
           data={surahSearchList}
           renderItem={renderSurahCard}
           keyExtractor={(item: any) => item.id.toString()}
@@ -218,7 +224,7 @@ export default function HomeScreen() {
           columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.gridContainer}
           showsVerticalScrollIndicator={false}
-        />
+        /> */}
       </SafeAreaView>
 
       {/* Menu Component */}
