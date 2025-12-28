@@ -4,7 +4,7 @@
     "slug": "Quran",
     "version": "0.3.9",
     "orientation": "portrait",
-    "icon": "./assets/images/adaptive-icon.png",
+    "icon": "./assets/images/iconwioutext.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -21,7 +21,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/iconwioutext.png",
         "backgroundColor": "#065F46"
       },
       "package": "com.alquran.quran",
