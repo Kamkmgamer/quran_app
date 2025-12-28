@@ -48,16 +48,12 @@ interface QuranSurah {
 const quran = quranImport as QuranSurah[];
 const HIGHLIGHT_END_THRESHOLD_MS = 1750;
 
-// Frame border measurements (measured from the image)
-// These are the ornate decorated borders that content should NOT overlap
-const FRAME_BORDER_TOP = 92; // Top ornate border height
-const FRAME_BORDER_BOTTOM = 88; // Bottom ornate border height
-const FRAME_BORDER_HORIZONTAL = 38; // Left/right ornate border width
-const HEADER_HEIGHT = 95; // Header height when visible (including safe area)
-const MINI_PLAYER_HEIGHT = 90; // MiniPlayer component height
+const FRAME_BORDER_TOP = 92;
+const FRAME_BORDER_BOTTOM = 88;
+const FRAME_BORDER_HORIZONTAL = 38;
+const HEADER_HEIGHT = 95;
+const MINI_PLAYER_HEIGHT = 90;
 
-// SVG path for back arrow (extracted to avoid long lines)
-// eslint-disable-next-line max-len
 const BACK_ARROW_PATH =
   'M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75';
 
