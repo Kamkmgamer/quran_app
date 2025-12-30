@@ -5,11 +5,16 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { View } from 'react-native';
+import { I18nManager, View } from 'react-native';
 
 import MiniPlayer from '../components/MiniPlayer';
 import { AudioPlayerProvider } from '../contexts/AudioPlayerContext';
 import { LocationProvider } from '../contexts/LocationContext';
+
+if (!I18nManager.isRTL) {
+  I18nManager.allowRTL(true);
+  I18nManager.forceRTL(true);
+}
 
 SplashScreen.preventAutoHideAsync();
 

@@ -48,9 +48,9 @@ interface QuranSurah {
 const quran = quranImport as QuranSurah[];
 const HIGHLIGHT_END_THRESHOLD_MS = 1750;
 
-const FRAME_BORDER_TOP = 92;
-const FRAME_BORDER_BOTTOM = 88;
-const FRAME_BORDER_HORIZONTAL = 38;
+const FRAME_BORDER_TOP = 75;
+const FRAME_BORDER_BOTTOM = 70;
+const FRAME_BORDER_HORIZONTAL = 32;
 const HEADER_HEIGHT = 95;
 const MINI_PLAYER_HEIGHT = 90;
 
@@ -698,9 +698,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 24,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     flexGrow: 1,
   },
   textContainer: {
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
   },
   surahHeaderContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   surahFrame: {
     width: 180,
@@ -726,7 +726,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#065F46',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
     fontWeight: '600',
     writingDirection: 'rtl',
   },
