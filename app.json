@@ -2,7 +2,7 @@
   "expo": {
     "name": "قرآن",
     "slug": "Quran",
-    "version": "0.3.10",
+    "version": "0.3.12",
     "orientation": "portrait",
     "icon": "./assets/images/iconwioutext.png",
     "scheme": "myapp",
@@ -15,11 +15,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.alquran.quran",
+      "supportsRTL": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
+      "supportsRTL": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/iconwioutext.png",
         "backgroundColor": "#065F46"

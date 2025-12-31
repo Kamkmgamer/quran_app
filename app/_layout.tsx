@@ -38,7 +38,7 @@ export default function RootLayout() {
       <AudioPlayerProvider>
         <LocationProvider>
           <ThemeProvider value={DarkTheme}>
-            <View style={{ flex: 1, direction: 'rtl' }}>
+            <View style={{ flex: 1 }}>
               <Stack>
                 <Stack.Screen name="index" options={{ headerShown: false, title: 'الرئيسية' }} />
                 <Stack.Screen

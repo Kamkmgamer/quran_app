@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   ImageBackground,
   LayoutChangeEvent,
+  I18nManager,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -48,10 +49,10 @@ interface QuranSurah {
 const quran = quranImport as QuranSurah[];
 const HIGHLIGHT_END_THRESHOLD_MS = 1750;
 
-const FRAME_BORDER_TOP = 75;
-const FRAME_BORDER_BOTTOM = 70;
-const FRAME_BORDER_HORIZONTAL = 32;
-const HEADER_HEIGHT = 95;
+const FRAME_BORDER_TOP = 38;
+const FRAME_BORDER_BOTTOM = 38;
+const FRAME_BORDER_HORIZONTAL = 18;
+const HEADER_HEIGHT_BASE = 55;
 const MINI_PLAYER_HEIGHT = 90;
 
 const BACK_ARROW_PATH =
@@ -428,7 +429,7 @@ export default function Quran() {
     const topOffset = interpolate(
       isFullScreen.value,
       [0, 1],
-      [HEADER_HEIGHT, 0],
+      [HEADER_HEIGHT_BASE + insets.top, 0],
       Extrapolation.CLAMP,
     );
 
@@ -648,7 +649,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
   },
   headerRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
@@ -736,7 +737,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     fontFamily: 'AlMadina',
     includeFontPadding: false,
-    paddingHorizontal: 10,
+    paddingHorizontal: 0,
   },
   currentVerse: {
     color: '#065F46',

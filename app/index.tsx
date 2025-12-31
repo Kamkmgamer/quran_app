@@ -3,7 +3,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ImageBackground,
+  I18nManager,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import quran from '../assets/Quran.json';
@@ -244,7 +252,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row-reverse',
+    flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
