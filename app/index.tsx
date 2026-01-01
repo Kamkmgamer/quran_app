@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   columnWrapper: {
-    flexDirection: 'row-reverse',
+    flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
   },
   card: {
     flex: 1,

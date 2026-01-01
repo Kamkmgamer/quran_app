@@ -51,7 +51,7 @@ const HIGHLIGHT_END_THRESHOLD_MS = 1750;
 
 const FRAME_BORDER_TOP = 38;
 const FRAME_BORDER_BOTTOM = 38;
-const FRAME_BORDER_HORIZONTAL = 18;
+const FRAME_BORDER_HORIZONTAL = 24;
 const HEADER_HEIGHT_BASE = 55;
 const MINI_PLAYER_HEIGHT = 90;
 
@@ -699,9 +699,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 8,
+    paddingTop: 20,
     paddingBottom: 24,
-    paddingHorizontal: 4,
+    paddingHorizontal: 10,
     flexGrow: 1,
   },
   textContainer: {
