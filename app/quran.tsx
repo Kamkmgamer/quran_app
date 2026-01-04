@@ -15,6 +15,7 @@ import {
   ImageBackground,
   LayoutChangeEvent,
   I18nManager,
+  Platform,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -49,14 +50,15 @@ interface QuranSurah {
 const quran = quranImport as QuranSurah[];
 const HIGHLIGHT_END_THRESHOLD_MS = 1750;
 
-const FRAME_BORDER_TOP = 28;
-const FRAME_BORDER_BOTTOM = 50;
-const FRAME_BORDER_HORIZONTAL = 32;
+const FRAME_BORDER_TOP = Platform.OS === 'android' ? 75 : 28;
+const FRAME_BORDER_BOTTOM = Platform.OS === 'android' ? 75 : 50;
+const FRAME_BORDER_HORIZONTAL = Platform.OS === 'android' ? 40 : 32;
 const HEADER_HEIGHT_BASE = 55;
 const MINI_PLAYER_HEIGHT = 90;
 
 const BACK_ARROW_PATH =
-  'M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75';
+  'M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 ' +
+  '0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75';
 
 // Animation configuration
 const SPRING_CONFIG = {
