@@ -28,23 +28,21 @@ const AllTheProviders: React.FC<AllTheProvidersProps> = ({ children }) => {
   return (
     <ActionSheetProvider>
       <AudioPlayerProvider>
-        <ThemeProvider value={MockTheme}>
-          {children}
-        </ThemeProvider>
+        <ThemeProvider value={MockTheme}>{children}</ThemeProvider>
       </AudioPlayerProvider>
     </ActionSheetProvider>
   );
 };
 
 // Custom render function
-const customRender = (
-  ui: React.ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>,
-) => render(ui, { wrapper: AllTheProviders, ...options });
+const customRender = (ui: React.ReactElement, options?: Omit<RenderOptions, 'wrapper'>) =>
+  render(ui, { wrapper: AllTheProviders, ...options });
 
 // Re-export everything from testing-library
+/* eslint-disable import/export */
 export * from '@testing-library/react-native';
 export { customRender as render };
+/* eslint-enable import/export */
 
 // Mock data helpers
 export const createMockQuranData = () => [

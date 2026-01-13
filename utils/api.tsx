@@ -7,4 +7,4 @@ import { createTRPCReact } from '@trpc/react-query';
  * and to avoid type sharing complexity for now.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const trpc = createTRPCReact<any>();
+export const trpc = createTRPCReact<any>() as any;

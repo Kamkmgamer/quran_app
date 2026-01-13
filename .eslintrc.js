@@ -19,6 +19,13 @@ module.exports = {
     ecmaVersion: 2020,
     sourceType: 'module',
   },
+  settings: {
+    'import/resolver': {
+      typescript: {
+        project: './tsconfig.json',
+      },
+    },
+  },
   rules: {
     // TypeScript specific rules
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],

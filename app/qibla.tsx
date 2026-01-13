@@ -23,12 +23,6 @@ const AnimatedImage = Animated.createAnimatedComponent(Image);
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedSvg = Animated.createAnimatedComponent(PointerToMekka);
 
-const normalizeAngle = (angle: number) => ((angle % 360) + 360) % 360;
-
-const shortestAngleDelta = (from: number, to: number) => {
-  return ((to - from + 540) % 360) - 180;
-};
-
 type HeadingStabilizerState = {
   lastRawAngle?: number;
   lastAcceptedTime: number;
@@ -37,6 +31,10 @@ type HeadingStabilizerState = {
 };
 
 // موقع الكعبة بالدقة التي قدمتها (من DMS -> عشري)
+
+type SensorSubscription = {
+  remove: () => void;
+};
 
 export default function QiblaCompass() {
   const locationContext = useLocation();
@@ -60,39 +58,20 @@ export default function QiblaCompass() {
     jitterScore: 0,
     holdUntil: 0,
   });
-  const filteredAngleRef = React.useRef<number | undefined>(undefined);
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const isLandscape = screenWidth > screenHeight;
   const shortestSide = Math.min(screenWidth, screenHeight);
   const compassSize = shortestSide * (isLandscape ? 0.65 : 0.75);
   const pointerIconSize = Math.max(Math.min(shortestSide * 0.16, 110), 70);
-  // Kaaba offset is ~15% of compass size; use ~4x that (0.6 * compassSize) so pointer orbits well outside the circle
+  // Kaaba offset is ~15% of compass size;
+  // use ~4x that (0.6 * compassSize) so pointer orbits well outside the circle
   const pointerOrbitRadius = compassSize * 0.6;
 
   // استخدام البيانات من السياق المحمل مسبقاً
   const qiblaDirection = locationContext.qiblaDirection;
   const locationLoading = locationContext.locationLoading;
   const locationError = locationContext.locationError;
-  // دالة لتنعيم القراءات ومنع الاهتزاز عبر مرشح منخفض التمرير يعتمد على مستوى الضجيج
-  const smoothAngle = React.useCallback((newAngle: number, jitterScore: number) => {
-    const cappedJitter = Math.min(Math.max(jitterScore, 0), 8);
-
-    const smoothingFactor = cappedJitter >= 5 ? 0.3 : cappedJitter >= 3 ? 0.4 : 0.5;
-
-    const maxStep = cappedJitter >= 5 ? 30 : cappedJitter >= 3 ? 40 : 50;
-
-    if (filteredAngleRef.current === undefined) {
-      filteredAngleRef.current = newAngle;
-      return newAngle;
-    }
-
-    const delta = shortestAngleDelta(filteredAngleRef.current, newAngle);
-    const clampedDelta = Math.max(-maxStep, Math.min(maxStep, delta));
-    const nextAngle = normalizeAngle(filteredAngleRef.current + clampedDelta * smoothingFactor);
-    filteredAngleRef.current = nextAngle;
-    return nextAngle;
-  }, []);
 
   useEffect(() => {
     magneticInterferenceRef.current = magneticInterference;
@@ -167,9 +146,9 @@ export default function QiblaCompass() {
   // إعداد البوصلة مع تسلسل احتياطي متعدد المستويات
   useEffect(() => {
     let headingSubscription: Location.LocationSubscription | null = null;
-    let deviceMotionSubscription: any = null;
-    let magnetometerSubscription: any = null;
-    let accelerometerSubscription: any = null;
+    let deviceMotionSubscription: SensorSubscription | null = null;
+    let magnetometerSubscription: SensorSubscription | null = null;
+    let accelerometerSubscription: SensorSubscription | null = null;
     let isActive = true;
 
     const setupCompass = async () => {
@@ -178,7 +157,7 @@ export default function QiblaCompass() {
         const { status } = await Location.getForegroundPermissionsAsync();
         if (status === 'granted') {
           try {
-            console.log('Attempting Location Heading method...');
+            // console.log('Attempting Location Heading method...');
             headingSubscription = await Location.watchHeadingAsync(headingData => {
               if (!isActive) return;
 
@@ -197,10 +176,10 @@ export default function QiblaCompass() {
               setIsCalibrated(true);
             });
 
-            console.log('Location Heading method active');
+            // console.log('Location Heading method active');
             return; // نجح - لا حاجة للطرق الاحتياطية
           } catch (headingError) {
-            console.log('Location Heading failed, trying DeviceMotion...', headingError);
+            // console.log('Location Heading failed, trying DeviceMotion...', headingError);
           }
         }
 
@@ -208,7 +187,7 @@ export default function QiblaCompass() {
         const deviceMotionAvailable = await DeviceMotion.isAvailableAsync();
         if (deviceMotionAvailable) {
           try {
-            console.log('Attempting DeviceMotion method...');
+            // console.log('Attempting DeviceMotion method...');
             deviceMotionSubscription = DeviceMotion.addListener(data => {
               if (!isActive) return;
 
@@ -225,10 +204,10 @@ export default function QiblaCompass() {
             });
 
             DeviceMotion.setUpdateInterval(20);
-            console.log('DeviceMotion method active');
+            // console.log('DeviceMotion method active');
             return;
           } catch (motionError) {
-            console.log('DeviceMotion failed, trying manual fusion...', motionError);
+            // console.log('DeviceMotion failed, trying manual fusion...', motionError);
           }
         }
 
@@ -237,7 +216,7 @@ export default function QiblaCompass() {
         const accelAvailable = await Accelerometer.isAvailableAsync();
 
         if (magAvailable && accelAvailable) {
-          console.log('Attempting Manual Sensor Fusion...');
+          // console.log('Attempting Manual Sensor Fusion...');
 
           // الاشتراك في كلا المستشعرين
           magnetometerSubscription = Magnetometer.addListener(data => {
@@ -273,13 +252,13 @@ export default function QiblaCompass() {
 
           Magnetometer.setUpdateInterval(20);
           Accelerometer.setUpdateInterval(20);
-          console.log('Manual Sensor Fusion active');
+          // console.log('Manual Sensor Fusion active');
           return;
         }
 
         // الطريقة 4: مقياس المغناطيسية الخام فقط (الملاذ الأخير - تحذير!)
         if (magAvailable) {
-          console.log('WARNING: Using raw magnetometer only (requires flat device)');
+          // console.log('WARNING: Using raw magnetometer only (requires flat device)');
           magnetometerSubscription = Magnetometer.addListener(data => {
             if (!isActive) return;
 
@@ -294,13 +273,13 @@ export default function QiblaCompass() {
           });
 
           Magnetometer.setUpdateInterval(20);
-          console.log('Raw magnetometer method active (WARNING: hold device flat)');
+          // console.log('Raw magnetometer method active (WARNING: hold device flat)');
         } else {
-          console.error('No compass sensors available!');
+          // console.error('No compass sensors available!');
           setIsCalibrated(false);
         }
       } catch (error) {
-        console.error('Error setting up compass:', error);
+        // console.error('Error setting up compass:', error);
         setIsCalibrated(false);
       }
     };
