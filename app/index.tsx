@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import quran from '../assets/Quran.json';
+import { AyahOfDayCard } from '../components/AyahOfDayCard';
 import Menu from '../components/Menu';
 
 interface Verse {
@@ -226,6 +227,8 @@ export default function HomeScreen() {
           columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.gridContainer}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={<AyahOfDayCard />}
+          ListHeaderComponentStyle={{ marginBottom: 16 }}
         />
       </SafeAreaView>
 
