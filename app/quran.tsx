@@ -501,7 +501,7 @@ export default function Quran() {
           style={[styles.mainContentContainer, contentAnimatedStyle, mainContentAnimatedStyle]}
         >
           <ImageBackground
-            source={require('../assets/images/Quran fram.png')}
+            source={require('../assets/images/quran-frame.png')}
             style={styles.frameContainer}
             resizeMode="stretch"
           >

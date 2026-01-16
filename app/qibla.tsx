@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import PointerToMekka from '../assets/images/pointer to mekka.svg';
+import PointerToMekka from '../assets/images/pointer-to-mekka.svg';
 import { useLocation } from '../contexts/LocationContext';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
@@ -545,7 +545,7 @@ export default function QiblaCompass() {
           <View style={[styles.compassContainer, isLandscape && styles.compassContainerLandscape]}>
             <View style={[styles.compass, { width: compassSize, height: compassSize }]}>
               <AnimatedImage
-                source={require('../assets/images/north east south west.png')}
+                source={require('../assets/images/compass-directions.png')}
                 style={[styles.directionsImage, { transform: [{ rotate: compassRotate }] }]}
                 resizeMode="contain"
               />
