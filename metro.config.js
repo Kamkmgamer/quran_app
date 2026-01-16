@@ -16,10 +16,13 @@ config.transformer = {
   babelTransformerPath: require.resolve('react-native-svg-transformer'),
 };
 
+const { assetExts, sourceExts } = config.resolver;
+
 config.resolver = {
   ...config.resolver,
-  assetExts: config.resolver.assetExts.filter((ext) => ext !== 'svg'),
-  sourceExts: [...config.resolver.sourceExts, 'svg'],
+  unstable_enablePackageExports: true,
+  assetExts: assetExts.filter((ext) => ext !== 'svg'),
+  sourceExts: [...sourceExts, 'svg', 'cjs', 'mjs'],
 };
 
 module.exports = config;
