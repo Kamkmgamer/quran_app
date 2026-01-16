@@ -29,7 +29,7 @@ export default function RootLayout() {
   });
 
   const [queryClient] = useState(() => new QueryClient());
-  // @ts-ignore - tRPC v11 typing issue with AnyRouter
+
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [

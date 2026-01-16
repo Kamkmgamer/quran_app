@@ -8,7 +8,15 @@ import Svg, { Path } from 'react-native-svg';
 
 import quranImport from '../assets/Quran.json';
 
-const quran = quranImport as any[];
+const quran = quranImport as {
+  id: number;
+  name: string;
+  array: {
+    id: number;
+    ar: string;
+    en: string;
+  }[];
+}[];
 
 interface BookmarkedVerse {
   id: string;
@@ -28,7 +36,8 @@ export default function Bookmarks() {
       const savedVersesString = await AsyncStorage.getItem('bookmarkedVerses');
       if (savedVersesString) {
         const savedVerses = JSON.parse(savedVersesString);
-        const versesWithDetails = savedVerses.map((item: any) => {
+        type SavedVerseItem = { surah: number; verse: number; addedAt?: number };
+        const versesWithDetails = savedVerses.map((item: SavedVerseItem) => {
           const surahData = quran[item.surah];
           const verseData = surahData.array[item.verse];
           return {
@@ -113,7 +122,8 @@ export default function Bookmarks() {
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Svg width="9" height="19" viewBox="0 0 9 19" fill="none">
               <Path
-                d="M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896 0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75"
+                d="M7.75 17.75L4.6648 14.7796C2.20442 12.4107 0.974227 11.2263 0.784807 9.78267C0.738398 9.42896
+                  0.738398 9.07104 0.784807 8.71733C0.974227 7.27371 2.20442 6.08928 4.6648 3.72042L7.75 0.75"
                 stroke="#065F46"
                 strokeWidth="1.5"
                 strokeLinecap="round"
