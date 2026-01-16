@@ -32,3 +32,6 @@ CMS/
 
 #idea
 .idea
+BUILD_GUIDE_ANDROID.md
+DEV_STRUCTURE_GUIDE.md
+setup_workspace.ps1
