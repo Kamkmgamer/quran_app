@@ -1,10 +1,7 @@
 import { createTRPCReact } from '@trpc/react-query';
+import type { AnyRouter } from '@trpc/server';
 
 /**
  * A set of typesafe hooks for consuming the API.
- *
- * Using 'any' to bypass strict router validation issues in v11 beta
- * and to avoid type sharing complexity for now.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const trpc = createTRPCReact<any>();
+export const trpc = createTRPCReact<AnyRouter>() as any;
