@@ -15,13 +15,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.alquran.quran",
-      "supportsRTL": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "supportsRTL": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/iconwioutext.png",
         "backgroundColor": "#065F46"

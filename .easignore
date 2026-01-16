@@ -6,6 +6,10 @@
 **/.expo/**
 **/node_modules/**
 
+# Exclude CMS folder
+CMS/
+**/CMS/**
+
 # Exclude entire Android directory for iOS builds
 **/android/**
 

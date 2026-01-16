@@ -32,7 +32,6 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="myapp"/>
-        <data android:scheme="com.alquran"/>
         <data android:scheme="com.alquran.quran"/>
         <data android:scheme="exp+quran"/>
       </intent-filter>
