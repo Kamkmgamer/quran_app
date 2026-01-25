@@ -16,7 +16,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.alquran.quran",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
