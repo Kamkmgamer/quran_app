@@ -16,6 +16,7 @@ import {
   LayoutChangeEvent,
   I18nManager,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -50,9 +51,15 @@ interface QuranSurah {
 const quran = quranImport as QuranSurah[];
 const HIGHLIGHT_END_THRESHOLD_MS = 1750;
 
-const FRAME_BORDER_TOP = Platform.OS === 'android' ? 75 : 28;
-const FRAME_BORDER_BOTTOM = Platform.OS === 'android' ? 75 : 50;
-const FRAME_BORDER_HORIZONTAL = Platform.OS === 'android' ? 40 : 32;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const IS_TABLET = SCREEN_WIDTH >= 768 || (Platform.OS === 'ios' && Platform.isPad);
+
+// Responsive frame borders to handle image stretching
+const FRAME_BORDER_TOP = (Platform.OS === 'android' ? 75 : 28) * (IS_TABLET ? 1.5 : 1);
+const FRAME_BORDER_BOTTOM = (Platform.OS === 'android' ? 75 : 50) * (IS_TABLET ? 1.5 : 1);
+// Significant increase for tablets as the border stretches horizontally
+const FRAME_BORDER_HORIZONTAL = (Platform.OS === 'android' ? 40 : 32) * (IS_TABLET ? 2.5 : 1);
+
 const HEADER_HEIGHT_BASE = 55;
 const MINI_PLAYER_HEIGHT = 90;
 
