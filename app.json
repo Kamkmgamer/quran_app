@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.alquran.quran",
+      "bundleIdentifier": "com.alquran.quran.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
@@ -27,7 +27,7 @@
         "foregroundImage": "./assets/images/iconwioutext.png",
         "backgroundColor": "#065F46"
       },
-      "package": "com.alquran.quran",
+      "package": "com.alquran.quran.app",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
