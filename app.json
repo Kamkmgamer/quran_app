@@ -58,7 +58,8 @@
             ]
           }
         }
-      ]
+      ],
+      "./plugins/withRemoveActivityRecognition.js"
     ],
     "experiments": {
       "typedRoutes": true
